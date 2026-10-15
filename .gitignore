@@ -1,23 +1,15 @@
 node_modules/
 .env
-*.md
 .env.*
 !.env.example
 npm-debug.log*
+*.log
 .DS_Store
 coverage/
-*.log
-public/free-books-pdf/
-# Test-only artifacts: never commit or deploy (created by tests/helpers/setup-fixtures.js and test runs)
-queries/Videos/
-queries/Tutorials/
-queries/Guidewire/Tutorial Videos/
 test-output/
 tmp/
-poc/edl-verify/out/
 *.tmp
-!.ai/**/*.md
+*.md
 !AGENTS.md
-
-# Private local personal-finance data (never commit)
-data/private/
+!README.md
+!.ai/**/*.md

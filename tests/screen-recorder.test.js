@@ -392,13 +392,6 @@ test('recorder controller runs record-pick-auto-record with pause/resume', () =>
     'picker → modal → confirm → construct → onstop → start → session clock');
 });
 
-test('Admin Video Editor exposes the desktop recorder launcher', async () => {
-  const html = await renderEditor();
-  assert.match(html, /video-editor-desktop-recorder-launch/);
-  assert.match(html, /href="learnwithme-recorder:\/\/launch"/);
-  assert.match(html, /desktop-recorder\\\\install-protocol\.ps1/);
-});
-
 test('website Stop has a bounded fallback if MediaRecorder omits onstop', () => {
   const src = readFileSync(path.join(PUBLIC_DIR, 'admin-video-editor.js'), 'utf8');
   const stopBody = src.slice(src.indexOf('function srStopRecording'), src.indexOf('function srPauseRecording'));

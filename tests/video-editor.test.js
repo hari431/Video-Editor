@@ -347,45 +347,6 @@ test('admin video editor page renders admin-only UI without touching protection 
   }
 });
 
-function renderWatchPage({ filePath, canConfigureBranding }) {
-  return ejs.renderFile(path.join(VIEWS_DIR, 'video.ejs'), {
-    user: { name: 'Owner', email: 'owner@example.com', app_role: 'OWNER', access_expires_at: new Date() },
-    file: { path: filePath },
-    path: filePath,
-    displayName: name => name.replace(/\.txt$/i, ''),
-    prettyTitle: name => name.replace(/\.[^.]+$/i, ''),
-    categoryForPath: () => 'Videos',
-    videoMimeType: fname => 'video/mp4',
-    viewsCount: 0,
-    likeCount: 0,
-    userLiked: false,
-    canConfigureBranding
-  });
-}
-
-test('watch page shows exact-path Edit Video link for admin/owner only', async () => {
-  const filePath = 'Guidewire/Tutorials/My Video & Part1.mp4';
-  const html = await renderWatchPage({ filePath, canConfigureBranding: true });
-  const expected = '/admin/video-editor?path=' + encodeURIComponent(filePath);
-  assert.ok(html.includes(`href="${expected}"`), 'link carries the exact encoded file path');
-  assert.match(html, /data-testid="edit-video-link"/, 'link hook present');
-  assert.match(html, /✏️ Edit Video/, 'link label present');
-  // No editing controls inside the player itself.
-  const shellIdx = html.indexOf('class="video-shell"');
-  const linkIdx = html.indexOf('edit-video-link');
-  assert.ok(shellIdx !== -1 && linkIdx > shellIdx, 'link exists');
-  const playerBlock = html.slice(shellIdx, linkIdx);
-  assert.doesNotMatch(playerBlock, /video-editor-trim|video-editor-text|video-editor-export/, 'no editor controls near the player');
-});
-
-test('watch page hides the Edit Video link from normal users', async () => {
-  for (const gate of [false, undefined]) {
-    const html = await renderWatchPage({ filePath: 'Videos/clip.mp4', canConfigureBranding: gate });
-    assert.doesNotMatch(html, /edit-video-link/, `no edit link when gate is ${String(gate)}`);
-    assert.doesNotMatch(html, /\/admin\/video-editor\?path=/, 'no editor URL leaked to normal users');
-  }
-});
-
 test('editor page accepts a preselected exact path with safe escaping', async () => {
   const preselectedPath = 'Guidewire/Tutorials/A&B/clip.mp4';
   const html = await ejs.renderFile(path.join(VIEWS_DIR, 'admin-video-editor.ejs'), {

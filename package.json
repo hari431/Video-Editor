@@ -1,44 +1,24 @@
 {
-  "name": "gosu-query-library",
+  "name": "browser-video-studio",
   "version": "0.1.0",
   "private": true,
-  "description": "Private learning library with Guidewire Gosu query files",
+  "description": "Standalone, local-first browser video editor and screen recorder",
   "type": "module",
   "engines": {
     "node": ">=22"
   },
   "scripts": {
-    "build": "node scripts/fetch-free-books.js && node scripts/generate-content-manifest.js && npm run check",
-    "sync:library-metadata": "node scripts/generate-content-manifest.js",
-    "lint": "npm run check",
-    "dev": "node --watch src/server.js",
-    "start": "node src/server.js",
-    "migrate": "node scripts/migrate.js",
-    "cleanup": "node scripts/cleanup.js",
-    "cleanup:dry": "node scripts/cleanup.js --dry-run",
-    "normalize-admins": "node scripts/normalize-admins.js",
+    "start": "node src/app.js",
+    "dev": "node --watch src/app.js",
     "test": "node --test",
-    "check": "node --check src/free-books/data.js && node --check scripts/fetch-free-books.js && node --check src/server.js && node --check src/expense-tracker/store.js && node --check src/expense-tracker/db-store.js && node --check scripts/import-expense-tracker.js && node --check src/knowledge/data.js && node --check src/knowledge/loader.js && node --check src/knowledge/notes.js && node --check src/luna/config.js && node --check src/luna/agent.js && node --check src/luna/model.js && node --check src/luna/permissions.js && node --check src/luna/conversation.js && node --check src/luna/retrieval.js && node --check src/luna/providers/gemini.js && node --check src/luna/providers/openrouter.js && node --check src/luna/tools/library.js && node --check src/luna/tools/documents.js && node --check src/luna/tools/spreadsheets.js && node --check src/luna/tools/images.js && node --check src/luna/tools/videos.js && node --check src/luna/tools/guidewire-docs.js && node --check src/luna/content-reader.js && node --check src/luna/guidewire-docs.js && node --check src/library/local.js && node --check src/library/tree.js && node --check src/library/folder-progress.js && node --check src/library/new-content.js && node --check src/library/video.js && node --check src/library/video-protection.js && node --check src/public/video-protection.js && node --check src/public/luna-widget.js && node --check src/library/likes.js && node --check src/library/free-tv.js && node --check src/auth/middleware.js && node --check src/auth/passport.js && node --check src/auth/users.js && node --check src/auth/admin.js && node --check src/auth/paidProducts.js && node --check src/auth/paid-products-scheduler.js && node --check src/email/mailer.js && node --check scripts/normalize-admins.js && node --check scripts/generate-content-manifest.js && node --check scripts/migrate.js",
-    "nanobot:sidecar": "node scripts/run-nanobot-sidecar.js"
+    "check": "node --check src/app.js && node --check src/auth/local.js && node --check src/video/ffmpeg.js && node --check src/video/routes.js && node --check src/library/video-editor.js && node --check src/library/edl-evidence.js && node --check src/public/admin-video-editor.js && node --check src/public/video-editor-project.js && node --check src/public/screen-recorder.js && node --check src/public/edl-evidence-panel.js",
+    "lint": "npm run check"
   },
   "dependencies": {
-    "@napi-rs/canvas": "^1.0.9",
-    "connect-pg-simple": "^10.0.0",
     "dotenv": "^17.2.2",
     "ejs": "^3.1.10",
     "express": "^5.1.0",
-    "express-session": "^1.18.2",
-    "mammoth": "^1.12.2",
-    "nodemailer": "^9.0.6",
-    "passport": "^0.7.0",
-    "passport-google-oauth20": "^2.0.0",
-    "pdf-lib": "^1.17.1",
-    "pdfjs-dist": "^6.3.289",
-    "pdfstudio": "0.4.0",
-    "pg": "^8.16.3",
-    "razorpay": "^2.9.8",
-    "tesseract.js": "^7.0.0",
-    "xlsx": "^0.18.5"
+    "express-session": "^1.18.2"
   },
   "devDependencies": {
     "jsdom": "^30.1.1"

@@ -1,9 +1,0 @@
-const html = '<div class="video-meta"><span class="views">▶ 0 Views</span><span class="likes">♥ 0 Likes <button class="like-btn" data-path="Videos/Finding Rate table & Routine Usages.mp4">Like</button></span></div>';
-const div = document.createElement('div');
-div.innerHTML = html;
-const likesSpan = div.querySelector('.likes');
-console.log('likes span:', likesSpan ? 'found' : 'not found');
-console.log('likes span innerHTML:', likesSpan ? likesSpan.innerHTML : 'null');
-const button = div.querySelector('.like-btn');
-console.log('button:', button ? 'found' : 'not found');
-console.log('button data-path:', button ? button.getAttribute('data-path') : 'null');

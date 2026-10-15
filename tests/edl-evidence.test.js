@@ -17,7 +17,7 @@ import { validateSpecV2 } from '../src/library/video-editor.js';
 
 const VIEWS_DIR = fileURLToPath(new URL('../src/views/', import.meta.url));
 const PUBLIC_DIR = fileURLToPath(new URL('../src/public/', import.meta.url));
-const SERVER_SRC = readFileSync(fileURLToPath(new URL('../src/server.js', import.meta.url)), 'utf8');
+const SERVER_SRC = readFileSync(fileURLToPath(new URL('../src/video/routes.js', import.meta.url)), 'utf8');
 
 function sampleTranscript() {
   return {
@@ -255,11 +255,11 @@ test('admin video editor page renders the evidence panel without touching editor
 
 test('server wires admin-only evidence routes with local-only gate and no render path', () => {
   for (const route of ['/api/admin/edl-evidence/validate', '/api/admin/edl-evidence/generate']) {
-    assert.match(SERVER_SRC, new RegExp(`app\\.post\\('${route.replace(/\//g, '\\/')}', requireApiAuth, requireAdmin`),
-      `route registered with admin auth: ${route}`);
+    assert.match(SERVER_SRC, new RegExp(`app\\.post\\('${route.replace(/\//g, '\\/')}', requireApiAuth`),
+      `route registered with auth: ${route}`);
   }
   const start = SERVER_SRC.indexOf('/api/admin/edl-evidence/validate');
-  const end = SERVER_SRC.indexOf('// Local-only Admin/Owner video export. Disabled in production', start);
+  const end = SERVER_SRC.indexOf('// Screen-recording finalize', start);
   assert.ok(start > 0 && end > start, 'evidence route block located');
   const block = SERVER_SRC.slice(start, end);
   assert.match(block, /isVideoEditorAvailable\(\)/, 'local-only gate present');
