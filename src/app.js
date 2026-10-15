@@ -2,13 +2,12 @@
 //
 // A deliberately small replacement for the original src/server.js monolith.
 // It serves exactly two things: the Video Editor (primary) and the Screen
-// Recorder (secondary), behind a simple local password. No database, no
-// OAuth, no library, no external integrations.
+// Recorder (secondary). No database, no OAuth, no library, no external
+// integrations.
 import 'dotenv/config';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import express from 'express';
-import { createLocalAuth } from './auth/local.js';
 import { registerVideoEditorRoutes } from './video/routes.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -21,29 +20,20 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Simple local password gate + in-memory session.
-const auth = createLocalAuth(app);
-
 // View locals shared by every render.
 app.use((req, res, next) => {
-  res.locals.siteName = 'BrowserVideoStudio';
-  res.locals.user = req.session && req.session.user ? req.session.user : null;
-  res.locals.isAuthenticated = Boolean(req.session && req.session.authed);
-  res.locals.isPrivileged = res.locals.isAuthenticated;
+  res.locals.siteName = 'Video Editor';
   res.locals.currentUrl = req.originalUrl || '/';
   next();
 });
 
 // Landing page: the two entry points.
-app.get('/', auth.requireAuth, (req, res) => {
+app.get('/', (req, res) => {
   res.render('landing', { activeApp: 'home' });
 });
 
 // Editor (primary) + recorder (secondary) + their APIs.
-registerVideoEditorRoutes(app, {
-  requireAuth: auth.requireAuth,
-  requireApiAuth: auth.requireApiAuth
-});
+registerVideoEditorRoutes(app);
 
 app.get('/health', (req, res) => res.json({ ok: true }));
 

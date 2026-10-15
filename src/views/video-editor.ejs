@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Video Editor</title><link rel="stylesheet" href="/styles.css"><link rel="modulepreload" href="/video-editor-project.js"><link rel="modulepreload" href="/screen-recorder.js"></head>
+<body><%- include('partials/app-nav') %>
+<main class="container">
+<h1>Video Editor</h1>
+
+<p class="muted">Admin/Owner only. Select video and media files from your device; files are uploaded temporarily to this service for FFmpeg processing when you export. The original files are not modified and temporary files are cleaned up after export. Production uploads are limited to 100 MB per video by default. External / YouTube videos are not editable.</p>
+
+<% const _available = typeof editorAvailable !== 'undefined' ? !!editorAvailable : false; %>
+<% const _pre = (typeof preselectedPath !== 'undefined' && preselectedPath) ? String(preselectedPath) : ''; %>
+<% const _maxMb = (typeof editorMaxVideoMb !== 'undefined' && Number.isFinite(Number(editorMaxVideoMb)) && Number(editorMaxVideoMb) >= 1) ? Math.floor(Number(editorMaxVideoMb)) : 2048; %>
+<% if (!_available) { %>
+  <p class="flash flash-error" data-testid="video-editor-disabled">The video editor is unavailable. Check that FFmpeg is installed and the VIDEO_EDITOR_ENABLED setting is not false.</p>
+<% } %>
+<% if (_pre) { %>
+  <p class="muted" data-testid="video-editor-preselected">Library video preselected: <code><%= _pre %></code> — loading it below. The original file is never modified.</p>
+<% } %>
+
+<div data-testid="video-editor-root" id="videoEditorRoot" data-available="<%= _available ? '1' : '0' %>" data-preselected="<%= _pre %>" data-max-video-mb="<%= _maxMb %>" style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start;">
+  <div id="veWorkspaceHeader" class="ve-ws-header" data-testid="video-editor-workspace-header" style="display:none;">
+    <div class="ve-ws-header-left">
+      <span class="ve-ws-title">🎬 Editing Workspace</span>
+      <span class="ve-ws-timecode" id="veWsTimecodeBadge">00:00.0 / 00:00.0</span>
+    </div>
+    <div class="ve-ws-header-center">
+      <button type="button" class="ve-ws-btn" id="veToggleMediaBtn" data-testid="video-editor-workspace-media-btn" title="Open media &amp; uploads drawer">📁 Media &amp; Files</button>
+      <button type="button" class="ve-ws-btn" id="veToggleExportBtn" data-testid="video-editor-workspace-export-btn" title="Open export settings drawer">🚀 Export Settings</button>
+      <button type="button" class="ve-ws-btn" id="veMaximizePreviewBtn" data-testid="video-editor-maximize-preview" title="Toggle maximize preview (F)">🗖 Maximize Preview</button>
+    </div>
+    <div class="ve-ws-header-right">
+      <button type="button" class="ve-ws-btn ve-ws-btn-primary" id="veWorkspaceRestoreBtn" data-testid="video-editor-workspace-restore" title="Restore standard page layout (Esc)">🗗 Restore Layout</button>
+    </div>
+  </div>
+
+  <div class="ve-standard-header" style="display:flex;justify-content:flex-end;width:100%;margin-bottom:8px;gap:8px;">
+    <button type="button" class="button primary" id="veWorkspaceToggle" data-testid="video-editor-workspace-toggle" style="display:inline-flex;align-items:center;gap:6px;font-weight:600;padding:6px 14px;">⤢ Editing Workspace</button>
+  </div>
+
+  <section id="veSectionPreview" style="flex:2 1 420px;min-width:300px;">
+    <div id="veUploadControls" class="ve-drawer-modal" data-testid="video-editor-upload-controls">
+      <div class="ve-drawer-box" style="max-width:680px;">
+        <div class="ve-drawer-header">
+          <h3 style="margin:0;font-size:14px;font-weight:700;">📁 Media &amp; Upload Sources</h3>
+          <button type="button" class="ve-drawer-close" id="veCloseUploadsBtn" aria-label="Close media dialog">✕</button>
+        </div>
+        <h2 style="font-size:15px;" class="ve-std-h2">1 · Select &amp; preview</h2>
+        <p class="muted" style="font-size:12px;margin:0 0 12px 0;">Add media files from your device. Selected files are uploaded temporarily to this service for export and removed afterward.</p>
+        
+        <div class="ve-upload-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;">
+          <!-- Card 1: Main Video -->
+          <div class="ve-upload-card" data-testid="video-editor-upload-card-video" style="padding:12px;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+              <span style="font-weight:700;font-size:13px;">🎥 Main Video</span>
+              <span class="muted" style="font-size:10px;font-weight:600;">(max <%= _maxMb %> MB)</span>
+            </div>
+            <p class="muted" style="font-size:11px;margin:0 0 8px 0;">Primary timeline track (mp4, webm, mov, mkv; multiple files).</p>
+            <input type="file" id="videoFile" data-testid="video-editor-file" accept=".mp4,.webm,.mov,.mkv,video/mp4,video/webm,video/quicktime,video/x-matroska" multiple <%= _available ? '' : 'disabled' %> style="font-size:12px;width:100%;">
+          </div>
+
+          <!-- Card 2: Video Overlays -->
+          <div class="ve-upload-card" data-testid="video-editor-upload-card-voverlay" style="padding:12px;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+              <span style="font-weight:700;font-size:13px;">🪟 Video Overlays (PiP)</span>
+              <span class="muted" style="font-size:10px;font-weight:600;">(max <%= _maxMb %> MB)</span>
+            </div>
+            <p class="muted" style="font-size:11px;margin:0 0 8px 0;">Picture-in-picture video sources for the overlay track.</p>
+            <input type="file" id="voverlaySourceFile" data-testid="video-editor-overlay-source-file" accept=".mp4,.webm,.mov,.mkv,video/mp4,video/webm,video/quicktime,video/x-matroska" multiple <%= _available ? '' : 'disabled' %> style="font-size:12px;width:100%;">
+            <div id="voverlaySourcesList" data-testid="video-editor-overlay-sources-list" style="margin:6px 0 0 0;font-size:11px;color:#475569;"></div>
+          </div>
+
+          <!-- Card 3: Audio & Music -->
+          <div class="ve-upload-card" data-testid="video-editor-upload-card-audio" style="padding:12px;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+              <span style="font-weight:700;font-size:13px;">🎵 Audio &amp; Music</span>
+              <span class="muted" style="font-size:10px;font-weight:600;">(max 200 MB)</span>
+            </div>
+            <p class="muted" style="font-size:11px;margin:0 0 8px 0;">Background music and sound tracks (mp3, wav, m4a, aac, flac).</p>
+            <input type="file" id="audioFile" data-testid="video-editor-audio" accept=".mp3,.wav,.m4a,.aac,.ogg,.flac,audio/mpeg,audio/wav,audio/mp4,audio/aac,audio/ogg,audio/flac" multiple <%= _available ? '' : 'disabled' %> style="font-size:12px;width:100%;">
+          </div>
+
+          <!-- Card 4: Overlay Images -->
+          <div class="ve-upload-card" data-testid="video-editor-upload-card-image" style="padding:12px;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+              <span style="font-weight:700;font-size:13px;">🖼️ Overlay Images</span>
+              <span class="muted" style="font-size:10px;font-weight:600;">(max 5 MB)</span>
+            </div>
+            <p class="muted" style="font-size:11px;margin:0 0 8px 0;">Static overlays, logos, and stickers (png, jpg, webp; up to 4).</p>
+            <input type="file" id="imageFile" data-testid="video-editor-image" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" multiple <%= _available ? '' : 'disabled' %> style="font-size:12px;width:100%;">
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <div id="vePreviewWorkspaceRow" class="ve-preview-workspace-row" style="display:flex;gap:12px;width:100%;height:100%;min-height:0;align-items:stretch;">
+      <div id="vePreviewContainer" class="ve-preview-panel" style="flex:1 1 minmax(280px, 1fr);min-width:0;">
+        <button type="button" class="ve-floating-restore-btn" id="veFloatingRestorePreview" style="display:none;" title="Restore Workspace (Esc)">🗗 Restore Workspace</button>
+        <div id="previewWrap" data-testid="video-editor-preview-wrap" style="position:relative;background:#000;border-radius:12px;overflow:hidden;max-width:100%;clip-path:inset(0 round 12px);">
+          <video id="previewVideo" data-testid="video-editor-preview" controls preload="metadata" playsinline style="width:100%;display:block;"></video>
+          <div id="overlayLayer" data-testid="video-editor-overlays" style="position:absolute;inset:0;pointer-events:none;overflow:visible;clip-path:none;z-index:30;"></div>
+          <div id="overlayVideoLayer" data-testid="video-editor-video-overlays" style="position:absolute;inset:0;pointer-events:none;overflow:visible;contain:paint;clip-path:none;z-index:25;"></div>
+          <div id="cropLayer" data-testid="video-editor-crop-layer" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:40;display:none;"></div>
+        </div>
+        <p class="muted" id="videoMeta" data-testid="video-editor-meta" style="font-size:12px;"></p>
+        <div class="ve-preview-playback-bar" style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0;align-items:center;">
+          <button type="button" class="button small" id="vePlayBtn" data-testid="video-editor-play" <%= _available ? '' : 'disabled' %>>▶ Play</button>
+          <span data-testid="video-editor-timecode" id="veTimecode" style="font-variant-numeric:tabular-nums;font-size:13px;font-weight:600;">00:00.0 / 00:00.0</span>
+          <span style="font-size:12px;color:#64748b;">Zoom</span>
+          <button type="button" class="button small secondary" id="veZoomOut" data-testid="video-editor-zoom-out" <%= _available ? '' : 'disabled' %>>−</button>
+          <button type="button" class="button small secondary" id="veZoomIn" data-testid="video-editor-zoom-in" <%= _available ? '' : 'disabled' %>>+</button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <div id="veDivider" class="ve-divider" data-testid="video-editor-divider" title="Drag to adjust timeline height">
+    <div class="ve-divider-grip"></div>
+  </div>
+
+  <section id="veSectionTimeline" style="flex:1 1 100%;min-width:280px;">
+    <div id="veTimelineContainer" class="ve-timeline-panel">
+      <h2 style="font-size:15px;" class="ve-std-h2">2 · Timeline <span class="muted" style="font-weight:400;font-size:12px;">(drag to scrub · clip bodies move · edges trim · video edges trim source · overlapping clips stack)</span></h2>
+      <div class="ve-timeline-toolbar" style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0;">
+        <button type="button" class="button small" id="veAddVideo" data-testid="video-editor-add-video" <%= _available ? '' : 'disabled' %>>＋ Video</button>
+        <button type="button" class="button small" id="veSplit" data-testid="video-editor-split" <%= _available ? '' : 'disabled' %>>✂ Split at playhead</button>
+        <button type="button" class="button small" id="veAddChapter" data-testid="video-editor-add-chapter" <%= _available ? '' : 'disabled' %>>＋ Chapter at playhead</button>
+        <button type="button" class="button small secondary" id="veCopyChapters" data-testid="video-editor-copy-chapters" <%= _available ? '' : 'disabled' %>>Copy YouTube timestamps</button>
+        <button type="button" class="button small secondary" id="veDeleteChapter" data-testid="video-editor-delete-chapter" <%= _available ? '' : 'disabled' %>>Delete last chapter</button>
+        <button type="button" class="button small" id="veAddAudio" data-testid="video-editor-add-audio" <%= _available ? '' : 'disabled' %>>＋ Audio</button>
+        <button type="button" class="button small" id="veAddBlur" data-testid="video-editor-add-blur" <%= _available ? '' : 'disabled' %>>＋ Blur/Hide</button>
+        <button type="button" class="button small" id="veAddText" data-testid="video-editor-add-text" <%= _available ? '' : 'disabled' %>>＋ Text</button>
+        <button type="button" class="button small" id="veAddImage" data-testid="video-editor-add-image" <%= _available ? '' : 'disabled' %>>＋ Image</button>
+        <button type="button" class="button small" id="veAddVideoOverlay" data-testid="video-editor-add-video-overlay" <%= _available ? '' : 'disabled' %>>＋ Video overlay</button>
+        <button type="button" class="button small" id="veAddZoom" data-testid="video-editor-add-zoom" <%= _available ? '' : 'disabled' %>>＋ Zoom</button>
+        <button type="button" class="button small secondary" id="veCropBtn" data-testid="video-editor-crop-tool" <%= _available ? '' : 'disabled' %>>✂️ Crop</button>
+        <button type="button" class="button small secondary" id="veDuplicate" data-testid="video-editor-duplicate-clip" <%= _available ? '' : 'disabled' %>>Duplicate</button>
+        <button type="button" class="button small secondary" id="veDelete" data-testid="video-editor-delete-clip" <%= _available ? '' : 'disabled' %>>Delete</button>
+        <button type="button" class="button small secondary" id="veTimelineWorkspaceToggle" data-testid="video-editor-timeline-workspace-toggle" title="Maximize Editing Workspace">⤢ Workspace</button>
+      </div>
+      <div id="veScroll" data-testid="video-editor-timeline" style="overflow-x:auto;overflow-y:auto;min-height:240px;max-height:360px;border:1px solid #e2e8f0;border-radius:12px;background:#f8fafc;scrollbar-gutter:stable;">
+        <div id="veContent" style="position:relative;min-width:100%;">
+          <div style="display:flex;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:25;background:#f1f5f9;">
+            <div style="flex:0 0 64px;position:sticky;left:0;top:0;z-index:35;background:#f1f5f9;font-size:11px;font-weight:700;color:#475569;display:flex;align-items:center;padding:0 8px;">Time</div>
+            <div id="veRuler" data-testid="video-editor-ruler" style="position:relative;flex:1;height:26px;cursor:crosshair;"></div>
+          </div>
+          <div id="vePlayhead" data-testid="video-editor-playhead" style="position:absolute;top:0;bottom:0;width:2px;background:#dc2626;z-index:30;pointer-events:none;"><div style="width:11px;height:11px;background:#dc2626;border-radius:50%;margin-left:-4.5px;"></div></div>
+          <div class="ve-lane" data-lane="video" data-testid="video-editor-lane-video" style="display:flex;border-bottom:1px solid #eef2f7;min-height:34px;">
+            <div class="ve-lane-label" style="position:sticky;left:0;z-index:20;flex:0 0 64px;background:#f1f5f9;font-size:11px;font-weight:700;color:#475569;display:flex;align-items:center;padding:0 8px;">Video</div>
+            <div class="ve-lane-body" id="veLaneVideo" style="position:relative;flex:1;"></div>
+          </div>
+          <div class="ve-lane" data-lane="audio" data-testid="video-editor-lane-audio" style="display:flex;border-bottom:1px solid #eef2f7;min-height:34px;">
+            <div class="ve-lane-label" style="position:sticky;left:0;z-index:20;flex:0 0 64px;background:#f1f5f9;font-size:11px;font-weight:700;color:#475569;display:flex;align-items:center;padding:0 8px;" title="Music clips may overlap. Waveforms are visual previews; fades and gain are configured in the Inspector.">Audio</div>
+            <div class="ve-lane-body" id="veLaneAudio" style="position:relative;flex:1;"></div>
+          </div>
+          <div class="ve-lane" data-lane="blur" data-testid="video-editor-lane-blur" style="display:flex;border-bottom:1px solid #eef2f7;min-height:34px;">
+            <div class="ve-lane-label" style="position:sticky;left:0;z-index:20;flex:0 0 64px;background:#f1f5f9;font-size:11px;font-weight:700;color:#475569;display:flex;align-items:center;padding:0 8px;">Blur</div>
+            <div class="ve-lane-body" id="veLaneBlur" style="position:relative;flex:1;"></div>
+          </div>
+          <div class="ve-lane" data-lane="text" data-testid="video-editor-lane-text" style="display:flex;border-bottom:1px solid #eef2f7;min-height:34px;">
+            <div class="ve-lane-label" style="position:sticky;left:0;z-index:20;flex:0 0 64px;background:#f1f5f9;font-size:11px;font-weight:700;color:#475569;display:flex;align-items:center;padding:0 8px;">Text</div>
+            <div class="ve-lane-body" id="veLaneText" style="position:relative;flex:1;"></div>
+          </div>
+          <div class="ve-lane" data-lane="image" data-testid="video-editor-lane-image" style="display:flex;min-height:34px;">
+            <div class="ve-lane-label" style="position:sticky;left:0;z-index:20;flex:0 0 64px;background:#f1f5f9;font-size:11px;font-weight:700;color:#475569;display:flex;align-items:center;padding:0 8px;">Image</div>
+            <div class="ve-lane-body" id="veLaneImage" style="position:relative;flex:1;"></div>
+          </div>
+          <div class="ve-lane" data-lane="voverlay" data-testid="video-editor-lane-video-overlay" style="display:flex;min-height:34px;border-bottom:1px solid #eef2f7;">
+            <div class="ve-lane-label" style="position:sticky;left:0;z-index:20;flex:0 0 64px;background:#f1f5f9;font-size:11px;font-weight:700;color:#475569;display:flex;align-items:center;padding:0 8px;" title="Second video track (muted picture-in-picture)">Vid overlay</div>
+            <div class="ve-lane-body" id="veLaneVideoOverlay" style="position:relative;flex:1;"></div>
+          </div>
+          <div class="ve-lane" data-lane="zoom" data-testid="video-editor-lane-zoom" style="display:flex;min-height:34px;">
+            <div class="ve-lane-label" style="position:sticky;left:0;z-index:20;flex:0 0 64px;background:#f1f5f9;font-size:11px;font-weight:700;color:#475569;display:flex;align-items:center;padding:0 8px;">Zoom</div>
+            <div class="ve-lane-body" id="veLaneZoom" style="position:relative;flex:1;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="ve-timeline-zoom-controls" data-testid="video-editor-timeline-zoom" style="display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:6px 8px;background:#f8fafc;border-top:1px solid #e2e8f0;">
+        <span class="muted" style="font-size:11px;">Timeline zoom</span>
+        <button type="button" id="veZoomOut" class="button small secondary" aria-label="Zoom timeline out" title="Show more time">−</button>
+        <input type="range" id="veZoomSlider" min="20" max="240" step="10" value="60" aria-label="Timeline pixels per second" style="width:120px;accent-color:#2563eb;">
+        <button type="button" id="veZoomIn" class="button small secondary" aria-label="Zoom timeline in" title="Show more detail">+</button>
+        <button type="button" id="veZoomFit" class="button small secondary" title="Fit timeline to available width">Fit</button>
+        <span id="veZoomReadout" class="muted" style="font-size:11px;min-width:44px;text-align:right;">60 px/s</span>
+      </div>
+      <div id="veHScrollbarWrap" class="ve-hscrollbar-wrap" data-testid="video-editor-hscrollbar-wrap">
+        <div id="veHScrollbarTrack" class="ve-hscrollbar-track" data-testid="video-editor-hscrollbar-track">
+          <div id="veHScrollbarThumb" class="ve-hscrollbar-thumb" data-testid="video-editor-hscrollbar-thumb" tabindex="0" role="scrollbar" aria-label="Timeline horizontal scrollbar"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="veInspectorContainer" class="ve-inspector-panel">
+      <h2 style="font-size:15px;margin-top:12px;" class="ve-std-h2">3 · Inspector <span class="muted" style="font-weight:400;font-size:12px;">(exact values for fine-tuning)</span></h2>
+      <div class="ve-inspector-title"><span>📐 Clip Inspector</span></div>
+      <div id="veInspector" data-testid="video-editor-inspector" style="border:1px solid #e2e8f0;border-radius:12px;padding:10px;background:#fff;font-size:13px;">
+        <p class="muted" style="margin:0;">Add video/audio files, then click any clip to edit exact values here. Preview gain above 100% is approximated; export gain is exact.</p>
+      </div>
+
+      <!-- Watermark Settings Restored in Inspector / Workspace Panel -->
+      <div id="veWatermarkSection" class="ve-inspector-watermark-card" data-testid="video-editor-watermark-controls" style="margin-top:12px;padding:10px;border:1px solid #e2e8f0;border-radius:12px;background:#fff;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-weight:700;font-size:13px;color:#1e293b;">💧 Project Watermarks</span>
+          <button type="button" id="veAddWatermark" data-testid="video-editor-add-watermark" style="border:1px solid #cbd5e1;border-radius:6px;padding:4px 8px;background:#fff;cursor:pointer;font-size:12px;">＋ Add watermark</button>
+          <label style="display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;cursor:pointer;margin:0;">
+            <input type="checkbox" id="veWatermark" data-testid="video-editor-watermark" <%= _available ? '' : 'disabled' %>> Burn in
+          </label>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;margin-top:8px;">
+          <label style="font-size:12px;flex:1;">Editing watermark
+            <select id="veWatermarkSelect" data-testid="video-editor-watermark-select" style="margin-top:2px;width:100%;border:1px solid #cbd5e1;border-radius:6px;padding:4px 6px;font-size:12px;"></select>
+          </label>
+          <button type="button" id="veRemoveWatermark" data-testid="video-editor-remove-watermark" style="margin-top:18px;border:1px solid #cbd5e1;border-radius:6px;padding:5px 8px;background:#fff;cursor:pointer;font-size:12px;">Remove</button>
+        </div>
+        <div id="veWatermarkPositionWrap" style="display:none;margin-top:8px;">
+          <label style="display:block;margin:6px 0;font-size:12px;">Watermark text
+            <input id="veWatermarkText" data-testid="video-editor-watermark-text" type="text" maxlength="200" value="Learn with me" autocomplete="off" spellcheck="false" style="margin-top:2px;width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:6px;padding:4px 8px;font-size:12px;" <%= _available ? '' : 'disabled' %>>
+          </label>
+          <div style="display:flex;gap:8px;margin:6px 0;flex-wrap:wrap;">
+            <label style="flex:1;min-width:110px;font-size:12px;">Position
+              <select id="veWatermarkPosition" data-testid="video-editor-watermark-position" <%= _available ? '' : 'disabled' %> style="margin-top:2px;width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:6px;padding:4px 6px;font-size:12px;">
+                <option value="1" selected>Bottom-right</option>
+                <option value="2">Top-left</option>
+                <option value="3">Center</option>
+                <option value="4">Top-right</option>
+                <option value="5">Bottom-left</option>
+              </select>
+            </label>
+            <label style="width:84px;font-size:12px;">Size (% h)
+              <input id="veWatermarkSize" data-testid="video-editor-watermark-size" type="number" min="2" max="25" step="0.5" value="4.5" style="margin-top:2px;width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:6px;padding:4px 6px;font-size:12px;" <%= _available ? '' : 'disabled' %>>
+            </label>
+          </div>
+          <div style="display:flex;gap:8px;margin:6px 0;flex-wrap:wrap;align-items:flex-end;">
+            <label style="flex:1;min-width:140px;font-size:12px;">Movement
+              <select id="veWatermarkMotion" data-testid="video-editor-watermark-motion" style="margin-top:2px;width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:6px;padding:4px 6px;font-size:12px;">
+                <option value="none" selected>Static</option>
+                <option value="left-to-right">Left to right</option>
+                <option value="right-to-left">Right to left</option>
+              </select>
+            </label>
+            <label style="width:110px;font-size:12px;">Speed (px/sec)
+              <input id="veWatermarkSpeed" data-testid="video-editor-watermark-speed" type="number" min="10" max="500" step="10" value="80" style="margin-top:2px;width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:6px;padding:4px 6px;font-size:12px;">
+            </label>
+          </div>
+          <div style="display:flex;gap:8px;margin:6px 0;flex-wrap:wrap;align-items:center;">
+            <label style="font-size:12px;display:flex;align-items:center;gap:4px;">Color
+              <input id="veWatermarkColor" data-testid="video-editor-watermark-color" type="color" value="#ffffff" style="width:36px;height:26px;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:4px;padding:1px;background:#fff;cursor:pointer;" <%= _available ? '' : 'disabled' %>>
+            </label>
+            <label style="flex:1;min-width:90px;font-size:12px;">Opacity (%)
+              <input id="veWatermarkOpacity" data-testid="video-editor-watermark-opacity" type="number" min="1" max="100" step="1" value="75" style="margin-top:2px;width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:6px;padding:4px 6px;font-size:12px;" <%= _available ? '' : 'disabled' %>>
+            </label>
+          </div>
+          <p class="muted" style="font-size:11px;margin:4px 0 0 0;line-height:1.3;">Preview matches exported MP4. Set to burn in branding across video.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="veSectionExport" style="flex:1 1 280px;min-width:260px;">
+    <div id="veExportContainer" class="ve-export-panel">
+      <div class="ve-drawer-box">
+        <div class="ve-drawer-header">
+          <h3 style="margin:0;font-size:14px;font-weight:700;">🚀 Export Project</h3>
+          <button type="button" class="ve-drawer-close" id="veCloseExportBtn" aria-label="Close export dialog">✕</button>
+        </div>
+        <h2 style="font-size:15px;" class="ve-std-h2">4 · Export</h2>
+        <label style="display:block;margin:8px 0;font-size:13px;">Export quality / resolution
+          <select id="exportResolution" data-testid="video-editor-resolution" <%= _available ? '' : 'disabled' %> style="margin-left:6px;max-width:100%;">
+            <option value="original" selected>Original</option>
+            <option value="480p">480p</option>
+            <option value="720p">720p</option>
+            <option value="1080p">1080p</option>
+            <option value="2k">2K (2560x1440)</option>
+            <option value="4k">4K (3840x2160)</option>
+            <option value="8k">8K (7680x4320)</option>
+          </select>
+        </label>
+        <div style="margin:10px 0;padding:8px 10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;" class="ve-export-watermark-note">
+          <span style="font-weight:600;">💧 Watermark:</span> Configured in the Inspector panel. Live preview matches export.
+        </div>
+        <button type="button" class="button primary" id="exportBtn" data-testid="video-editor-export" <%= _available ? '' : 'disabled' %>>Export edited MP4</button>
+        <p class="muted" data-testid="video-editor-status" id="exportStatus" style="font-size:12px;font-weight:600;margin-bottom:8px;"></p>
+        <div id="exportProgressContainer" style="display:none;margin-top:8px;background:#e2e8f0;border-radius:6px;height:12px;overflow:hidden;width:100%;">
+          <div id="exportProgressBar" style="width:0%;background:#2563eb;height:100%;transition:width 0.3s ease;"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="veSectionEvidence" data-testid="video-editor-evidence-section" style="flex:1 1 100%;min-width:280px;">
+    <details data-testid="video-editor-evidence-details" style="border:1px solid #e2e8f0;border-radius:12px;padding:10px;background:#fff;">
+      <summary data-testid="video-editor-evidence-toggle" style="cursor:pointer;font-size:14px;font-weight:700;">🧾 EDL Evidence Validation <span class="muted" style="font-weight:400;">(optional)</span></summary>
+      <p class="muted" data-testid="video-editor-evidence-note" style="font-size:12px;">Upload your video above and edit its clips on the timeline. Use “Build EDL from Timeline” to populate this plan from the current timeline trims, then optionally validate it against a manually supplied timestamped transcript. This panel validates evidence and generates a spec; use the main Export edited MP4 button to render the current timeline.</p>
+      <div id="evVisualBuilder" style="border:1px solid #cbd5e1;border-radius:10px;padding:12px;margin:10px 0;background:#f8fafc;">
+        <h4 style="margin:0 0 4px;font-size:15px;">Visual Cut Plan</h4>
+        <p style="margin:0 0 10px;font-size:12px;color:#64748b;">Example: on a 20-second video, keep 0–5s and 10–20s to remove 5–10s. Enter ranges you want to KEEP.</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end;">
+          <label style="font-size:12px;flex:2;min-width:220px;">Source filename
+            <input id="evVisualSource" type="text" placeholder="Upload video, then load timeline" style="display:block;width:100%;box-sizing:border-box;padding:7px;border:1px solid #cbd5e1;border-radius:6px;">
+          </label>
+          <label style="font-size:12px;min-width:120px;">Source duration (seconds)
+            <input id="evVisualDuration" type="number" min="0.1" step="0.001" value="20" style="display:block;width:100%;box-sizing:border-box;padding:7px;border:1px solid #cbd5e1;border-radius:6px;">
+          </label>
+          <button type="button" class="button small secondary" id="evVisualLoadTimeline" <%= _available ? '' : 'disabled' %>>Load Current Timeline</button>
+          <button type="button" class="button small secondary" id="evVisualExample">Load 20s Example</button>
+        </div>
+        <div id="evVisualRanges" style="display:grid;gap:8px;margin-top:10px;"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
+          <button type="button" class="button small secondary" id="evVisualAddRange">+ Add Keep Range</button>
+          <button type="button" class="button primary" id="evVisualBuild">Build EDL JSON</button>
+        </div>
+        <div id="evVisualBar" aria-label="Visual keep and remove timeline" style="display:flex;min-height:42px;margin-top:12px;border-radius:6px;overflow:hidden;border:1px solid #cbd5e1;"></div>
+        <p id="evVisualSummary" style="font-size:12px;color:#475569;margin:8px 0 0;">Green = kept footage · Red = removed footage. Load a timeline or example to begin.</p>
+      </div>
+      <label style="display:block;margin:8px 0;font-size:13px;">EDL JSON (paste or choose a file)
+        <input id="evEdlFile" data-testid="video-editor-evidence-edl-file" type="file" accept=".json,application/json" style="font-size:12px;" <%= _available ? '' : 'disabled' %>>
+        <textarea id="evEdl" data-testid="video-editor-evidence-edl" rows="6" spellcheck="false" placeholder='{"sources": {"MAIN": "clip.mp4"}, "ranges": [...], "total_duration_s": 8}' style="margin-top:4px;width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:6px;padding:4px 8px;font-size:12px;font-family:monospace;" <%= _available ? '' : 'disabled' %>></textarea>
+      </label>
+      <label style="display:block;margin:8px 0;font-size:13px;">Transcript JSON (paste or choose a file; omit for structural checks only)
+        <input id="evTxFile" data-testid="video-editor-evidence-transcript-file" type="file" accept=".json,application/json" style="font-size:12px;" <%= _available ? '' : 'disabled' %>>
+        <textarea id="evTx" data-testid="video-editor-evidence-transcript" rows="6" spellcheck="false" placeholder='{"sources": {"MAIN": {"duration": 12, "words": [...]}}}' style="margin-top:4px;width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:6px;padding:4px 8px;font-size:12px;font-family:monospace;" <%= _available ? '' : 'disabled' %>></textarea>
+      </label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+        <button type="button" class="button small secondary" id="evApplyEdlBtn" data-testid="video-editor-evidence-apply-edl" <%= _available ? '' : 'disabled' %>>Apply EDL to Video Timeline</button>
+        <button type="button" class="button small secondary" id="evUseTimelineBtn" data-testid="video-editor-evidence-build-from-timeline" <%= _available ? '' : 'disabled' %>>Build EDL from Timeline</button>
+        <button type="button" class="button primary" id="evValidateBtn" data-testid="video-editor-evidence-validate" <%= _available ? '' : 'disabled' %>>Validate Edit Plan</button>
+        <button type="button" class="button small secondary" id="evGenerateBtn" data-testid="video-editor-evidence-generate" disabled>Generate V2 Spec</button>
+      </div>
+      <p class="muted" data-testid="video-editor-evidence-status" id="evStatus" style="font-size:12px;font-weight:600;"></p>
+      <div id="evResult" data-testid="video-editor-evidence-result" style="font-size:13px;"></div>
+      <div id="evSummary" data-testid="video-editor-evidence-summary" style="font-size:13px;"></div>
+      <pre id="evSpec" data-testid="video-editor-evidence-spec" style="display:none;background:#0f172a;color:#e2e8f0;padding:10px;border-radius:8px;overflow:auto;font-size:12px;max-height:300px;"></pre>
+    </details>
+  </section>
+</div>
+</main>
+<%- include('partials/video-editor-styles') %>
+<script type="module" src="/admin-video-editor.js?v=<%= Date.now() %>"></script>
+<script src="/edl-evidence-panel.js?v=<%= Date.now() %>"></script>
+</body></html>

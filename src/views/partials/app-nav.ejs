@@ -1,12 +1,7 @@
 <header class="topbar app-nav">
-  <a class="brand" href="/"><%= (typeof siteName !== 'undefined' && siteName) ? siteName : 'BrowserVideoStudio' %></a>
+  <a class="brand" href="/"><%= (typeof siteName !== 'undefined' && siteName) ? siteName : 'Video Editor' %></a>
   <nav class="app-nav-links" style="display:inline-flex;gap:14px;margin-left:20px;align-items:center;">
     <a href="/editor"<%= (typeof currentUrl !== 'undefined' && /^\/editor/.test(currentUrl || '')) ? ' style="font-weight:700;"' : '' %>>Video Editor</a>
     <a href="/recorder"<%= (typeof currentUrl !== 'undefined' && /^\/recorder/.test(currentUrl || '')) ? ' style="font-weight:700;"' : '' %>>Screen Recorder</a>
   </nav>
-  <div class="user">
-    <% if (typeof isAuthenticated !== 'undefined' && isAuthenticated) { %>
-      <form method="post" action="/logout" style="display:inline;"><button type="submit">Sign out</button></form>
-    <% } %>
-  </div>
 </header>

@@ -94,11 +94,10 @@ export function validateEdlEvidenceRequest(body) {
   return { ok: res.ok, status, errors: res.errors, warnings: res.warnings, summary: edlCutSummary(edl) };
 }
 
-export function registerVideoEditorRoutes(app, { requireAuth, requireApiAuth }) {
-  // Primary page. The same view hosts the screen recorder and the editor.
-  app.get('/editor', requireAuth, (req, res) => {
-    res.render('admin-video-editor', {
-      user: req.session && req.session.user ? req.session.user : null,
+export function registerVideoEditorRoutes(app) {
+  // Primary page: the Video Editor. It no longer embeds the screen recorder.
+  app.get('/editor', (req, res) => {
+    res.render('video-editor', {
       editorAvailable: isVideoEditorAvailable(),
       editorMaxVideoMb: editorMaxVideoMb(),
       preselectedPath: null,
@@ -106,19 +105,16 @@ export function registerVideoEditorRoutes(app, { requireAuth, requireApiAuth }) 
     });
   });
 
-  // Secondary entry point: same page, recorder focus.
-  app.get('/recorder', requireAuth, (req, res) => {
-    res.render('admin-video-editor', {
-      user: req.session && req.session.user ? req.session.user : null,
+  // Secondary page: the standalone Screen Recorder (saves to device only).
+  app.get('/recorder', (req, res) => {
+    res.render('screen-recorder', {
       editorAvailable: isVideoEditorAvailable(),
-      editorMaxVideoMb: editorMaxVideoMb(),
-      preselectedPath: null,
       activeApp: 'recorder'
     });
   });
 
   // Export progress polling (local ffmpeg only).
-  app.get('/api/admin/video-editor/export-progress', requireApiAuth, (req, res) => {
+  app.get('/api/admin/video-editor/export-progress', (req, res) => {
     const { id } = req.query;
     if (!id) return res.status(400).json({ error: 'Missing id.' });
     const progress = exportProgress.get(id) || { percent: 0, status: 'unknown' };
@@ -126,7 +122,7 @@ export function registerVideoEditorRoutes(app, { requireAuth, requireApiAuth }) 
   });
 
   // Local-only export cancel.
-  app.post('/api/admin/video-editor/cancel-export', requireApiAuth, (req, res) => {
+  app.post('/api/admin/video-editor/cancel-export', (req, res) => {
     const id = (req.body && req.body.id) || req.query.id;
     if (!id) return res.status(400).json({ error: 'Missing id.' });
     const child = activeExportsGet(id);
@@ -144,7 +140,7 @@ export function registerVideoEditorRoutes(app, { requireAuth, requireApiAuth }) 
   });
 
   // Local-only EDL evidence validation.
-  app.post('/api/admin/edl-evidence/validate', requireApiAuth, expressJson(), (req, res) => {
+  app.post('/api/admin/edl-evidence/validate', expressJson(), (req, res) => {
     if (!isVideoEditorAvailable()) {
       return res.status(403).json({ ok: false, status: 'FAILED', errors: ['EDL evidence validation is disabled in production.'], warnings: [] });
     }
@@ -154,7 +150,7 @@ export function registerVideoEditorRoutes(app, { requireAuth, requireApiAuth }) 
 
   // Local-only V2 spec generation from a validated EDL. Re-validates
   // server-side; failed validation never produces a spec. Never renders.
-  app.post('/api/admin/edl-evidence/generate', requireApiAuth, expressJson(), (req, res) => {
+  app.post('/api/admin/edl-evidence/generate', expressJson(), (req, res) => {
     if (!isVideoEditorAvailable()) {
       return res.status(403).json({ ok: false, status: 'FAILED', errors: ['EDL evidence validation is disabled in production.'], warnings: [] });
     }
@@ -184,7 +180,7 @@ export function registerVideoEditorRoutes(app, { requireAuth, requireApiAuth }) 
   });
 
   // Screen-recording finalize: WebM upload -> MP4 download via local ffmpeg.
-  app.post('/api/admin/video-editor/finalize-recording', requireApiAuth, async (req, res) => {
+  app.post('/api/admin/video-editor/finalize-recording', async (req, res) => {
     try { req.setTimeout(0); } catch {}
     try { res.setTimeout(0); } catch {}
     if (!isVideoEditorAvailable()) {
@@ -241,7 +237,7 @@ export function registerVideoEditorRoutes(app, { requireAuth, requireApiAuth }) 
   });
 
   // Local-only export. Disabled in production before the body is touched.
-  app.post('/api/admin/video-editor/export', requireApiAuth, async (req, res) => {
+  app.post('/api/admin/video-editor/export', async (req, res) => {
     try { req.setTimeout(0); } catch {}
     try { res.setTimeout(0); } catch {}
     if (!isVideoEditorAvailable()) {

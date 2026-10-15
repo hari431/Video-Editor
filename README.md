@@ -22,9 +22,7 @@ npm install
 npm start
 ```
 
-Then open http://localhost:3000 and sign in with the `APP_PASSWORD` you set in
-`.env`. If `APP_PASSWORD` is left blank the app runs unprotected (local use
-only).
+Then open http://localhost:3000 — no sign-in is required.
 
 ## Using it
 
@@ -44,8 +42,6 @@ See `.env.example`. The relevant variables:
 | Variable | Purpose |
 | --- | --- |
 | `PORT` | HTTP port (default 3000) |
-| `APP_PASSWORD` | Password for the local sign-in gate |
-| `SESSION_SECRET` | Cookie-signing secret |
 | `FFMPEG_PATH` / `FFPROBE_PATH` | Absolute paths if FFmpeg is not on `PATH` |
 | `VIDEO_EDITOR_FONT` | `.ttf` used for text overlays / watermark |
 | `VIDEO_EDITOR_MAX_VIDEO_MB` | Max upload per video (default 2048, max 8192) |
@@ -64,8 +60,7 @@ builders, the screen-recorder helpers and EDL evidence validation.
 
 ```
 src/
-  app.js                 Express bootstrap (static, session, routes)
-  auth/local.js          Local password gate + in-memory session
+  app.js                 Express bootstrap (static, routes)
   video/routes.js        HTTP routes (editor, recorder, EDL, export)
   video/ffmpeg.js        Local ffmpeg/ffprobe helpers
   library/video-editor.js  Spec validation + FFmpeg argument builders

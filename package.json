@@ -11,14 +11,13 @@
     "start": "node src/app.js",
     "dev": "node --watch src/app.js",
     "test": "node --test",
-    "check": "node --check src/app.js && node --check src/auth/local.js && node --check src/video/ffmpeg.js && node --check src/video/routes.js && node --check src/library/video-editor.js && node --check src/library/edl-evidence.js && node --check src/public/admin-video-editor.js && node --check src/public/video-editor-project.js && node --check src/public/screen-recorder.js && node --check src/public/edl-evidence-panel.js",
+    "check": "node --check src/app.js && node --check src/video/ffmpeg.js && node --check src/video/routes.js && node --check src/library/video-editor.js && node --check src/library/edl-evidence.js && node --check src/public/admin-video-editor.js && node --check src/public/video-editor-project.js && node --check src/public/screen-recorder.js && node --check src/public/edl-evidence-panel.js",
     "lint": "npm run check"
   },
   "dependencies": {
     "dotenv": "^17.2.2",
     "ejs": "^3.1.10",
-    "express": "^5.1.0",
-    "express-session": "^1.18.2"
+    "express": "^5.1.0"
   },
   "devDependencies": {
     "jsdom": "^30.1.1"

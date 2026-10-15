@@ -4490,7 +4490,13 @@ import {
     var status = $('srRecordingCompleteStatus');
     if (name) name.textContent = file.name;
     if (size) size.textContent = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
-    if (status) status.textContent = 'Recording is ready. Save it to your device or add it to the editor.';
+    if (status) {
+      // The standalone Screen Recorder page ships without an "Add to editor"
+      // button; offer only the download path there.
+      status.textContent = $('srRecordingCompleteAdd')
+        ? 'Recording is ready. Save it to your device or add it to the editor.'
+        : 'Recording is ready. Save it to your device.';
+    }
     if (modal) modal.style.display = 'flex';
     setStatus('Screen recording is ready to save.', true);
     srRenderControlWindow();
@@ -4844,7 +4850,6 @@ import {
   // Stop button, native Stop sharing, and recorder errors all converge on
   // srFinalizeRecording, which is guarded to run exactly once.
   async function srStartRecording() {
-    if (!project) return;
     if (srSession.status !== 'idle') return;
     if (srStarting) return;
     srStarting = true;
@@ -5627,7 +5632,7 @@ import {
   }
 
   async function srConfirmRegion() {
-    if (!project || !srRegionOpen) return;
+    if (!srRegionOpen) return;
     if (srConfirming) return;
     srConfirming = true;
     try {
@@ -5910,7 +5915,9 @@ import {
   }
 
   // ---- init ----
-  function init() {
+  // Editor page only: the recorder has its own page and wires itself in
+  // initScreenRecorder below. Gated on the editor root being present.
+  function initVideoEditor() {
     var root = document.querySelector('[data-testid="video-editor-root"]');
     if (!root) return;
     if (root.getAttribute('data-available') !== '1') return;
@@ -5969,8 +5976,6 @@ import {
         setImageFiles(imageInput.files);
       });
     }
-    srWireControls();
-
     // Native video events: the element is a preview slave of the master
     // timeline clock (tlTime). User seeks map back onto the timeline when
     // they land inside a known clip; anything else re-syncs to tlTime.
@@ -6555,6 +6560,21 @@ import {
     if (exportBtn) exportBtn.addEventListener('click', doExport);
 
     initWorkspaceControls();
+  }
+
+  // The standalone Screen Recorder page has no editor root; wire only its own
+  // controls. Gated on the recorder card actually being on the page, so the
+  // Video Editor page never initializes recorder state.
+  function initScreenRecorder() {
+    var card = document.querySelector('[data-testid="video-editor-screen-recorder"]');
+    if (!card) return;
+    srWireControls();
+  }
+
+  // Entry point: initialize whichever features this page actually ships.
+  function init() {
+    initVideoEditor();
+    initScreenRecorder();
   }
 
   // Map the video element's own clock back onto the timeline (native seeks).

@@ -253,10 +253,10 @@ test('admin video editor page renders the evidence panel without touching editor
   assert.match(html, /video-editor-export/, 'export still present');
 });
 
-test('server wires admin-only evidence routes with local-only gate and no render path', () => {
+test('routes wire local-only evidence endpoints with no render path', () => {
   for (const route of ['/api/admin/edl-evidence/validate', '/api/admin/edl-evidence/generate']) {
-    assert.match(SERVER_SRC, new RegExp(`app\\.post\\('${route.replace(/\//g, '\\/')}', requireApiAuth`),
-      `route registered with auth: ${route}`);
+    assert.match(SERVER_SRC, new RegExp(`app\\.post\\('${route.replace(/\//g, '\\/')}'`),
+      `route registered: ${route}`);
   }
   const start = SERVER_SRC.indexOf('/api/admin/edl-evidence/validate');
   const end = SERVER_SRC.indexOf('// Screen-recording finalize', start);

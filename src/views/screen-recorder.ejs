@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Screen Recorder</title><link rel="stylesheet" href="/styles.css"><link rel="modulepreload" href="/video-editor-project.js"><link rel="modulepreload" href="/screen-recorder.js"></head>
+<body><%- include('partials/app-nav') %>
+<main class="container">
+<h1>Screen Recorder</h1>
+
+<p class="muted">Record your screen in the browser with an optional microphone and camera. Press Record, choose a display, window, or tab, drag the region to record, then save the finished video to your device. Recording requires the local app (FFmpeg installed). To edit an existing file instead, use the Video Editor.</p>
+
+<% const _available = typeof editorAvailable !== 'undefined' ? !!editorAvailable : false; %>
+<% if (!_available) { %>
+  <p class="flash flash-error" data-testid="video-editor-disabled">Screen recording is unavailable. Check that FFmpeg is installed and the VIDEO_EDITOR_ENABLED setting is not false.</p>
+<% } %>
+
+<div class="ve-upload-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;">
+          <div class="ve-upload-card" data-testid="video-editor-screen-recorder" style="padding:12px;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+              <span style="font-weight:700;font-size:13px;">⏺️ Screen Recorder</span>
+              <span class="muted" style="font-size:10px;font-weight:600;" data-testid="video-editor-recording-timer" id="srTimer">00:00</span>
+            </div>
+            <p class="muted" style="font-size:11px;margin:0 0 8px 0;">In browser recording, the microphone starts muted and can be enabled from the floating controls; camera is optional picture-in-picture.</p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:6px;">
+              <button type="button" class="button small" id="srRecordBtn" data-testid="video-editor-start-recording" aria-label="Record screen" <%= _available ? '' : 'disabled' %>>⏺ Record</button>
+              <label style="font-size:11px;font-weight:600;color:#475569;display:inline-flex;align-items:center;gap:4px;margin:0;">Resolution
+                <select id="srResolution" data-testid="video-editor-recording-resolution" aria-label="Preferred recording resolution" <%= _available ? '' : 'disabled' %> style="border:1px solid #cbd5e1;border-radius:6px;padding:3px 6px;font-size:11px;">
+                  <option value="original" selected>Original</option>
+                  <option value="720p">720p</option>
+                  <option value="1080p">1080p</option>
+                </select>
+              </label>
+              <button type="button" class="button small secondary" id="srPauseBtn" data-testid="video-editor-pause-recording" aria-label="Pause recording" disabled>⏸ Pause</button>
+              <button type="button" class="button small secondary" id="srResumeBtn" data-testid="video-editor-resume-recording" aria-label="Resume recording" disabled>▶ Resume</button>
+              <button type="button" class="button small secondary" id="srStopBtn" data-testid="video-editor-stop-recording" aria-label="Stop recording" disabled>⏹ Stop</button>
+              <span data-testid="video-editor-recording-status" id="srStatus" style="font-size:11px;font-weight:600;color:#64748b;" role="status">Idle</span>
+            </div>
+            <p class="muted" data-testid="video-editor-recording-error" id="srError" style="font-size:11px;margin:6px 0 0 0;color:#b91c1c;"></p>
+          </div>
+</div>
+<!-- Screen-recorder region modal: deliberately a direct child of <main>,
+     NOT nested in the upload drawer. Ancestors with backdrop-filter (the
+     workspace drawer) become containing blocks for position:fixed and
+     would trap/clip the modal; here it is always viewport-fixed. -->
+<div id="srRegionModal" data-testid="video-editor-region-modal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(2,6,23,.85);align-items:center;justify-content:center;padding:20px;box-sizing:border-box;" role="dialog" aria-modal="true" aria-label="Select recording region">
+  <div style="background:#fff;border-radius:12px;max-width:880px;width:100%;padding:14px;box-sizing:border-box;max-height:calc(100vh - 40px);overflow:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px;">
+      <strong style="font-size:13px;">✂️ Select recording region</strong>
+      <span class="muted" id="srRegionDims" data-testid="video-editor-region-dims" style="font-size:11px;">Drag on the preview</span>
+    </div>
+    <div id="srRegionStage" data-testid="video-editor-region-stage" style="position:relative;background:#000;border-radius:8px;overflow:hidden;cursor:crosshair;touch-action:none;user-select:none;-webkit-user-select:none;">
+      <video id="srRegionVideo" data-testid="video-editor-region-video" muted playsinline preload="auto" style="width:100%;display:block;pointer-events:none;"></video>
+      <div id="srCountdownNumber" data-testid="video-editor-countdown-number" aria-live="assertive" style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;background:rgba(2,6,23,.28);color:#fff;font-size:clamp(48px,10vw,96px);font-weight:800;text-shadow:0 3px 18px rgba(0,0,0,.8);pointer-events:none;z-index:4;"></div>
+      <div id="srRegionBox" data-testid="video-editor-region-box" style="display:none;position:absolute;border:2px solid #38bdf8;background:rgba(56,189,248,.18);box-shadow:0 0 0 1px rgba(0,0,0,.4);pointer-events:none;"></div>
+    </div>
+    <p class="muted" style="font-size:11px;margin:8px 0;">Drag a rectangle on the live preview. Only that region is recorded. When the countdown starts, move the floating controls window outside the rectangle using its title bar. Press Esc or Cancel to stop without recording.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+      <label for="srCountdownSeconds" class="muted" style="font-size:11px;">Start delay (seconds)</label>
+      <input id="srCountdownSeconds" data-testid="video-editor-countdown-seconds" type="number" min="1" max="60" step="1" value="5" inputmode="numeric" aria-label="Countdown duration in seconds" style="width:58px;padding:5px 6px;border:1px solid #cbd5e1;border-radius:6px;font:12px inherit;">
+      <button type="button" class="button small primary" id="srRegionConfirm" data-testid="video-editor-region-confirm" aria-label="Record selected region" disabled>⏺ Record region</button>
+      <button type="button" class="button small secondary" id="srRegionCancel" data-testid="video-editor-region-cancel" aria-label="Cancel region selection">Cancel</button>
+    </div>
+    <p class="muted" data-testid="video-editor-region-error" id="srRegionError" style="font-size:11px;margin:6px 0 0 0;color:#b91c1c;"></p>
+  </div>
+</div>
+
+<!-- Maximized pause workspace. DOM controls are not captured; only the crop canvas is. -->
+<div id="srPauseStudioModal" data-testid="video-editor-pause-studio" style="display:none;position:fixed;inset:0;z-index:10030;background:rgba(2,6,23,.97);padding:14px;box-sizing:border-box;overflow:auto;" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Pause and edit recording">
+  <div style="max-width:1600px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;gap:12px;color:#e2e8f0;">
+    <header style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+      <div>
+        <h2 style="margin:0;font-size:22px;">⏸ Pause &amp; Edit Studio</h2>
+        <p style="margin:4px 0 0;color:#94a3b8;font-size:13px;">Add overlays while paused. Each edit stays active across Resume until you remove it or choose Clear all edits.</p>
+      </div>
+      <button type="button" class="button primary" id="srPauseStudioResume" data-testid="video-editor-pause-studio-resume">▶ Resume recording</button>
+    </header>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px;background:#111827;border:1px solid #334155;border-radius:10px;">
+      <input id="srPauseStudioText" data-testid="video-editor-pause-studio-text" type="text" maxlength="240" placeholder="Enter text to add to the recording" aria-label="Text overlay" style="flex:1 1 240px;min-width:200px;padding:9px;border-radius:6px;border:1px solid #475569;background:#0f172a;color:#f8fafc;">
+      <button type="button" class="button small" id="srPauseStudioAddText" data-testid="video-editor-pause-studio-add-text">＋ Add text</button>
+      <label class="button small" for="srPauseStudioImage" style="cursor:pointer;">＋ Add image</label>
+      <input id="srPauseStudioImage" data-testid="video-editor-pause-studio-image" type="file" accept="image/png,image/jpeg,image/webp,image/gif" style="display:none;">
+      <button type="button" class="button small" id="srPauseStudioBlur" data-testid="video-editor-pause-studio-blur">▧ Blur region</button>
+      <button type="button" class="button small secondary" id="srPauseStudioSelect" data-testid="video-editor-pause-studio-select">↖ Select / move</button>
+      <button type="button" class="button small secondary" id="srPauseStudioRemove" data-testid="video-editor-pause-studio-remove" disabled>✕ Remove selected</button>
+      <button type="button" class="button small secondary" id="srPauseStudioClear" data-testid="video-editor-pause-studio-clear">Clear all edits</button>
+      <span id="srPauseStudioMode" data-testid="video-editor-pause-studio-mode" role="status" style="font-size:12px;color:#cbd5e1;">Select mode: drag an overlay to move it</span>
+    </div>
+    <div style="flex:1;min-height:240px;display:flex;align-items:center;justify-content:center;background:#020617;border:1px solid #334155;border-radius:10px;padding:8px;overflow:auto;">
+      <canvas id="srPauseStudioCanvas" data-testid="video-editor-pause-studio-canvas" aria-label="Paused recording preview; drag overlays to position them" style="display:block;max-width:100%;max-height:calc(100vh - 220px);width:auto;height:auto;object-fit:contain;touch-action:none;cursor:crosshair;"></canvas>
+    </div>
+    <p style="font-size:12px;color:#94a3b8;margin:0;">Blur: select Blur region, then drag a rectangle. Text and images can be dragged to reposition. Resume hides this studio before recording continues. Edits persist through every later pause/resume until removed or cleared. Changes apply to frames after you resume; footage already recorded is not retroactively changed.</p>
+  </div>
+</div>
+
+<!-- Fallback toolbar for browsers without Document Picture-in-Picture. -->
+<div id="srFloatingControlsFallback" data-testid="video-editor-floating-recorder-controls" style="display:none;position:fixed;right:18px;top:12px;z-index:10020;background:#fff;border:1px solid #cbd5e1;border-radius:12px;box-shadow:0 12px 36px rgba(15,23,42,.28);padding:8px 10px;max-width:calc(100vw - 36px);">
+  <div style="font-size:11px;color:#475569;margin-bottom:5px;" id="srFloatingStatus" role="status">Starting…</div>
+  <div style="display:flex;gap:5px;flex-wrap:nowrap;align-items:center;">
+    <button type="button" class="button small" id="srFloatingPause" title="Pause recording" aria-label="Pause recording">Ⅱ</button>
+    <button type="button" class="button small" id="srFloatingResume" title="Resume recording" aria-label="Resume recording">▶</button>
+    <button type="button" class="button small" id="srFloatingStop" title="Stop recording" aria-label="Stop recording">■</button>
+    <button type="button" class="button small secondary" id="srFloatingAbort" title="Abort and discard recording" aria-label="Abort and discard recording">✕</button>
+    <button type="button" class="button small secondary" id="srFloatingMic" title="Unmute microphone" aria-label="Unmute microphone" disabled>🔇</button>
+    <button type="button" class="button small secondary" id="srFloatingCamera" title="Turn camera on" aria-label="Turn camera on" disabled>🚫</button>
+    <button type="button" class="button small primary" id="srFloatingSave" title="Save recording after Stop" aria-label="Save recording after Stop">↓</button>
+  </div>
+  <p title="Keep this toolbar outside the selected recording rectangle." style="font-size:10px;color:#64748b;margin:5px 0 0;">Controls · hover icons for details</p>
+</div>
+
+<!-- Completed screen recording: explicit save or discard choices after Stop. -->
+<div id="srRecordingCompleteModal" data-testid="video-editor-recording-complete-modal" style="display:none;position:fixed;inset:0;z-index:10001;background:rgba(2,6,23,.78);align-items:center;justify-content:center;padding:20px;box-sizing:border-box;" role="dialog" aria-modal="true" aria-labelledby="srRecordingCompleteTitle">
+  <div style="background:#fff;border-radius:12px;max-width:460px;width:100%;padding:20px;box-sizing:border-box;">
+    <h3 id="srRecordingCompleteTitle" style="font-size:16px;margin:0 0 8px 0;">Recording complete</h3>
+    <p style="font-size:13px;margin:0 0 8px 0;color:#475569;">Your screen recording is ready.</p>
+    <p id="srRecordingCompleteName" data-testid="video-editor-recording-complete-name" style="font-size:12px;font-weight:600;overflow-wrap:anywhere;margin:0 0 4px 0;"></p>
+    <p id="srRecordingCompleteSize" data-testid="video-editor-recording-complete-size" style="font-size:12px;color:#64748b;margin:0 0 12px 0;"></p>
+    <p id="srRecordingCompleteStatus" data-testid="video-editor-recording-complete-status" role="status" style="font-size:12px;color:#475569;margin:0 0 14px 0;">Choose how to keep your recording.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button type="button" class="button primary" id="srRecordingCompleteSave" data-testid="video-editor-recording-save">⬇ Save to device</button>
+      <button type="button" class="button small secondary" id="srRecordingCompleteDiscard" data-testid="video-editor-recording-discard">Discard</button>
+    </div>
+  </div>
+</div>
+</main>
+<%- include('partials/video-editor-styles') %>
+<script type="module" src="/admin-video-editor.js?v=<%= Date.now() %>"></script>
+</body></html>
