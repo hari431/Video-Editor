@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>My Liked Items · Learn with me</title><link rel="stylesheet" href="/styles.css"><%- include('partials/adsense-verification') %></head>
+<body>
+<header class="topbar"><a class="brand" href="/">Learn with me</a><% if (typeof paidPlansEnabled !== 'undefined' && paidPlansEnabled) { %><a class="nav-link" href="/plans">💎 Available Plans</a><% } %><% const _canLikesNav = (typeof hasNotes !== 'undefined' ? hasNotes : (typeof hasNotesPermission !== 'undefined' ? hasNotesPermission : false)); if (_canLikesNav) { %><a class="nav-link" href="/my/likes">❤️ My Liked Items</a><% } %><% if (typeof hasActiveAccess !== 'undefined' ? hasActiveAccess : (typeof user !== 'undefined' && user && ((typeof hasUserActiveAccess === 'function') ? hasUserActiveAccess(user) : (user.status === 'active' && (!user.access_expires_at || new Date(user.access_expires_at) > new Date()))))) { %><a class="nav-link" href="/my/notes" id="notesLink">📝 My Notes</a><% } %><% if (typeof user !== 'undefined' && user && (user.app_role === 'ADMIN' || user.app_role === 'OWNER')) { %><a class="nav-link" href="/admin" data-testid="admin-nav-link" style="font-weight: bold; color: #dc2626;">🛠️ Admin</a><% } %><div class="user"><a href="/account" style="text-decoration: underline; font-weight: bold;"><%= user.name || user.email %></a><% if (typeof user !== 'undefined' && user) { %><span class="user-status-text" style="color: #64748b; font-size: 13px; margin-left: 6px;"><%= (typeof getUserHeaderStatus === 'function') ? getUserHeaderStatus(user) : (user.status ? (user.status.charAt(0).toUpperCase() + user.status.slice(1)) : 'Active') %><% if (user.access_expires_at) { %> <span class="user-access-until">(Access Until: <%= new Date(user.access_expires_at).toLocaleDateString() %>)</span><% } %></span><% } %><form method="post" action="/logout"><button type="submit">Sign out</button></form></div></header>
+<%- include('partials/access-expiry') %>
+<main class="container" id="likedContainer">
+  <div class="breadcrumbs"><a href="/">Home</a><span>/</span><span>My Liked Items</span></div>
+  <section class="page-heading">
+    <div><h1>❤️ My Liked Items</h1><p>Videos, queries, and files you've liked across the library.</p></div>
+  </section>
+  <% if (items.length) { %>
+  <div class="browse-controls" data-controls-for="liked">
+    <div class="control-group">
+      <label for="likedSortSelect">Sort by</label>
+      <select id="likedSortSelect" class="control-select" data-testid="liked-sort-select">
+        <option value="newest">Recently liked</option>
+        <option value="oldest">Oldest first</option>
+        <option value="nameAsc">Name A → Z</option>
+        <option value="nameDesc">Name Z → A</option>
+        <option value="mostLiked">Most liked</option>
+        <option value="leastLiked">Least liked</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label for="likedViewSelect">View by</label>
+      <select id="likedViewSelect" class="control-select" data-testid="liked-view-select">
+        <option value="cards">Cards</option>
+        <option value="list">List</option>
+        <option value="details">Details</option>
+      </select>
+    </div>
+  </div>
+  <div class="grid" data-testid="liked-list" id="likedGrid">
+    <% for (const item of items) { %>
+      <% const likedMs = item.likedAt ? new Date(item.likedAt).getTime() : 0; const likedIso = item.likedAt ? new Date(item.likedAt).toISOString() : ''; const dn = displayName(item.name.replace(/\.[^.]+$/i, '')); const itemLikeCnt = (typeof likesMap !== 'undefined' && likesMap[item.path]) ? Number(likesMap[item.path].likeCount || 0) : 0; %>
+      <div class="card liked-card" data-testid="liked-item" data-path="<%= item.path %>" data-name="<%= dn.toLowerCase() %>" data-date="<%= likedIso %>" data-date-ms="<%= likedMs %>" data-like-count="<%= itemLikeCnt %>" data-type="<%= item.typeLabel %>">
+        <a class="liked-link" href="<%= item.href %>">
+          <div class="icon" aria-hidden="true"><%= item.kind === 'video' ? '🎬' : item.kind === 'text' ? '📄' : item.kind === 'pdf' ? '📕' : item.kind === 'image' ? '🖼️' : '📎' %></div>
+          <div class="liked-info">
+            <strong class="liked-title"><%= dn %></strong>
+            <small class="liked-meta"><%= item.typeLabel %> · Liked: <%= new Date(item.likedAt).toLocaleDateString() %></small>
+          </div>
+        </a>
+        <div class="liked-actions">
+          <% const _canLikeLiked = (typeof hasNotes !== 'undefined' ? hasNotes : (typeof hasNotesPermission !== 'undefined' ? hasNotesPermission : false)); if (_canLikeLiked) { %>
+          <% const itemLikes = (typeof likesMap !== 'undefined' && likesMap[item.path]) ? likesMap[item.path] : { liked: true, likeCount: 1 }; %>
+          <div class="card-like-control like-control">
+            <button class="card-like-btn like-btn <%= itemLikes.liked ? 'liked' : '' %>" data-path="<%= item.path %>" style="background: rgba(255, 255, 255, 0.95); border: 1px solid #cbd5e1; cursor: pointer; display: flex; align-items: center; gap: 4px; font-size: 13px; color: <%= itemLikes.liked ? '#ef4444' : '#64748b' %>; padding: 6px 10px; border-radius: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); font-weight: 500; transition: all 0.2s; min-width: 54px; justify-content: center;">
+              <span class="heart-icon"><%= itemLikes.liked ? '❤️' : '🤍' %></span>
+              <span class="like-count"><%= itemLikes.likeCount %></span>
+            </button>
+          </div>
+          <% } %>
+        </div>
+      </div>
+    <% } %>
+  </div>
+  <div class="details-wrap" id="likedDetailsWrap">
+    <table class="details-table" data-testid="liked-details-table">
+      <thead>
+        <tr><th>Name</th><th>Type</th><th>Liked</th><th>Likes</th></tr>
+      </thead>
+      <tbody id="likedDetailsBody">
+        <% for (const item of items) { %>
+          <% const likedIso2 = item.likedAt ? new Date(item.likedAt).toISOString() : ''; const likedMs2 = item.likedAt ? new Date(item.likedAt).getTime() : 0; const dn2 = displayName(item.name.replace(/\.[^.]+$/i, '')); const itemLikeCnt2 = (typeof likesMap !== 'undefined' && likesMap[item.path]) ? Number(likesMap[item.path].likeCount || 0) : 0; %>
+          <tr data-name="<%= dn2.toLowerCase() %>" data-date="<%= likedIso2 %>" data-date-ms="<%= likedMs2 %>" data-like-count="<%= itemLikeCnt2 %>">
+            <td><a href="<%= item.href %>"><%= dn2 %></a></td>
+            <td><%= item.typeLabel %></td>
+            <td><%= new Date(item.likedAt).toLocaleDateString() %></td>
+            <td><%= itemLikeCnt2 %></td>
+          </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+  <% } else { %>
+    <p class="empty-folder">You haven't liked anything yet. Open a video, query, or file and press Like.</p>
+  <% } %>
+</main>
+<%- include('partials/footer') %>
+<script src="/like.js" defer></script>
+<script src="/browse-controls.js"></script>
+<% if (items.length) { %>
+<script>
+BrowseControls.setup({
+  containerId: 'likedContainer',
+  gridId: 'likedGrid',
+  detailsBodyId: 'likedDetailsBody',
+  sortSelectId: 'likedSortSelect',
+  viewSelectId: 'likedViewSelect',
+  lsSortKey: 'myLikedItems_sort',
+  lsViewKey: 'myLikedItems_view',
+  defaultSort: 'newest',
+  defaultView: 'cards',
+  sortFns: {
+    newest: function(a,b){ return (parseInt(b.getAttribute('data-date-ms'))||0) - (parseInt(a.getAttribute('data-date-ms'))||0); },
+    oldest: function(a,b){ return (parseInt(a.getAttribute('data-date-ms'))||0) - (parseInt(b.getAttribute('data-date-ms'))||0); },
+    nameAsc: function(a,b){ return (a.getAttribute('data-name')||'').localeCompare(b.getAttribute('data-name')||''); },
+    nameDesc: function(a,b){ return (b.getAttribute('data-name')||'').localeCompare(a.getAttribute('data-name')||''); },
+    mostLiked: function(a,b){ var d=(parseInt(b.getAttribute('data-like-count'))||0)-(parseInt(a.getAttribute('data-like-count'))||0); return d!==0?d:(a.getAttribute('data-name')||'').localeCompare(b.getAttribute('data-name')||''); },
+    leastLiked: function(a,b){ var d=(parseInt(a.getAttribute('data-like-count'))||0)-(parseInt(b.getAttribute('data-like-count'))||0); return d!==0?d:(a.getAttribute('data-name')||'').localeCompare(b.getAttribute('data-name')||''); }
+  }
+});
+</script>
+<% } %>
+</body></html>

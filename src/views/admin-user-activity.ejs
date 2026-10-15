@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>User Activity & Learning · Admin · Learn with me</title>
+  <link rel="stylesheet" href="/styles.css">
+  <%- include('partials/adsense-verification') %>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/">Learn with me</a>
+  <div class="user">
+    <a href="/account" style="text-decoration: underline; font-weight: bold;"><%= user.name || user.email %></a>
+    <% if (typeof user !== 'undefined' && user) { %>
+      <span class="user-status-text" style="color: #64748b; font-size: 13px; margin-left: 6px;"><%= (typeof getUserHeaderStatus === 'function') ? getUserHeaderStatus(user) : (user.status ? (user.status.charAt(0).toUpperCase() + user.status.slice(1)) : 'Active') %><% if (user.access_expires_at) { %> <span class="user-access-until">(Access Until: <%= new Date(user.access_expires_at).toLocaleDateString() %>)</span><% } %></span>
+    <% } %>
+    <form method="post" action="/logout"><button type="submit">Sign out</button></form>
+  </div>
+</header>
+<main class="container">
+  <h1 id="activity-dashboard">User Activity & Learning</h1>
+  
+  <%- include('partials/admin-nav') %>
+
+  <% function fmtIST(date) { if (!date) return '—'; return new Date(date).toLocaleString(undefined, { timeZone: 'Asia/Kolkata' }); } %>
+  <% function fmtISTDate(date) { if (!date) return '—'; return new Date(date).toLocaleDateString(undefined, { timeZone: 'Asia/Kolkata' }); } %>
+
+  <% if (msg) { %><div class="flash flash-ok"><%= msg %></div><% } %>
+  <% if (error) { %><div class="flash flash-error"><%= error %></div><% } %>
+
+  <p class="muted">Detailed read-only dashboard of user learning progression, recently viewed content, and liked queries.</p>
+
+  <form method="get" action="/admin/user-activity" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px 16px;margin-bottom:20px;">
+    <!-- Multi-select Dropdown instead of search box -->
+    <div style="display:flex;flex-direction:column;gap:4px;min-width:260px;position:relative;" id="multiselect-container">
+      <label style="font-size:12px;font-weight:600;color:#475569;">Select Users (Multi-select)</label>
+      <div id="multiselect-toggle" style="background:#fff; border:1px solid #cbd5e1; border-radius:8px; padding:6px 12px; font-size:13px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; min-height:34px; user-select:none;">
+        <span id="multiselect-label" style="color:#1e293b; font-weight:500;">All Users</span>
+        <span style="color:#64748b; font-size:10px;">▼</span>
+      </div>
+      <div id="multiselect-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid #cbd5e1; border-radius:8px; margin-top:4px; max-height:260px; overflow-y:auto; z-index:100; box-shadow:0 4px 12px rgba(0,0,0,0.08); padding:8px;">
+        <input type="text" id="multiselect-search" placeholder="Filter user list..." style="width:100%; font-size:12px; padding:6px 8px; border:1px solid #cbd5e1; border-radius:6px; margin-bottom:8px; outline:none; box-sizing:border-box;">
+        <div style="display:flex; flex-direction:column; gap:2px;">
+          <% allUsersList.forEach(u => { %>
+            <% const isChecked = activityUsersFilter.includes(u.id); %>
+            <label class="multiselect-option-label" style="display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:6px; font-size:13px; cursor:pointer; margin:0; user-select:none; transition:background 0.15s ease;">
+              <input type="checkbox" name="activity_users" value="<%= u.id %>" class="multiselect-checkbox" style="width:14px; height:14px; cursor:pointer;" <%= isChecked ? 'checked' : '' %>>
+              <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:inline-block; max-width:200px;">
+                <strong style="color:#1e293b;"><%= u.name || 'Anonymous' %></strong> 
+                <span style="font-size:11px; color:#64748b; margin-left:4px;"><%= u.email %></span>
+              </span>
+            </label>
+          <% }) %>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:4px;min-width:150px;">
+      <label for="act-status" style="font-size:12px;font-weight:600;color:#475569;">Account Status</label>
+      <select id="act-status" name="activity_status" style="font-size:13px;padding:6px 10px;border:1px solid #cbd5e1;border-radius:8px;outline:none;background:#fff;">
+        <option value="" <%= activityStatus === '' ? 'selected' : '' %>>All Statuses</option>
+        <option value="active" <%= activityStatus === 'active' ? 'selected' : '' %>>Active</option>
+        <option value="pending" <%= activityStatus === 'pending' ? 'selected' : '' %>>Pending</option>
+        <option value="revoked" <%= activityStatus === 'revoked' ? 'selected' : '' %>>Revoked</option>
+        <option value="expired" <%= activityStatus === 'expired' ? 'selected' : '' %>>Expired</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:8px;align-items:flex-end;margin-top:20px;">
+      <button type="submit" class="button small success" style="margin:0;padding:8px 16px;font-size:13px;">Filter</button>
+      <% if (activitySearch || activityStatus || activityUsersFilter.length > 0) { %>
+        <a href="/admin/user-activity" class="button small secondary" style="margin:0;padding:8px 16px;font-size:13px;text-decoration:none;display:inline-block;border:1px solid #cbd5e1;border-radius:8px;background:#f1f5f9;color:#475569;">Reset</a>
+      <% } %>
+    </div>
+  </form>
+
+  <% if (activityUsers && activityUsers.length > 0) { %>
+    <div class="activity-user-list">
+      <% 
+        function itemHref(p) { 
+          return contentRouteForPath(p) + p.split('/').map(function(c){ return encodeURIComponent(c); }).join('/'); 
+        } 
+      %>
+      <% activityUsers.forEach(u => { 
+        const role = (typeof getUserRole === 'function' ? getUserRole(u) : (u.app_role || 'USER'));
+        const isOwnerRow = role === 'OWNER';
+        const isAdminRow = role === 'ADMIN';
+        const isProtected = isOwnerRow || isAdminRow;
+        const st = statusDisplay(u);
+        const label = { pending: 'Pending', active: 'Active', revoked: 'Revoked', expired: 'Expired' }[st] || st;
+        const expiry = u.access_expires_at ? new Date(u.access_expires_at) : null;
+        const daysRemaining = expiry ? Math.ceil((expiry - new Date()) / 86400000) : null;
+        const isExpiringSoon = !isProtected && st === 'active' && daysRemaining !== null && daysRemaining >= 0 && daysRemaining <= 7;
+      %>
+        <details class="activity-user-card" data-testid="user-activity-card">
+          <summary class="activity-user-summary">
+            <div class="activity-user-grid">
+              <div style="display:flex;flex-direction:column;gap:2px;">
+                <span style="font-weight:600;color:#1e293b;font-size:14px;"><%= u.name || 'Anonymous' %></span>
+                <span class="muted" style="font-size:12px;word-break:break-all;"><%= u.email %></span>
+              </div>
+              
+              <div>
+                <% if (isOwnerRow) { %>
+                  <span class="badge badge-owner">OWNER</span>
+                <% } else if (isAdminRow) { %>
+                  <span class="badge badge-admin">ADMIN</span>
+                <% } else { %>
+                  <span class="badge badge-neutral">USER</span>
+                <% } %>
+              </div>
+
+              <div>
+                <% if (isOwnerRow || isAdminRow) { %>
+                  <span class="badge badge-active">Active</span>
+                <% } else { %>
+                  <span class="badge badge-<%= st %>"><%= label %></span>
+                <% } %>
+              </div>
+
+              <div style="font-size:12px;color:#475569;">
+                <% if (isProtected) { %>
+                  <span class="muted" style="font-size:11px;">Never expires</span>
+                <% } else { %>
+                  Expires: <span class="badge <%= st === 'expired' ? 'badge-expired' : isExpiringSoon ? 'badge-warning' : 'badge-neutral' %>" style="font-size:11px;padding:1px 6px;"><%= fmtISTDate(u.access_expires_at) %></span>
+                <% } %>
+              </div>
+
+              <div style="font-size:12px;color:#475569;">
+                Last active: <span style="font-weight:500;color:#1e293b;"><%= u.last_activity_at ? fmtISTDate(u.last_activity_at) : '—' %></span>
+              </div>
+
+              <div style="display:flex;gap:12px;align-items:center;font-size:13px;">
+                <span title="Liked Count" style="white-space:nowrap;">❤️ <strong><%= u.likes.length %></strong></span>
+                <span title="Recently Viewed Count" style="white-space:nowrap;">👁️ <strong><%= u.views.length %></strong></span>
+                <% if (u.needsAttention) { %>
+                  <span class="badge badge-warning" title="Needs attention" style="font-size:10px;padding:2px 6px;line-height:1;margin-left:4px;">⚠️ Attention</span>
+                <% } %>
+              </div>
+
+              <div style="text-align:right;" class="activity-chevron-container">
+                <span class="activity-chevron" style="display:inline-block;transition:transform 0.15s ease;color:#64748b;font-weight:bold;font-size:14px;">▼</span>
+              </div>
+            </div>
+          </summary>
+          
+          <div class="activity-user-expanded">
+            <!-- Column 1: Liked Items -->
+            <div>
+              <h4 style="margin:0 0 10px;font-size:13px;font-weight:600;color:#475569;display:flex;align-items:center;gap:6px;border-bottom:1px solid #e2e8f0;padding-bottom:6px;">❤️ Liked Items (<%= u.likes.length %>)</h4>
+              <% if (u.likes.length > 0) { %>
+                <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;">
+                  <% u.likes.forEach(l => { %>
+                    <li style="font-size:13px;display:flex;flex-direction:column;gap:2px;">
+                      <a href="<%= itemHref(l.item_path) %>" target="_blank" rel="noopener noreferrer" style="color:#2563eb;text-decoration:none;font-weight:500;" class="activity-link"><%= displayName(l.item_path.split('/').at(-1)) %></a>
+                      <span class="muted" style="font-size:11px;">Liked on <%= fmtISTDate(l.created_at) %></span>
+                    </li>
+                  <% }) %>
+                </ul>
+              <% } else { %>
+                <p class="muted" style="font-size:12px;margin:4px 0 0;">No queries liked yet.</p>
+              <% } %>
+            </div>
+
+            <!-- Column 2: Recently Viewed -->
+            <div>
+              <h4 style="margin:0 0 10px;font-size:13px;font-weight:600;color:#475569;display:flex;align-items:center;gap:6px;border-bottom:1px solid #e2e8f0;padding-bottom:6px;">👁️ Recently Viewed (<%= u.views.length %>)</h4>
+              <% if (u.views.length > 0) { %>
+                <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;">
+                  <% u.views.forEach(v => { %>
+                    <li style="font-size:13px;display:flex;flex-direction:column;gap:2px;">
+                      <a href="<%= itemHref(v.item_path) %>" target="_blank" rel="noopener noreferrer" style="color:#2563eb;text-decoration:none;font-weight:500;" class="activity-link"><%= displayName(v.item_path.split('/').at(-1)) %></a>
+                      <span class="muted" style="font-size:11px;">Viewed on <%= fmtISTDate(v.last_viewed_at) %></span>
+                    </li>
+                  <% }) %>
+                </ul>
+              <% } else { %>
+                <p class="muted" style="font-size:12px;margin:4px 0 0;">No content viewed recently.</p>
+              <% } %>
+            </div>
+
+            <!-- Column 3: Seen / Dismissed Activity -->
+            <div>
+              <h4 style="margin:0 0 10px;font-size:13px;font-weight:600;color:#475569;display:flex;align-items:center;gap:6px;border-bottom:1px solid #e2e8f0;padding-bottom:6px;">🟢 Learning/Seen Activity (<%= u.seen.length %>)</h4>
+              <% if (u.seen.length > 0) { %>
+                <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;">
+                  <% u.seen.forEach(s => { %>
+                    <li style="font-size:13px;display:flex;flex-direction:column;gap:2px;">
+                      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                        <a href="<%= itemHref(s.item_path) %>" target="_blank" rel="noopener noreferrer" style="color:#2563eb;text-decoration:none;font-weight:500;" class="activity-link"><%= displayName(s.item_path.split('/').at(-1)) %></a>
+                        <% if (s.status === 'ignored') { %>
+                          <span class="badge badge-warning" style="font-size:10px;padding:0px 4px;line-height:1.2;">dismissed</span>
+                        <% } else { %>
+                          <span class="badge badge-active" style="font-size:10px;padding:0px 4px;line-height:1.2;">seen</span>
+                        <% } %>
+                      </div>
+                      <span class="muted" style="font-size:11px;">Recorded on <%= fmtISTDate(s.seen_at) %></span>
+                    </li>
+                  <% }) %>
+                </ul>
+              <% } else { %>
+                <p class="muted" style="font-size:12px;margin:4px 0 0;">No learning activity recorded yet.</p>
+              <% } %>
+            </div>
+          </div>
+        </details>
+      <% }) %>
+    </div>
+
+    <!-- Pagination controls -->
+    <% 
+      function getPageUrl(pageNum) {
+        let params = new URLSearchParams();
+        if (activityStatus) params.set('activity_status', activityStatus);
+        if (activitySearch) params.set('activity_search', activitySearch);
+        activityUsersFilter.forEach(uid => params.append('activity_users', uid));
+        params.set('activity_page', pageNum);
+        return '?' + params.toString();
+      }
+    %>
+    <% if (totalActivityPages > 1) { %>
+      <div style="display:flex;align-items:center;justify-content:center;gap:16px;margin:24px 0;background:#f8fafc;padding:10px;border-radius:8px;border:1px solid #e2e8f0;" class="activity-pagination">
+        <% if (activityPage > 1) { %>
+          <a href="<%= getPageUrl(activityPage - 1) %>" class="button small secondary" style="text-decoration:none;margin:0;">&larr; Prev</a>
+        <% } else { %>
+          <span class="muted" style="font-size:13px;">&larr; Prev</span>
+        <% } %>
+        <span style="font-size:13px;font-weight:600;color:#334155;">Page <%= activityPage %> of <%= totalActivityPages %> <span class="muted">(<%= totalActivityUsers %> users total)</span></span>
+        <% if (activityPage < totalActivityPages) { %>
+          <a href="<%= getPageUrl(activityPage + 1) %>" class="button small secondary" style="text-decoration:none;margin:0;">Next &rarr;</a>
+        <% } else { %>
+          <span class="muted" style="font-size:13px;">Next &rarr;</span>
+        <% } %>
+      </div>
+    <% } %>
+  <% } else { %>
+    <div class="empty-folder" style="margin-top:12px;">
+      No users found matching your search criteria. <a href="/admin/user-activity" style="color:#2563eb;text-decoration:underline;font-weight:500;">Reset filters</a>
+    </div>
+  <% } %>
+
+  <h2>Popular queries</h2><table class="admin-table"><thead><tr><th>Query</th><th>Views</th><th>Copies</th></tr></thead><tbody><% (popular || []).forEach(q => { %><tr><td><%= displayName(q.query_path.split('/').at(-1)) %></td><td><%= q.views %></td><td><%= q.copies %></td></tr><% }) %></tbody></table>
+  <h2>Liked items</h2>
+  <% if (likedItems && likedItems.length > 0) { %>
+  <table class="admin-table">
+    <thead><tr><th>Item</th><th>Likes</th><th>Liked by</th></tr></thead>
+    <tbody>
+    <% likedItems.forEach(item => { %>
+      <tr>
+        <td><%= item.item_path.split('/').at(-1) %><br><small class="muted"><%= item.item_path %></small></td>
+        <td><%= item.like_count %></td>
+        <td><% item.likers.forEach((l, i) => { %><%= i > 0 ? ', ' : '' %><%= l.name || l.email %><% if (l.name) { %> <small class="muted">(<%= l.email %>)</small><% } %> <small class="muted"><%= new Date(l.liked_at).toLocaleDateString() %></small><% }) %></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table>
+  <% } else { %>
+  <p class="muted">No items liked yet.</p>
+  <% } %>
+</main>
+<%- include('partials/footer') %>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const toggle = document.getElementById('multiselect-toggle');
+  const dropdown = document.getElementById('multiselect-dropdown');
+  const search = document.getElementById('multiselect-search');
+  const checkboxes = document.querySelectorAll('.multiselect-checkbox');
+  const label = document.getElementById('multiselect-label');
+  const container = document.getElementById('multiselect-container');
+
+  // Toggle dropdown on click
+  if (toggle) {
+    toggle.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const isVisible = dropdown.style.display === 'block';
+      dropdown.style.display = isVisible ? 'none' : 'block';
+      if (!isVisible && search) {
+        search.focus();
+      }
+    });
+  }
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', function(e) {
+    if (dropdown && container && !container.contains(e.target)) {
+      dropdown.style.display = 'none';
+    }
+  });
+
+  // Filter list on search input inside the dropdown
+  if (search) {
+    search.addEventListener('input', function() {
+      const term = search.value.toLowerCase();
+      const options = document.querySelectorAll('.multiselect-option-label');
+      options.forEach(opt => {
+        const text = opt.textContent.toLowerCase();
+        if (text.includes(term)) {
+          opt.style.display = 'flex';
+        } else {
+          opt.style.display = 'none';
+        }
+      });
+    });
+  }
+
+  // Hover states using JS for pure inline flexibility
+  const options = document.querySelectorAll('.multiselect-option-label');
+  options.forEach(opt => {
+    opt.addEventListener('mouseenter', () => {
+      opt.style.backgroundColor = '#f1f5f9';
+    });
+    opt.addEventListener('mouseleave', () => {
+      opt.style.backgroundColor = 'transparent';
+    });
+  });
+
+  // Update toggle button text dynamically
+  function updateLabel() {
+    const checked = Array.from(checkboxes).filter(cb => cb.checked);
+    if (checked.length === 0) {
+      label.textContent = 'All Users';
+    } else if (checked.length === 1) {
+      const parentLabel = checked[0].closest('.multiselect-option-label');
+      if (parentLabel) {
+        const nameNode = parentLabel.querySelector('strong');
+        label.textContent = nameNode ? nameNode.textContent : '1 User Selected';
+      } else {
+        label.textContent = '1 User Selected';
+      }
+    } else {
+      label.textContent = `${checked.length} Users Selected`;
+    }
+  }
+
+  checkboxes.forEach(cb => {
+    cb.addEventListener('change', updateLabel);
+  });
+
+  // Initialize label
+  updateLabel();
+});
+</script>
+</body>
+</html>

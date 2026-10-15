@@ -1,0 +1,54 @@
+HASHMAP INTERNALS
+=================
+
+HashMap stores key-value associations using hashing to locate entries. Understanding its conceptual model helps explain lookup performance and equality requirements.
+
+LOOKUP MODEL
+------------
+A key is hashed and the resulting value helps select a bucket. The map then uses equality checks to distinguish matching keys from other entries that land in the same bucket.
+
+EQUALS AND HASHCODE
+-------------------
+Objects that compare equal must produce the same hash code. If a key changes in a way that affects hashing while it is stored in a map, retrieval can fail because the entry may no longer be found through the expected bucket.
+
+EXAMPLE WITH CORRECT CONTRACT
+------------------------------
+record CustomerKey(String id) {}
+Map<CustomerKey, String> customers = new HashMap<>();
+
+// Correct: record provides stable equals/hashCode
+var keyA = new CustomerKey("C100")
+customers.put(keyA, "Hari")
+customers.get(new CustomerKey("C100")) // → "Hari" (equal keys, same hash)
+
+// Broken: mutable key that changes after insertion
+class MutableKey { String id; MutableKey(String id){this.id=id;} }
+var mk = new MutableKey("C100")
+customers.put((CustomerKey)(Object)mk, "Hari") // conceptual
+mk.id = "C999" // hash now differs → get fails even though map still holds entry
+
+BUCKET AND TREE DETAIL
+----------------------
+Java 8+ HashMap uses `Node<K,V>[] table` with power-of-two sizing. Index = `(n-1) & (h ^ h>>>16)`. Colliding entries chain via linked nodes; when a bin exceeds `TREEIFY_THRESHOLD = 8` and table `>= 64`, the chain converts to a red-black tree (`TreeNode`), bounding worst-case lookup to `O(log n)` and mitigating hash-flooding.
+
+PERFORMANCE
+-----------
+Hash maps usually provide efficient average-case lookup, but performance depends on implementation details, key distribution, load, and correct hashing. Expected `O(1)` assumes `hashCode` disperses uniformly and table load factor `0.75` is maintained; degenerate hashing or mutable keys can surface `O(n)` or missing entries.
+
+COMMON MISTAKES
+---------------
+Using mutable keys, implementing equals without a consistent hashCode, and assuming O(1) means a guaranteed constant number of operations in every circumstance. Also overriding `equals` with `instanceof` vs `getClass` inconsistency causing asymmetric equality across inheritance.
+
+KEY TAKEAWAYS
+-------------
+HashMap depends on consistent hashing and equality. Treat keys as effectively immutable while they are stored.
+
+ORIGINAL INTERVIEW / CHECKPOINT QUESTIONS
+------------------------------------------
+1. What is the equals/hashCode contract?
+2. Why are mutable keys dangerous?
+3. Is HashMap lookup always exactly O(1)?
+
+EDITORIAL NOTE
+--------------
+This article is original educational content written for the public knowledge library. Reference material may have been used to understand terminology and cross-check concepts; copyrighted or proprietary source text is not reproduced.

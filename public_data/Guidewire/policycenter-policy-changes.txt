@@ -1,0 +1,65 @@
+POLICYCENTER POLICY CHANGES
+===========================
+
+A policy change modifies an existing policy period through a transaction.
+
+EXAMPLES
+--------
+Common business reasons include adding/removing coverage, changing limits, changing deductibles, or modifying insured risk information.
+
+TRANSACTION PRINCIPLE
+---------------------
+The change is represented as a policy transaction rather than silently overwriting historical state.
+
+CLOUD API LIFECYCLE
+-------------------
+Current PolicyCenter Cloud API models a policy change as a Job. Typical flow:
+
+POST /job/v1/jobs {jobType: "PolicyChange", policyId: "pc:123", effectiveDate: "2026-03-15"}
+→ returns Job id pc:Job/456 + new PolicyPeriod branch id
+PATCH /policy/v1/periods/{periodId} {coverages: [{pattern: "Collision", limit: 500000}]}
+POST /job/v1/jobs/{jobId}/quote → POST /job/v1/jobs/{jobId}/bind
+
+Each step runs server-side rating and underwriting rules. The `effectiveDate` is the business effective date of the change; creation date is separate and matters for out-of-sequence ordering.
+
+GOSU BRANCH AND EDIT PATTERN
+----------------------------
+Policy changes branch from the bound Period:
+
+var jobNumber = "12345"
+var period = Job.finder.findJobByJobNumber(jobNumber).LatestPeriod
+Transaction.runWithNewBundle(\bundle -> {
+  period = bundle.add(period)
+  // add coverage, e.g., add a new Coverage pattern to the period's line
+  var cov = period.Policy.addCoverage("CollisionCov")
+  cov.Limit = 500000bd
+  period = period.getSlice(period.EditEffectiveDate)
+})
+
+Editing outside a bundle and expecting automatic commit is a common error. Edits must occur on the bundle copy, then the bundle is committed.
+
+EFFECTIVE DATE VS CREATION DATE
+-------------------------------
+A PolicyChange created on 2026-03-20 may be effective 2026-03-15. The period's `EditEffectiveDate` controls rating; the Job's `CreateTime` controls timeline ordering. Confusing the two causes preemption or phantom quote errors when a later-bound period already exists.
+
+REFERENCE GROUNDING
+-------------------
+The supplied material also identifies policy changes as transactions and distinguishes them from other job types.
+
+COMMON MISTAKES
+---------------
+Forgetting effective date semantics, assuming a policy change affects only the current visible screen, or bypassing required rating/underwriting steps. Also querying `Policy` without `Period Branch` awareness and therefore reading stale audited data.
+
+KEY TAKEAWAYS
+-------------
+Policy change preserves transaction history while applying a defined modification to a policy period.
+
+ORIGINAL INTERVIEW / CHECKPOINT QUESTIONS
+------------------------------------------
+1. What is a policy change?
+2. Why is it a transaction?
+3. What role does the effective date play?
+
+EDITORIAL NOTE
+--------------
+This article is original educational content written for the public knowledge library. Reference material may have been used to understand terminology and cross-check concepts; copyrighted or proprietary source text is not reproduced.

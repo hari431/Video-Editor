@@ -1,0 +1,34 @@
+ISOLATION LEVELS
+================
+
+Isolation levels define how concurrent transactions may observe one another's work. Different databases implement and name details differently.
+
+TYPICAL PHENOMENA
+-----------------
+Discussions often include dirty reads, non-repeatable reads and phantom reads. A stronger isolation level can reduce anomalies but may increase contention or reduce concurrency.
+
+CHOICE
+------
+Use the weakest isolation level that correctly supports the business requirement, but do not choose solely for performance without understanding correctness.
+
+EXAMPLE
+-------
+A financial operation that requires a stable view or serialization may need stronger guarantees than a simple reporting query.
+
+COMMON MISTAKES
+---------------
+Assuming the database default is universally correct, confusing snapshot behavior with serializable behavior, and ignoring application retry requirements.
+
+KEY TAKEAWAYS
+-------------
+Isolation is a correctness decision. Learn the behavior of the specific database engine rather than relying on generic slogans.
+
+ORIGINAL INTERVIEW / CHECKPOINT QUESTIONS
+------------------------------------------
+1. What is a dirty read?
+2. Why can stronger isolation reduce concurrency?
+3. Should every transaction use SERIALIZABLE?
+
+EDITORIAL NOTE
+--------------
+This article is original educational content written for the public knowledge library. Reference material may have been used to understand terminology and cross-check concepts; copyrighted or proprietary source text is not reproduced.

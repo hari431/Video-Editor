@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>File Hash &amp; Signature Inspector · Admin · Learn with me</title>
+  <link rel="stylesheet" href="/styles.css">
+  <%- include('partials/adsense-verification') %>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/">Learn with me</a>
+    <div class="user">
+      <a href="/account" style="text-decoration: underline; font-weight: bold;"><%= user.name || user.email %></a>
+      <% if (typeof user !== 'undefined' && user) { %>
+        <span class="user-status-text" style="color: #64748b; font-size: 13px; margin-left: 6px;">
+          <%= (typeof getUserHeaderStatus === 'function') ? getUserHeaderStatus(user) : (user.status ? (user.status.charAt(0).toUpperCase() + user.status.slice(1)) : 'Active') %>
+          <% if (user.access_expires_at) { %>
+            <span class="user-access-until">(Access Until: <%= new Date(user.access_expires_at).toLocaleDateString() %>)</span>
+          <% } %>
+        </span>
+      <% } %>
+      <form method="post" action="/logout">
+        <button type="submit">Sign out</button>
+      </form>
+    </div>
+  </header>
+
+  <main class="container" style="max-width:1100px;">
+    <h1>File Metadata &amp; Cryptographic Hash Inspector</h1>
+    <%- include('partials/admin-nav') %>
+
+    <p class="muted">
+      Admin/Owner only. Drop or select any local file to analyze its system metadata, extract headers, compute a cryptographic SHA-256 checksum, and audit its underlying binary signature (magic bytes) to identify potential extension/mimetype mismatches. **This tool runs 100% offline inside your browser sandbox memory using native Web Crypto APIs; files are never uploaded to any server.**
+    </p>
+
+    <!-- Inspection Main Panel -->
+    <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:20px; margin-top:20px;">
+      <h2 style="font-size:16px; margin-top:0; margin-bottom:12px;">Select File to Inspect</h2>
+      <div style="margin-bottom:16px;">
+        <input type="file" id="hashFileInput" style="width:100%; max-width:400px; font-size:13px; padding:8px; border:1px solid #cbd5e1; border-radius:8px; background:#f8fafc;" />
+      </div>
+
+      <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:24px;">
+        <button type="button" class="button small secondary" id="clearBtn">Clear</button>
+      </div>
+
+      <!-- Error display banner -->
+      <div id="errorContainer" class="hidden bg-red-50 border border-red-200 text-red-900 rounded-xl p-4 mb-6"></div>
+
+      <!-- Analysis Results Panel -->
+      <div id="resultsPanel" class="hidden">
+        <hr style="border:0; border-top:1px solid #e2e8f0; margin:24px 0;">
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+          
+          <!-- Metadata Table & Hashes -->
+          <div class="md:col-span-2 space-y-4">
+            <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-2">
+              <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+              File Properties
+            </h3>
+
+            <div class="overflow-x-auto border rounded-xl bg-slate-50/20">
+              <table class="w-full text-left border-collapse text-xs text-slate-700">
+                <tbody>
+                  <tr class="border-b border-slate-100">
+                    <td class="p-3 font-semibold text-slate-500 w-36">Filename</td>
+                    <td id="metaFilename" class="p-3 font-mono font-bold text-slate-900 break-all select-all"></td>
+                  </tr>
+                  <tr class="border-b border-slate-100">
+                    <td class="p-3 font-semibold text-slate-500">File Type / Ext</td>
+                    <td id="metaExtension" class="p-3 font-mono"></td>
+                  </tr>
+                  <tr class="border-b border-slate-100">
+                    <td class="p-3 font-semibold text-slate-500">MIME Type</td>
+                    <td id="metaMime" class="p-3 font-mono"></td>
+                  </tr>
+                  <tr class="border-b border-slate-100">
+                    <td class="p-3 font-semibold text-slate-500">Size (Bytes)</td>
+                    <td id="metaSizeBytes" class="p-3 font-mono"></td>
+                  </tr>
+                  <tr class="border-b border-slate-100">
+                    <td class="p-3 font-semibold text-slate-500">Last Modified</td>
+                    <td id="metaModified" class="p-3 font-mono"></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Cryptographic Checksum -->
+            <div class="bg-slate-900 text-white rounded-xl p-5 border border-slate-800 space-y-3 shadow-md">
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Cryptographic Checksum (SHA-256)</span>
+                <button type="button" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-white text-[10px] font-bold rounded border border-slate-700 transition-colors" id="copySha256Btn">Copy SHA-256</button>
+              </div>
+              <code id="sha256Hex" class="block font-mono text-sm break-all font-bold text-emerald-400 select-all leading-relaxed"></code >
+            </div>
+          </div>
+
+          <!-- Mimetype Mismatch Audits -->
+          <div class="space-y-4">
+            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100 pb-2">Magic Bytes Signature Audit</h3>
+            
+            <div id="mismatchAlert" class="rounded-xl p-4 text-xs font-medium space-y-2">
+              <!-- Rendered mismatch check status -->
+            </div>
+
+            <div class="bg-slate-50 border rounded-xl p-4 space-y-2 text-xs">
+              <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Header Magic Bytes Preview</span>
+              <code id="magicBytesPre" class="block font-mono text-indigo-700 font-bold break-all"></code >
+              <p class="text-[10px] text-slate-400">File magic numbers refer to the initial sequence of bytes used to identify the true format of a file independently of its extension name.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <%- include('partials/footer') %>
+
+  <!-- Browser Hash Client Script -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const fileInput = document.getElementById('hashFileInput');
+      const clearBtn = document.getElementById('clearBtn');
+      const errorContainer = document.getElementById('errorContainer');
+      const resultsPanel = document.getElementById('resultsPanel');
+
+      const metaFilename = document.getElementById('metaFilename');
+      const metaExtension = document.getElementById('metaExtension');
+      const metaMime = document.getElementById('metaMime');
+      const metaSizeBytes = document.getElementById('metaSizeBytes');
+      const metaModified = document.getElementById('metaModified');
+      const sha256Hex = document.getElementById('sha256Hex');
+      const mismatchAlert = document.getElementById('mismatchAlert');
+      const magicBytesPre = document.getElementById('magicBytesPre');
+      const copySha256Btn = document.getElementById('copySha256Btn');
+
+      if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+          fileInput.value = '';
+          resultsPanel.classList.add('hidden');
+          errorContainer.classList.add('hidden');
+        });
+      }
+
+      if (fileInput) {
+        fileInput.addEventListener('change', async () => {
+          const file = fileInput.files[0];
+          if (!file) return;
+
+          errorContainer.classList.add('hidden');
+          resultsPanel.classList.add('hidden');
+
+          try {
+            // Read array buffer for hashing and signature audit
+            const arrayBuffer = await file.arrayBuffer();
+
+            // 1. Compute SHA-256 via Web Crypto
+            const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const sha256String = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+            // 2. Read first 8 bytes for signature checking
+            const magicBytesArray = new Uint8Array(arrayBuffer.slice(0, 8));
+            const hexSig = Array.from(magicBytesArray).map(b => b.toString(16).padStart(2, '0')).join('');
+            
+            // Format nice spacing for magic bytes display
+            const formattedHex = Array.from(magicBytesArray).map(b => b.toString(16).toUpperCase().padStart(2, '0')).join(' ');
+
+            // Populate table stats
+            metaFilename.textContent = file.name;
+            const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+            metaExtension.textContent = ext || 'None';
+            metaMime.textContent = file.type || 'application/octet-stream';
+            metaSizeBytes.textContent = `${file.size.toLocaleString()} Bytes`;
+            metaModified.textContent = file.lastModifiedDate ? file.lastModifiedDate.toLocaleString() : new Date(file.lastModified).toLocaleString();
+
+            sha256Hex.textContent = sha256String;
+            magicBytesPre.textContent = formattedHex;
+
+            // Audit Check (PNG, JPEG, PDF, ZIP / DOCX)
+            let detectedFormat = 'Unknown Binary Data';
+            let alertClass = 'bg-slate-50 border border-slate-200 text-slate-700';
+            let alertHtml = '';
+
+            const hexSigLower = hexSig.toLowerCase();
+
+            if (hexSigLower.startsWith('89504e47')) {
+              detectedFormat = '.png';
+            } else if (hexSigLower.startsWith('ffd8ff')) {
+              detectedFormat = '.jpg';
+            } else if (hexSigLower.startsWith('25504446')) {
+              detectedFormat = '.pdf';
+            } else if (hexSigLower.startsWith('504b0304')) {
+              detectedFormat = '.zip / Office Document';
+            } else if (hexSigLower.startsWith('3c3f786d')) {
+              detectedFormat = '.xml';
+            }
+
+            // Check if matches extension
+            const lowerFilename = file.name.toLowerCase();
+            let hasMismatch = false;
+
+            if (detectedFormat === '.png' && !lowerFilename.endsWith('.png')) {
+              hasMismatch = true;
+            } else if (detectedFormat === '.jpg' && !lowerFilename.endsWith('.jpg') && !lowerFilename.endsWith('.jpeg')) {
+              hasMismatch = true;
+            } else if (detectedFormat === '.pdf' && !lowerFilename.endsWith('.pdf')) {
+              hasMismatch = true;
+            } else if (detectedFormat === '.zip / Office Document' && !lowerFilename.endsWith('.zip') && !lowerFilename.endsWith('.docx') && !lowerFilename.endsWith('.xlsx')) {
+              hasMismatch = true;
+            } else if (detectedFormat === '.xml' && !lowerFilename.endsWith('.xml') && !lowerFilename.endsWith('.pcf')) {
+              hasMismatch = true;
+            }
+
+            if (hasMismatch) {
+              alertClass = 'bg-red-50 border border-red-200 text-red-900';
+              alertHtml = `❌ <strong>Content-Extension Mismatch Alert!</strong><p class="mt-1">The uploaded file's binary signature corresponds to a <strong>${detectedFormat}</strong> file structure, but it uses the extension <strong>${ext}</strong>. This can lead to validation anomalies inside application workflows.</p>`;
+            } else if (detectedFormat !== 'Unknown Binary Data') {
+              alertClass = 'bg-emerald-50 border border-emerald-200 text-emerald-900';
+              alertHtml = `✓ <strong>Signature Match Confirmed:</strong><p class="mt-1">Initial bytes successfully verified against standard <strong>${detectedFormat}</strong> signatures with zero alignment anomalies detected.</p>`;
+            } else {
+              alertClass = 'bg-slate-50 border border-slate-200 text-slate-600';
+              alertHtml = `ℹ️ <strong>Generic/Uncategorized Format:</strong><p class="mt-1">No standardized file headers detected. Content-extension mapping was skipped.</p>`;
+            }
+
+            mismatchAlert.className = `rounded-xl p-4 text-xs font-medium space-y-2 ${alertClass}`;
+            mismatchAlert.innerHTML = alertHtml;
+
+            resultsPanel.classList.remove('hidden');
+
+          } catch (err) {
+            showError(err.message || 'Unable to compute file properties.');
+          }
+        });
+      }
+
+      if (copySha256Btn) {
+        copySha256Btn.addEventListener('click', () => {
+          navigator.clipboard.writeText(sha256Hex.textContent).then(() => {
+            const originalText = copySha256Btn.textContent;
+            copySha256Btn.textContent = '✓ Copied!';
+            setTimeout(() => {
+              copySha256Btn.textContent = originalText;
+            }, 1500);
+          });
+        });
+      }
+
+      function showError(msg) {
+        errorContainer.classList.remove('hidden');
+        errorContainer.innerHTML = `
+          <div class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-red-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            <div class="text-sm font-semibold text-red-900">${msg}</div>
+          </div>
+        `;
+      }
+    });
+  </script>
+</body>
+</html>

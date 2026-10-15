@@ -1,0 +1,58 @@
+CLAIMCENTER PAYMENT WORKFLOWS & CONTROLS
+========================================
+
+Payments represent the actual cash disbursements sent to claimants, medical providers, auto repair facilities, or vendors to settle covered losses. Inside Guidewire ClaimCenter, payments are executed through a highly secure, transaction-safe workflow governed by the check wizard, approval rules, and automated downstream system integration.
+
+THE ABILITY TO PAY CHECK & CONTROLS
+-----------------------------------
+Before any payment can be drafted, processed, or submitted to the database, ClaimCenter evaluates a critical validation concept known as "Ability to Pay". This check guarantees that a payment meets all legal, regulatory, and policy-specific criteria:
+1. Claim/Exposure Status: The claim and associated exposure must be in an "Open" or "Reopened" state. No payments can be issued on Closed files.
+2. Coverage Verification: The system confirms that the payment is linked to a valid, active coverage on the policy and that the payment does not exceed the absolute coverage limit.
+3. Reserve Validation: By default, the system checks if the proposed payment amount exceeds the Available Reserves on the target Reserve Line. If it does, the payment violates the "Ability to Pay" constraint, and the transaction is blocked until the adjuster increases the reserves.
+
+PAYMENT TYPES IN CLAIMCENTER
+----------------------------
+Payments are formally classified into three distinct categories in the database:
+- Partial Payment: Issued when a claim is ongoing (e.g., weekly physical therapy costs or incremental contractor payments). It leaves both the reserve line and the exposure open.
+- Final Payment: Issued when the claim obligation is fully resolved. A final payment automatically closes the associated exposure and triggers the system to zero out (reduce to $0.00) any remaining available reserves for that Reserve Line, returning the unused funds to the insurer's general ledger.
+- Supplement Payment: Issued when new facts emerge or expenses are discovered after a final payment has already been made and the claim closed. This requires reopening the exposure.
+
+CHECK WIZARDS, APPROVALS, AND AP INTEGRATION
+--------------------------------------------
+When a claims adjuster enters a payment, they navigate through the multi-step Check Wizard. This wizard handles complex distribution patterns (e.g., splitting a single check between a claimant and an auto-repair shop as joint payees).
+
+Once submitted, the payment transaction enters the approval pipeline:
+1. Authority Limit Check: The system compares the total check amount against the adjuster's user authority limit. If it is within their limit, the check status becomes "Approved".
+2. Multi-tier Approvals: If it exceeds their limit, the check is programmatically routed up the management hierarchy using Gosu check assignment rules. The check remains in "Pending Approval" status.
+3. Accounts Payable (AP) Integration: Approved checks are processed by the Outbound Messaging engine. The system packages the check details into an XML or JSON payload, sending it downstream to the corporate Accounts Payable (AP) ledger for printing or electronic fund transfer (EFT). The AP system then returns a payment status update (e.g., "Issued", "Cleared", or "Voided"), updating the check record in ClaimCenter.
+
+COMMON MISTAKES & CODE PITFALLS
+-------------------------------
+- Bypassing the Check Builder: Trying to programmatically instantiate a `Check` or `Payment` entity via standard constructor syntax (`new Check()`). This is a severe error. Checks must always be created using the financial API builders to ensure correct allocation of tax documents (1099 tracking) and transaction ledger entries:
+```gosu
+// Proper check creation in Gosu using the Check Creator
+uses gw.api.financials.CheckCreator
+
+var payment = claim.createPayment(exposure, CostType.TC_CLAIMCOST, CostCategory.TC_PROPERTYDAMAGE)
+payment.PaymentType = PaymentType.TC_PARTIAL
+payment.setAmount(750.00)
+
+var checkCreator = new CheckCreator(claim)
+checkCreator.addPayment(payment)
+checkCreator.PayTo = "John Doe Auto Repairs"
+checkCreator.DeliveryMethod = DeliveryMethod.TC_MAIL
+var check = checkCreator.createCheck()
+```
+- Missing Payee Tax ID (TIN): Creating check records without a valid tax identifier. This can cause regulatory violations; therefore, a validation rule should block check submission if tax documents cannot be generated.
+
+KEY TAKEAWAYS
+-------------
+- Payments are controlled transaction subclasses that require explicit validation and approval.
+- 'Ability to Pay' verifies the financial and legal validity of a payment before routing.
+- Final payments automatically zero out remaining reserves and trigger the closure of the associated exposure.
+
+ORIGINAL INTERVIEW / CHECKPOINT QUESTIONS
+------------------------------------------
+1. How does ClaimCenter prevent an adjuster from writing a check that exceeds their authority limit?
+2. Explain the workflow difference between a Partial Payment and a Final Payment.
+3. What is the role of the Outbound Messaging engine after a check is marked as 'Approved'?

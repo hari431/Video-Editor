@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PDF to Images · Admin · Learn with me</title><link rel="stylesheet" href="/styles.css"><%- include('partials/adsense-verification') %></head>
+<body><header class="topbar"><a class="brand" href="/">Learn with me</a><div class="user"><a href="/account" style="text-decoration: underline; font-weight: bold;"><%= user.name || user.email %></a><% if (typeof user !== 'undefined' && user) { %><span class="user-status-text" style="color: #64748b; font-size: 13px; margin-left: 6px;"><%= (typeof getUserHeaderStatus === 'function') ? getUserHeaderStatus(user) : (user.status ? (user.status.charAt(0).toUpperCase() + user.status.slice(1)) : 'Active') %><% if (user.access_expires_at) { %> <span class="user-access-until">(Access Until: <%= new Date(user.access_expires_at).toLocaleDateString() %>)</span><% } %></span><% } %><form method="post" action="/logout"><button type="submit">Sign out</button></form></div></header>
+<main class="container" style="max-width:900px;">
+<h1>PDF to Images</h1>
+<%- include('partials/admin-nav') %>
+
+<p class="muted">Admin/Owner only. Render pages of a local PDF to PNG or JPEG images. Rendering happens <strong>entirely in this browser</strong> — the source PDF is never uploaded. One page downloads directly; several pages download as a ZIP. The original file is never modified. This tool is <strong>disabled in production</strong>.</p>
+
+<% const _available = typeof pdfToImagesAvailable !== 'undefined' ? !!pdfToImagesAvailable : false; %>
+<% if (!_available) { %>
+  <p class="flash flash-error" data-testid="pdf-to-images-disabled">PDF to Images is disabled in production. Run the app locally (development) to use it.</p>
+<% } %>
+
+<div data-testid="pdf-to-images-root" data-available="<%= _available ? '1' : '0' %>">
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0;">
+    <button type="button" class="button small" id="pdfToImagesPick" data-testid="pdf-to-images-pick" <%= _available ? '' : 'disabled' %>>📂 Select PDF</button>
+    <input type="file" id="pdfToImagesFile" data-testid="pdf-to-images-file" accept=".pdf,application/pdf" style="display:none;" <%= _available ? '' : 'disabled' %>>
+    <label style="font-size:13px;">Format
+      <select id="pdfToImagesFormat" data-testid="pdf-to-images-format" <%= _available ? '' : 'disabled' %>>
+        <option value="png" selected>PNG (lossless)</option>
+        <option value="jpeg">JPEG (quality 0.92)</option>
+      </select>
+    </label>
+    <label style="font-size:13px;">Resolution
+      <select id="pdfToImagesScale" data-testid="pdf-to-images-scale" <%= _available ? '' : 'disabled' %>>
+        <option value="1">1x (72 DPI)</option>
+        <option value="1.5">1.5x (108 DPI)</option>
+        <option value="2" selected>2x (144 DPI)</option>
+        <option value="3">3x (216 DPI)</option>
+      </select>
+    </label>
+  </div>
+  <p class="muted" id="pdfToImagesFileInfo" data-testid="pdf-to-images-fileinfo" style="font-size:13px;">No PDF selected yet.</p>
+  <fieldset style="border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;margin:12px 0;max-width:560px;">
+    <legend style="font-size:13px;font-weight:700;padding:0 6px;">Pages to render</legend>
+    <label style="display:block;font-size:13px;margin:6px 0;">
+      <input type="radio" name="pdfToImagesMode" value="all" data-testid="pdf-to-images-mode-all" checked <%= _available ? '' : 'disabled' %>>
+      All pages
+    </label>
+    <label style="display:block;font-size:13px;margin:6px 0;">
+      <input type="radio" name="pdfToImagesMode" value="range" data-testid="pdf-to-images-mode-range" <%= _available ? '' : 'disabled' %>>
+      Page range
+      <input type="text" id="pdfToImagesSelection" data-testid="pdf-to-images-selection" placeholder="e.g. 1-3,5,8-10" autocomplete="off" spellcheck="false" style="width:200px;margin-left:8px;" <%= _available ? '' : 'disabled' %>>
+    </label>
+    <label style="display:block;font-size:13px;margin:6px 0;">
+      <input type="radio" name="pdfToImagesMode" value="page" data-testid="pdf-to-images-mode-page" <%= _available ? '' : 'disabled' %>>
+      Individual page
+      <input type="number" id="pdfToImagesPage" data-testid="pdf-to-images-page" value="1" min="1" step="1" style="width:80px;margin-left:8px;" <%= _available ? '' : 'disabled' %>>
+    </label>
+    <p class="muted" id="pdfToImagesPreview" data-testid="pdf-to-images-preview" style="font-size:12px;margin:6px 0 0;"></p>
+  </fieldset>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0;">
+    <button type="button" class="button small primary" id="pdfToImagesBtn" data-testid="pdf-to-images-submit" <%= _available ? '' : 'disabled' %>>🖼 Render &amp; download</button>
+    <button type="button" class="button small secondary" id="pdfToImagesClear" data-testid="pdf-to-images-clear" <%= _available ? '' : 'disabled' %>>Clear</button>
+  </div>
+  <div id="pdfToImagesProgress" data-testid="pdf-to-images-progress" style="display:none;margin-top:8px;font-size:13px;font-weight:600;" role="status" aria-live="polite">Rendering… <span id="pdfToImagesProgressPct">0%</span></div>
+  <p class="muted" data-testid="pdf-to-images-status" id="pdfToImagesStatus" style="font-size:13px;font-weight:600;"></p>
+  <p class="muted" data-testid="pdf-to-images-result" id="pdfToImagesResult" style="font-size:13px;"></p>
+</div>
+
+</main>
+<%- include('partials/footer') %>
+<script type="module" src="/admin-pdf-to-images.js?v=<%= Date.now() %>"></script>
+</body></html>

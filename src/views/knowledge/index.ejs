@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Public Knowledge Base · Java, SQL, System Design & Guidewire Theory</title>
+  <meta name="description" content="Free, public, read-only educational reference library covering Java OOP, Collections, Concurrency, SQL Joins, Window Functions, ACID, SOLID principles, and Guidewire architecture.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="<%= canonicalUrl || '/knowledge' %>">
+  
+  <!-- Open Graph / Social -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Public Knowledge Base · Educational Reference Library">
+  <meta property="og:description" content="Comprehensive guides and technical theory covering Java, SQL, System Design, and Guidewire Architecture. Free and open to everyone.">
+  <meta property="og:url" content="<%= canonicalUrl || '/knowledge' %>">
+  
+  <link rel="stylesheet" href="/styles.css">
+  <%- include('../partials/adsense-verification') %>
+
+  <!-- JSON-LD Structured Data for Google Search -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": "Public Technical Knowledge Base",
+    "description": "Educational theory and programming concepts covering Java, SQL, System Design, and Guidewire Suite Architecture.",
+    "url": "<%= canonicalUrl || '/knowledge' %>",
+    "hasPart": [
+      <% categories.forEach((cat, index) => { %>
+        {
+          "@type": "WebPage",
+          "name": "<%= cat.name %>",
+          "url": "/knowledge/<%= cat.slug %>",
+          "description": "<%= cat.description %>"
+        }<%= index < categories.length - 1 ? ',' : '' %>
+      <% }) %>
+    ]
+  }
+  </script>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/">Learn with me</a>
+  <a class="nav-link" href="/knowledge" style="font-weight: 700; color: #1e40af;">📖 Knowledge Base</a>
+  <% if (typeof user !== 'undefined' && user) { %>
+    <a class="nav-link" href="/">Browse Queries</a>
+    <div class="user">
+      <a href="/account" style="text-decoration: underline; font-weight: bold;"><%= user.name || user.email %></a>
+      <% if (typeof user !== 'undefined' && user) { %>
+        <span class="user-status-text" style="color: #64748b; font-size: 13px; margin-left: 6px;"><%= (typeof getUserHeaderStatus === 'function') ? getUserHeaderStatus(user) : (user.status ? (user.status.charAt(0).toUpperCase() + user.status.slice(1)) : 'Active') %><% if (user.access_expires_at) { %> <span class="user-access-until">(Access Until: <%= new Date(user.access_expires_at).toLocaleDateString() %>)</span><% } %></span>
+      <% } %>
+      <form method="post" action="/logout"><button type="submit">Sign out</button></form>
+    </div>
+  <% } else { %>
+    <a class="nav-link" href="/about">About</a>
+    <a class="nav-link" href="/login">Sign in</a>
+  <% } %>
+</header>
+
+<main class="container">
+  <nav class="breadcrumbs" aria-label="Breadcrumb">
+    <a href="/">Home</a>
+    <span>/</span>
+    <span style="color: #172033; font-weight: 600;">Knowledge Base</span>
+  </nav>
+
+  <section class="knowledge-hero">
+    <h1>Technical Knowledge Base</h1>
+    <p>
+      A public, read-only educational reference library providing in-depth theory, architectural patterns, and code examples for modern software engineering, relational databases, Java, and Guidewire InsuranceSuite.
+    </p>
+    <form action="/knowledge/search" method="get" class="knowledge-search-bar" role="search">
+      <input type="search" name="q" placeholder="Search concepts, e.g. 'Joins', 'HashMap', 'ACID', 'SOLID', 'Gosu'..." required maxlength="100" autocomplete="off">
+      <button type="submit" class="button primary">Search</button>
+    </form>
+  </section>
+
+  <section>
+    <div class="page-heading">
+      <h2>Explore Knowledge Domains</h2>
+      <p>Select a technical topic to read comprehensive guides, architectural references, and syntax tutorials.</p>
+    </div>
+
+    <div class="knowledge-category-grid">
+      <% categories.forEach(cat => { %>
+        <a href="/knowledge/<%= cat.slug %>" class="knowledge-cat-card">
+          <span class="knowledge-cat-icon"><%= cat.icon %></span>
+          <h3 class="knowledge-cat-title"><%= cat.name %></h3>
+          <span class="knowledge-cat-tagline"><%= cat.tagline %></span>
+          <p class="knowledge-cat-desc"><%= cat.description %></p>
+          <div class="knowledge-cat-footer">
+            <span><%= cat.articleCount %> Guides</span>
+            <span style="color: #3b82f6; font-weight: 600;">Explore &rarr;</span>
+          </div>
+        </a>
+      <% }) %>
+    </div>
+  </section>
+
+  <section style="margin-top: 40px;">
+    <div class="page-heading">
+      <h2>More Learning Resources</h2>
+      <p>Curated collections that live alongside the Knowledge Base.</p>
+    </div>
+
+    <div class="knowledge-category-grid">
+      <a href="/free-books" class="knowledge-cat-card">
+        <span class="knowledge-cat-icon">📚</span>
+        <h3 class="knowledge-cat-title">Free Technical Books</h3>
+        <span class="knowledge-cat-tagline">Open books, documentation &amp; vendor resources</span>
+        <p class="knowledge-cat-desc">Curated free technical books and learning resources with licence information and links to authoritative sources.</p>
+        <div class="knowledge-cat-footer">
+          <span>Open collection</span>
+          <span style="color: #3b82f6; font-weight: 600;">Explore &rarr;</span>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <section style="margin-top: 40px;">
+    <div class="page-heading">
+      <h2>Featured In-Depth Guides</h2>
+      <p>Curated technical deep-dives covering core foundational concepts.</p>
+    </div>
+
+    <div class="knowledge-article-list">
+      <% articles.slice(0, 6).forEach(article => { %>
+        <a href="/knowledge/<%= article.category %>/<%= article.slug %>" class="knowledge-article-card">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+            <span class="knowledge-tag" style="background: #e0f2fe; border-color: #bae6fd; color: #0369a1;"><%= article.categoryName %></span>
+            <span style="font-size: 12px; color: #64748b;"><%= article.readTime %></span>
+          </div>
+          <h3 class="knowledge-article-title"><%= article.title %></h3>
+          <p class="knowledge-article-desc"><%= article.description %></p>
+          <div class="knowledge-article-meta">
+            <% article.tags.slice(0, 4).forEach(tag => { %>
+              <span class="knowledge-tag"><%= tag %></span>
+            <% }) %>
+            <span style="margin-left: auto; font-size: 12px; color: #94a3b8;">Updated <%= article.lastUpdated %></span>
+          </div>
+        </a>
+      <% }) %>
+    </div>
+  </section>
+
+  <aside class="knowledge-disclaimer-box" aria-label="About this knowledge base">
+    <div class="knowledge-disclaimer-icon">💡</div>
+    <div class="knowledge-disclaimer-text">
+      <strong>Public &amp; Read-Only Educational Resource</strong><br>
+      This section is open to all visitors without requiring authentication. It contains peer-reviewed educational theory and reference material. Looking for Guidewire Gosu code files, video walkthroughs, and community Q&amp;A discussions? <a href="/login" style="color: #2563eb; font-weight: 600; text-decoration: underline;">Sign in with Google</a> to access the private query library.
+    </div>
+  </aside>
+</main>
+
+<%- include('../partials/footer', { showFooter: true }) %>
+</body>
+</html>

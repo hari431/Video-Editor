@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Luna AI — Beta</title>
+  <style>
+    :root{color-scheme:light;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    body{margin:0;background:#f8fafc;color:#0f172a}
+    .wrap{max-width:960px;margin:0 auto;padding:32px 20px 48px}
+    .card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 8px 30px rgba(15,23,42,.06);overflow:hidden}
+    .head{padding:24px;border-bottom:1px solid #e2e8f0}
+    h1{margin:0 0 6px;font-size:26px}
+    .muted{color:#64748b}
+    .beta-tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.04em;color:#1d4ed8;background:#dbeafe;border-radius:999px;padding:2px 10px;margin-left:8px;vertical-align:middle}
+    .chat{min-height:420px;padding:24px}
+    .msg{margin:0 0 18px;white-space:pre-wrap;line-height:1.65}
+    .user{font-weight:600}
+    .assistant{padding:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px}
+    .sources{margin-top:12px;display:grid;gap:8px}
+    .source{display:block;padding:10px 12px;border:1px solid #e2e8f0;border-radius:10px;text-decoration:none;color:#0f172a}
+    .source:hover{background:#f8fafc}
+    .source small{display:block;color:#64748b;margin-top:3px}
+    .composer{display:flex;gap:10px;padding:18px 24px;border-top:1px solid #e2e8f0}
+    textarea{flex:1;min-height:52px;max-height:180px;resize:vertical;border:1px solid #cbd5e1;border-radius:10px;padding:12px;font:inherit}
+    button{border:0;border-radius:10px;padding:0 18px;background:#2563eb;color:#fff;font-weight:600;cursor:pointer}
+    button:disabled{opacity:.6;cursor:wait}
+    button.btn-secondary{background:#f1f5f9;color:#0f172a;border:1px solid #cbd5e1}
+    .status{padding:0 24px 16px;color:#64748b;font-size:13px}
+    .setup{padding:24px;border-bottom:1px solid #e2e8f0;display:grid;gap:14px}
+    .setup h2{margin:0;font-size:18px}
+    .field{display:grid;gap:6px;font-size:13px;font-weight:600}
+    .field select,.field input{font:inherit;font-weight:400;border:1px solid #cbd5e1;border-radius:8px;padding:9px 10px;max-width:420px;width:100%;box-sizing:border-box}
+    .hint{font-size:12px;color:#64748b;font-weight:400}
+    .setup-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .setup-actions button{padding:10px 16px}
+    .setup-status{font-size:13px;color:#64748b;min-height:20px}
+    .setup-status.ok{color:#15803d}
+    .setup-status.err{color:#b91c1c}
+    .checks{list-style:none;margin:0;padding:0;display:grid;gap:4px;font-size:13px;color:#15803d}
+    .badge-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px 24px;border-bottom:1px solid #e2e8f0;background:#f8fafc;font-size:12px;color:#475569}
+    .badge{font-weight:700;color:#1d4ed8;background:#dbeafe;border-radius:999px;padding:2px 10px}
+    .badge.local{color:#475569;background:#e2e8f0}
+    .linklike{background:none;border:0;color:#2563eb;cursor:pointer;font-size:12px;padding:0;text-decoration:underline}
+    [hidden]{display:none !important}
+    @media(max-width:640px){.composer{flex-direction:column}.composer button{height:44px}.chat{min-height:360px}.wrap{padding:16px 12px 32px}.head,.setup{padding:18px}.setup-actions button{flex:1}}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="card">
+      <header class="head">
+        <h1>Ask Luna<span class="beta-tag">Luna AI — Beta</span></h1>
+        <div class="muted">Local knowledge assistant for this Guidewire Website. Read-only and source-backed.</div>
+        <div class="muted" style="margin-top:6px;font-size:12px">Beta: bring your own AI API key. Your key is used for Luna requests in this page session only and is not stored in your Luna account.</div>
+      </header>
+
+      <div id="lunaSetup" class="setup" aria-label="Luna AI setup">
+        <h2>Luna AI — Beta setup</h2>
+
+        <label class="field">AI Provider
+          <select id="provider"></select>
+        </label>
+
+        <label class="field">Model
+          <select id="model"></select>
+          <span id="customModelWrap" class="field" hidden>Or enter any OpenRouter model slug
+            <input id="customModel" type="text" autocomplete="off" spellcheck="false" placeholder="e.g. anthropic/claude-3.5-sonnet">
+          </span>
+        </label>
+
+        <label class="field">API Key
+          <input id="apiKey" type="password" autocomplete="off" spellcheck="false" placeholder="Paste key for this session only">
+          <span class="hint">Create or copy your API key from your provider account, then paste it here. It stays in this page's memory only and is cleared when the session ends.</span>
+        </label>
+
+        <div class="setup-actions">
+          <a id="keyLink" href="#" target="_blank" rel="noopener">Get API Key</a>
+        </div>
+
+        <div class="setup-actions">
+          <button id="testKey" type="button">Test Connection</button>
+          <button id="startLuna" type="button" disabled>Start Luna</button>
+        </div>
+
+        <div id="setupStatus" class="setup-status" role="status">○ Not connected</div>
+        <ul id="setupChecks" class="checks" hidden></ul>
+
+        <div class="hint"><button id="localStart" class="linklike" type="button">Continue without AI (local knowledge only)</button></div>
+      </div>
+
+      <div id="lunaChatWrap" hidden>
+        <div class="badge-row">
+          <span id="aiBadge" class="badge">Local only</span>
+          <button id="toggleSetup" class="linklike" type="button">AI setup</button>
+          <button id="endSession" class="linklike" type="button" hidden>End AI session</button>
+        </div>
+        <div id="chat" class="chat">
+          <div class="msg assistant">Hi, I'm Luna. Ask me about the knowledge available in this website.</div>
+        </div>
+        <div id="status" class="status"></div>
+        <form id="composer" class="composer">
+          <textarea id="query" maxlength="4000" placeholder="Ask a Guidewire, Gosu, Java or SQL question..." required></textarea>
+          <button id="send" type="submit">Ask Luna</button>
+        </form>
+      </div>
+    </section>
+  </main>
+<script src="/luna-session.js"></script>
+<script>
+(() => {
+  const S = window.LunaSession;
+  // Runtime-only session: plain page memory via the shared module.
+  const session = S.createSession();
+  let catalog = [];
+
+  const setup = document.getElementById('lunaSetup');
+  const chatWrap = document.getElementById('lunaChatWrap');
+  const providerSelect = document.getElementById('provider');
+  const modelSelect = document.getElementById('model');
+  const customModelWrap = document.getElementById('customModelWrap');
+  const customModelInput = document.getElementById('customModel');
+  const apiKeyInput = document.getElementById('apiKey');
+  const keyLink = document.getElementById('keyLink');
+  const testKeyBtn = document.getElementById('testKey');
+  const startBtn = document.getElementById('startLuna');
+  const localStart = document.getElementById('localStart');
+  const setupStatus = document.getElementById('setupStatus');
+  const setupChecks = document.getElementById('setupChecks');
+
+  const chat = document.getElementById('chat');
+  const form = document.getElementById('composer');
+  const input = document.getElementById('query');
+  const send = document.getElementById('send');
+  const status = document.getElementById('status');
+  const badge = document.getElementById('aiBadge');
+  const toggleSetup = document.getElementById('toggleSetup');
+  const endSession = document.getElementById('endSession');
+  const history = [];
+
+  function setStatus(text, kind) {
+    setupStatus.textContent = text;
+    setupStatus.classList.toggle('ok', kind === 'ok');
+    setupStatus.classList.toggle('err', kind === 'err');
+  }
+
+  function currentProvider() {
+    return S.findProvider(catalog, providerSelect.value);
+  }
+
+  function effectiveModel() {
+    return S.effectiveModel({ modelValue: modelSelect.value, customValue: customModelInput.value, provider: currentProvider() });
+  }
+
+  function refreshProviderUI() {
+    const p = currentProvider();
+    const { showCustom } = S.populateModelSelect(modelSelect, p);
+    customModelWrap.hidden = !showCustom;
+    const link = S.keyLinkFor(p);
+    keyLink.href = link.href;
+    keyLink.textContent = link.text;
+    invalidateValidation();
+  }
+
+  function invalidateValidation() {
+    session.invalidate();
+    startBtn.disabled = true;
+    setupChecks.hidden = true;
+    setupChecks.innerHTML = '';
+    if (providerSelect.value) setStatus('○ Not connected');
+  }
+
+  async function loadCatalog() {
+    try {
+      catalog = await S.fetchProviderCatalog();
+    } catch (err) {
+      setStatus('Could not load AI providers: ' + (err.message || 'network failure.'), 'err');
+      return;
+    }
+    S.populateProviderSelect(providerSelect, catalog);
+    refreshProviderUI();
+  }
+
+  function startChat(mode) {
+    if (mode === 'ai') {
+      badge.textContent = 'AI: ' + session.state.providerLabel + ' • ' + session.state.model;
+      badge.classList.remove('local');
+      endSession.hidden = false;
+    } else {
+      badge.textContent = 'Local only';
+      badge.classList.add('local');
+      endSession.hidden = true;
+    }
+    setup.hidden = true;
+    chatWrap.hidden = false;
+    input.focus();
+  }
+
+  function endAiSession() {
+    session.end(apiKeyInput);
+    chatWrap.hidden = true;
+    setup.hidden = false;
+    startBtn.disabled = true;
+    setStatus('○ Not connected');
+  }
+
+  providerSelect.addEventListener('change', refreshProviderUI);
+  modelSelect.addEventListener('change', invalidateValidation);
+  customModelInput.addEventListener('input', invalidateValidation);
+  apiKeyInput.addEventListener('input', invalidateValidation);
+
+  testKeyBtn.addEventListener('click', async () => {
+    const p = currentProvider();
+    testKeyBtn.disabled = true;
+    setStatus('Testing connection…');
+    try {
+      const validated = await S.validateConnection({ provider: p ? p.id : '', model: effectiveModel(), apiKey: apiKeyInput.value });
+      session.markValidated(validated.provider, validated.model);
+      setupChecks.innerHTML = '';
+      ['Connection successful', 'Model available (' + validated.model + ')'].forEach(text => {
+        const li = document.createElement('li');
+        li.textContent = '✓ ' + text;
+        setupChecks.appendChild(li);
+      });
+      setupChecks.hidden = false;
+      setStatus('✓ Connection successful', 'ok');
+      startBtn.disabled = false;
+    } catch (err) {
+      session.invalidate();
+      startBtn.disabled = true;
+      setStatus(err.message || 'Validation failed.', 'err');
+    } finally {
+      testKeyBtn.disabled = false;
+    }
+  });
+
+  startBtn.addEventListener('click', () => {
+    const p = currentProvider();
+    const model = effectiveModel();
+    if (!p || !session.isValidated(p.id, model, apiKeyInput.value)) {
+      setStatus('Test the connection first — then Start Luna.', 'err');
+      return;
+    }
+    session.startAi({ provider: p.id, providerLabel: p.label, model, apiKey: apiKeyInput.value });
+    startChat('ai');
+  });
+
+  localStart.addEventListener('click', () => {
+    session.startLocal();
+    startChat('local');
+  });
+  toggleSetup.addEventListener('click', () => { setup.hidden = !setup.hidden; });
+  endSession.addEventListener('click', endAiSession);
+  S.attachSessionCleanup(session, apiKeyInput);
+
+  function addUser(text) {
+    const el = document.createElement('div');
+    el.className = 'msg user';
+    el.textContent = 'You: ' + text;
+    chat.appendChild(el);
+  }
+
+  function addAssistant(data) {
+    const box = document.createElement('div');
+    box.className = 'msg assistant';
+    box.textContent = data.answer || 'No answer found.';
+    chat.appendChild(box);
+
+    if (Array.isArray(data.results) && data.results.length) {
+      const sources = document.createElement('div');
+      sources.className = 'sources';
+      data.results.forEach(source => {
+        const a = document.createElement('a');
+        a.className = 'source';
+        a.href = source.href || '#';
+        a.textContent = source.title || source.path || 'Source';
+        const small = document.createElement('small');
+        small.textContent = source.path || source.type || '';
+        a.appendChild(small);
+        sources.appendChild(a);
+      });
+      box.appendChild(sources);
+    }
+
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const query = input.value.trim();
+    if (!query || send.disabled) return;
+
+    addUser(query);
+    history.push({ role: 'user', content: query });
+    input.value = '';
+    send.disabled = true;
+    status.textContent = session.state.mode === 'ai'
+      ? 'Luna is searching + consulting the AI provider...'
+      : 'Luna is searching local knowledge...';
+
+    try {
+      const data = await S.sendLunaQuery({
+        query,
+        history: history.slice(-20),
+        contextPath: new URLSearchParams(window.location.search).get('context_path') || '',
+        topK: 5,
+        session: session.state
+      });
+      addAssistant(data);
+      history.push({ role: 'assistant', content: data.answer || '' });
+      status.textContent = 'Source-backed retrieval • private library + official Guidewire docs when relevant';
+    } catch (error) {
+      status.textContent = error.message || 'Luna request failed.';
+    } finally {
+      send.disabled = false;
+      input.focus();
+    }
+  });
+
+  loadCatalog();
+})();
+</script>
+</body>
+</html>

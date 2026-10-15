@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Search: "<%= query %>" · Public Knowledge Base</title>
+  <meta name="description" content="Search results for <%= query %> in the public knowledge base.">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="stylesheet" href="/styles.css">
+  <%- include('../partials/adsense-verification') %>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/">Learn with me</a>
+  <a class="nav-link" href="/knowledge" style="font-weight: 700; color: #1e40af;">📖 Knowledge Base</a>
+  <% if (typeof user !== 'undefined' && user) { %>
+    <a class="nav-link" href="/">Browse Queries</a>
+    <div class="user">
+      <a href="/account" style="text-decoration: underline; font-weight: bold;"><%= user.name || user.email %></a>
+      <% if (typeof user !== 'undefined' && user) { %>
+        <span class="user-status-text" style="color: #64748b; font-size: 13px; margin-left: 6px;"><%= (typeof getUserHeaderStatus === 'function') ? getUserHeaderStatus(user) : (user.status ? (user.status.charAt(0).toUpperCase() + user.status.slice(1)) : 'Active') %><% if (user.access_expires_at) { %> <span class="user-access-until">(Access Until: <%= new Date(user.access_expires_at).toLocaleDateString() %>)</span><% } %></span>
+      <% } %>
+      <form method="post" action="/logout"><button type="submit">Sign out</button></form>
+    </div>
+  <% } else { %>
+    <a class="nav-link" href="/about">About</a>
+    <a class="nav-link" href="/login">Sign in</a>
+  <% } %>
+</header>
+
+<main class="container" id="searchContainer">
+  <nav class="breadcrumbs" aria-label="Breadcrumb">
+    <a href="/">Home</a>
+    <span>/</span>
+    <a href="/knowledge">Knowledge Base</a>
+    <span>/</span>
+    <span style="color: #172033; font-weight: 600;">Search</span>
+  </nav>
+
+  <section class="knowledge-hero" style="padding: 32px 28px;">
+    <h1 style="font-size: 26px;">Search Results for "<%= query %>"</h1>
+    <p>Found <%= results.length %> <%= results.length === 1 ? 'guide' : 'guides' %> matching your search query.</p>
+    <form action="/knowledge/search" method="get" class="knowledge-search-bar" role="search">
+      <input type="search" name="q" value="<%= query %>" placeholder="Search another concept..." required maxlength="100" autocomplete="off">
+      <button type="submit" class="button primary">Search</button>
+    </form>
+  </section>
+
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <h2 style="margin: 0; font-size: 20px; color: #16234a;">Matching Articles</h2>
+    <a href="/knowledge" class="button small">&larr; Knowledge Home</a>
+  </div>
+
+  <% if (results.length > 0) { %>
+  <div class="browse-controls" data-controls-for="search">
+    <div class="control-group">
+      <label for="searchSortSelect">Sort by</label>
+      <select id="searchSortSelect" class="control-select" data-testid="search-sort-select">
+        <option value="relevance">Relevance</option>
+        <option value="nameAsc">Name A → Z</option>
+        <option value="nameDesc">Name Z → A</option>
+        <option value="newest">Recently updated</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label for="searchViewSelect">View by</label>
+      <select id="searchViewSelect" class="control-select" data-testid="search-view-select">
+        <option value="cards">Cards</option>
+        <option value="list">List</option>
+      </select>
+    </div>
+  </div>
+  <% } %>
+
+  <section class="knowledge-article-list" id="searchGrid" data-testid="search-list">
+    <% if (results.length === 0) { %>
+      <div class="empty-folder" style="padding: 40px 20px; text-align: center;">
+        <p style="font-size: 16px; color: #475569; margin: 0 0 12px;">No technical articles found matching "<%= query %>".</p>
+        <p style="font-size: 14px; color: #64748b; margin: 0 0 20px;">Try searching for broader keywords like <strong>Java</strong>, <strong>Joins</strong>, <strong>ACID</strong>, <strong>SOLID</strong>, or <strong>Gosu</strong>.</p>
+        <a href="/knowledge" class="button primary">Browse All Categories</a>
+      </div>
+    <% } else { %>
+      <% results.forEach(article => { %>
+        <% const _sDateMs = article.lastUpdated ? new Date(article.lastUpdated).getTime() : 0; const _sDateIso = article.lastUpdated || ''; %>
+        <a href="/knowledge/<%= article.category %>/<%= article.slug %>" class="knowledge-article-card" data-name="<%= article.title.toLowerCase() %>" data-date="<%= _sDateIso %>" data-date-ms="<%= _sDateMs %>">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+            <span class="knowledge-tag" style="background: #e0f2fe; border-color: #bae6fd; color: #0369a1;"><%= article.categoryName %></span>
+            <span style="font-size: 12px; color: #64748b;"><%= article.readTime %></span>
+          </div>
+          <h3 class="knowledge-article-title"><%= article.title %></h3>
+          <p class="knowledge-article-desc"><%= article.description %></p>
+          <div class="knowledge-article-meta">
+            <% article.tags.forEach(tag => { %>
+              <span class="knowledge-tag"><%= tag %></span>
+            <% }) %>
+            <span style="margin-left: auto; font-size: 12px; color: #94a3b8;">Updated <%= article.lastUpdated %></span>
+          </div>
+        </a>
+      <% }) %>
+    <% } %>
+  </section>
+</main>
+
+<%- include('../partials/footer', { showFooter: true }) %>
+<script src="/browse-controls.js"></script>
+<% if (results.length > 0) { %>
+<script>
+BrowseControls.setup({
+  containerId: 'searchContainer',
+  gridId: 'searchGrid',
+  sortSelectId: 'searchSortSelect',
+  viewSelectId: 'searchViewSelect',
+  lsSortKey: 'knowledge_search_sort',
+  lsViewKey: 'knowledge_search_view',
+  defaultSort: 'relevance',
+  defaultView: 'cards',
+  sortFns: {
+    relevance: null,
+    nameAsc: function(a,b){ return (a.getAttribute('data-name')||'').localeCompare(b.getAttribute('data-name')||''); },
+    nameDesc: function(a,b){ return (b.getAttribute('data-name')||'').localeCompare(a.getAttribute('data-name')||''); },
+    newest: function(a,b){ return (parseInt(b.getAttribute('data-date-ms'))||0) - (parseInt(a.getAttribute('data-date-ms'))||0); }
+  }
+});
+</script>
+<% } %>
+</body>
+</html>

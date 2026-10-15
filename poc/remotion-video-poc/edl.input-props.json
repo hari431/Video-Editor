@@ -1,0 +1,36 @@
+{
+  "fps": 30,
+  "width": 1280,
+  "height": 720,
+  "durationInFrames": 180,
+  "main": {
+    "src": "main.mp4",
+    "trimBeforeFrames": 60
+  },
+  "overlay": {
+    "src": "overlay.mp4",
+    "x": 0.68,
+    "y": 0.04,
+    "w": 0.28,
+    "startFrame": 30,
+    "endFrame": 150,
+    "trimBeforeFrames": 0
+  },
+  "text": {
+    "content": "Guidewire POC",
+    "x": 0.05,
+    "y": 0.05,
+    "sizeFrac": 0.05,
+    "color": "#FFFFFF",
+    "startFrame": 30,
+    "endFrame": 180
+  },
+  "audio": {
+    "src": "audio.m4a",
+    "trimBeforeFrames": 60
+  },
+  "watermark": {
+    "text": "Learn with me",
+    "position": 1
+  }
+}

@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Analytics · Admin · Learn with me</title><link rel="stylesheet" href="/styles.css"><%- include('partials/adsense-verification') %></head>
+<body><header class="topbar"><a class="brand" href="/">Learn with me</a><div class="user"><a href="/account" style="text-decoration: underline; font-weight: bold;"><%= user.name || user.email %></a><% if (typeof user !== 'undefined' && user) { %><span class="user-status-text" style="color: #64748b; font-size: 13px; margin-left: 6px;"><%= (typeof getUserHeaderStatus === 'function') ? getUserHeaderStatus(user) : (user.status ? (user.status.charAt(0).toUpperCase() + user.status.slice(1)) : 'Active') %><% if (user.access_expires_at) { %> <span class="user-access-until">(Access Until: <%= new Date(user.access_expires_at).toLocaleDateString() %>)</span><% } %></span><% } %><form method="post" action="/logout"><button type="submit">Sign out</button></form></div></header>
+<main class="container">
+<h1>Analytics</h1>
+<%- include('partials/admin-nav') %>
+<% function fmtIST(date) { if (!date) return '—'; return new Date(date).toLocaleString(undefined, { timeZone: 'Asia/Kolkata' }); } %>
+<% function fmtISTDate(date) { if (!date) return '—'; return new Date(date).toLocaleDateString(undefined, { timeZone: 'Asia/Kolkata' }); } %>
+<% function contentHref(p) { return contentRouteForPath(p) + p.split('/').map(function(c){ return encodeURIComponent(c); }).join('/'); } %>
+<% function baseName(p) { return String(p).split('/').at(-1); } %>
+
+<h2>User Overview</h2>
+<div class="stats"><div class="stat stat--neutral"><strong><%= users.total_users %></strong><span>Total users</span></div><div class="stat stat--success"><strong><%= users.active_users %></strong><span>Active users</span></div><div class="stat stat--warning"><strong><%= users.expired_users %></strong><span>Expired users</span></div><div class="stat stat--info"><strong><%= users.new_30d_users %></strong><span>New users (30 days)</span></div></div>
+<p class="muted"><span class="badge badge-healthy"><%= users.never_expires_users %> Never expires</span> (Owner/Admin — permanent access, counted as active)</p>
+
+<h2>Content Overview</h2>
+<div class="stats"><div class="stat stat--neutral"><strong><%= library.totalItems %></strong><span>Total library items</span></div><div class="stat stat--neutral"><strong><%= library.totalFolders %></strong><span>Total folders</span></div></div>
+
+<h3>Most viewed content</h3>
+<% if (topViewed && topViewed.length > 0) { %>
+<table class="admin-table">
+  <thead><tr><th>Content</th><th>Viewers</th><th>Last viewed</th></tr></thead>
+  <tbody>
+  <% topViewed.forEach(function(v) { %>
+    <tr>
+      <td><a href="<%= contentHref(v.item_path) %>" target="_blank" rel="noopener noreferrer"><%= baseName(v.item_path) %></a><br><small class="muted"><a href="<%= contentHref(v.item_path) %>" target="_blank" rel="noopener noreferrer"><%= v.item_path %></a></small></td>
+      <td><%= v.viewer_count %></td>
+      <td><%= fmtIST(v.last_viewed_at) %></td>
+    </tr>
+  <% }) %>
+  </tbody>
+</table>
+<% } else { %>
+<p class="muted">No viewed content yet.</p>
+<% } %>
+
+<h3>Most liked content</h3>
+<% if (topLiked && topLiked.length > 0) { %>
+<table class="admin-table">
+  <thead><tr><th>Content</th><th>Likes</th><th>Last liked</th></tr></thead>
+  <tbody>
+  <% topLiked.forEach(function(l) { %>
+    <tr>
+      <td><a href="<%= contentHref(l.item_path) %>" target="_blank" rel="noopener noreferrer"><%= baseName(l.item_path) %></a><br><small class="muted"><a href="<%= contentHref(l.item_path) %>" target="_blank" rel="noopener noreferrer"><%= l.item_path %></a></small></td>
+      <td><%= l.like_count %></td>
+      <td><%= fmtIST(l.last_liked_at) %></td>
+    </tr>
+  <% }) %>
+  </tbody>
+</table>
+<% } else { %>
+<p class="muted">No liked content yet.</p>
+<% } %>
+
+<h2>Discussion Overview</h2>
+<div class="stats"><div class="stat stat--neutral"><strong><%= discussions.total_questions %></strong><span>Total questions</span></div><div class="stat stat--success"><strong><%= discussions.answered_questions %></strong><span>Answered questions</span></div><div class="stat stat--warning"><strong><%= discussions.unanswered_questions %></strong><span>Unanswered questions</span></div><div class="stat stat--neutral"><strong><%= discussions.total_replies %></strong><span>Total replies</span></div><div class="stat stat--healthy"><strong><%= discussions.accepted_answers %></strong><span>Accepted answers</span></div><div class="stat stat--info"><strong><%= discussions.new_30d_questions %></strong><span>Questions (30 days)</span></div></div>
+
+<h2>Recent Activity</h2>
+<h3>Recent user logins</h3>
+<% if (recentLogins && recentLogins.length > 0) { %>
+<table class="admin-table">
+  <thead><tr><th>User</th><th>Last login</th></tr></thead>
+  <tbody>
+  <% recentLogins.forEach(function(u) { %>
+    <tr>
+      <td><%= u.name || '—' %> <small class="muted">(<%= u.email %>)</small></td>
+      <td><%= fmtIST(u.last_login_at) %></td>
+    </tr>
+  <% }) %>
+  </tbody>
+</table>
+<% } else { %>
+<p class="muted">No recent logins.</p>
+<% } %>
+
+<h3>Recently viewed content</h3>
+<% if (recentViews && recentViews.length > 0) { %>
+<table class="admin-table">
+  <thead><tr><th>Content</th><th>Viewed by</th><th>Viewed at</th></tr></thead>
+  <tbody>
+  <% recentViews.forEach(function(r) { %>
+    <tr>
+      <td><a href="<%= contentHref(r.item_path) %>" target="_blank" rel="noopener noreferrer"><%= baseName(r.item_path) %></a><br><small class="muted"><a href="<%= contentHref(r.item_path) %>" target="_blank" rel="noopener noreferrer"><%= r.item_path %></a></small></td>
+      <td><%= r.viewer_name || '—' %></td>
+      <td><%= fmtIST(r.last_viewed_at) %></td>
+    </tr>
+  <% }) %>
+  </tbody>
+</table>
+<% } else { %>
+<p class="muted">No recently viewed content.</p>
+<% } %>
+
+<h3>Recently created questions</h3>
+<% if (recentQuestions && recentQuestions.length > 0) { %>
+<table class="admin-table">
+  <thead><tr><th>Question</th><th>Author</th><th>Created</th></tr></thead>
+  <tbody>
+  <% recentQuestions.forEach(function(q) { %>
+    <tr>
+      <td><a href="/discussions/<%= q.id %>"><%= q.title %></a><br><small class="muted"><a href="<%= contentHref(q.item_path) %>" target="_blank" rel="noopener noreferrer"><%= q.item_path %></a></small></td>
+      <td><%= q.author_name || '—' %></td>
+      <td><%= fmtIST(q.created_at) %></td>
+    </tr>
+  <% }) %>
+  </tbody>
+</table>
+<% } else { %>
+<p class="muted">No recent questions.</p>
+<% } %>
+</main>
+<%- include('partials/footer') %>
+</body></html>

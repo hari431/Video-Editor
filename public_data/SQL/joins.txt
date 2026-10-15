@@ -1,0 +1,36 @@
+JOINS
+=====
+
+Joins combine rows from multiple tables based on related data. Understanding join cardinality is essential for both correctness and performance.
+
+TYPES
+-----
+INNER JOIN returns matching rows. LEFT JOIN keeps all rows from the left side even when no match exists. RIGHT and FULL joins exist in some systems and can be expressed differently when needed.
+
+EXAMPLE
+-------
+SELECT p.policy_number, c.name
+FROM policies p
+JOIN customers c ON c.id = p.customer_id;
+
+CARDINALITY
+-----------
+A one-to-many join can multiply rows. If one policy has five claims, joining policies to claims produces five rows for that policy.
+
+COMMON MISTAKES
+---------------
+Joining on incomplete keys, accidentally converting a LEFT JOIN into an INNER JOIN through a WHERE predicate, and aggregating without considering multiplication.
+
+KEY TAKEAWAYS
+-------------
+Always ask: what is the relationship cardinality, and how many rows should one input row produce?
+
+ORIGINAL INTERVIEW / CHECKPOINT QUESTIONS
+------------------------------------------
+1. INNER vs LEFT JOIN?
+2. Why can a one-to-many join multiply rows?
+3. How can a WHERE condition unintentionally change a LEFT JOIN?
+
+EDITORIAL NOTE
+--------------
+This article is original educational content written for the public knowledge library. Reference material may have been used to understand terminology and cross-check concepts; copyrighted or proprietary source text is not reproduced.

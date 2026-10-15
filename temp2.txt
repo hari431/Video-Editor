@@ -1,0 +1,125 @@
+TAP version 13
+# Subtest: keep isAdVisibleForUser as single authority
+ok 1 - keep isAdVisibleForUser as single authority
+  ---
+  duration_ms: 316.978844
+  type: 'test'
+  ...
+# Subtest: keep ad-slot as abstraction boundary
+ok 2 - keep ad-slot as abstraction boundary
+  ---
+  duration_ms: 1.850598
+  type: 'test'
+  ...
+# Subtest: Google/AdSense code only rendered when showAd true and eligible
+ok 3 - Google/AdSense code only rendered when showAd true and eligible
+  ---
+  duration_ms: 1.833528
+  type: 'test'
+  ...
+# Subtest: never load advertising code on PDFs
+ok 4 - never load advertising code on PDFs
+  ---
+  duration_ms: 103.034126
+  type: 'test'
+  ...
+# Subtest: never load on restricted/private content
+ok 5 - never load on restricted/private content
+  ---
+  duration_ms: 0.497385
+  type: 'test'
+  ...
+# Subtest: never load on OWNER/ADMIN pages
+ok 6 - never load on OWNER/ADMIN pages
+  ---
+  duration_ms: 41.407664
+  type: 'test'
+  ...
+# Subtest: never load on login/authentication and error pages
+ok 7 - never load on login/authentication and error pages
+  ---
+  duration_ms: 18.949895
+  type: 'test'
+  ...
+# Subtest: do not use client-side params to decide eligibility
+ok 8 - do not use client-side params to decide eligibility
+  ---
+  duration_ms: 1.129794
+  type: 'test'
+  ...
+# Subtest: keep Google identifiers outside logic, not hard-coded
+ok 9 - keep Google identifiers outside logic, not hard-coded
+  ---
+  duration_ms: 1.044271
+  type: 'test'
+  ...
+# Subtest: default configuration keeps live advertising disabled
+ok 10 - default configuration keeps live advertising disabled
+  ---
+  duration_ms: 0.912847
+  type: 'test'
+  ...
+# Subtest: missing Google configuration does not break pages
+not ok 11 - missing Google configuration does not break pages
+  ---
+  duration_ms: 19.337061
+  type: 'test'
+  location: '/app/applet/tests/adsense-preparation.test.js:218:1'
+  failureType: 'testCodeFailure'
+  error: 'no ad slot when disabled'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (file:///app/applet/tests/adsense-preparation.test.js:227:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: placeholder mode so tests can verify without contacting Google
+ok 12 - placeholder mode so tests can verify without contacting Google
+  ---
+  duration_ms: 1.998038
+  type: 'test'
+  ...
+# Subtest: no real Google network call by test suite
+ok 13 - no real Google network call by test suite
+  ---
+  duration_ms: 2.798015
+  type: 'test'
+  ...
+# Subtest: eligible USER content can render prepared ad component in placeholder mode
+ok 14 - eligible USER content can render prepared ad component in placeholder mode
+  ---
+  duration_ms: 46.188251
+  type: 'test'
+  ...
+# Subtest: OWNER/ADMIN/PDF/restricted cannot render prepared component
+ok 15 - OWNER/ADMIN/PDF/restricted cannot render prepared component
+  ---
+  duration_ms: 0.743712
+  type: 'test'
+  ...
+# Subtest: client-side query attempts cannot force ad rendering
+ok 16 - client-side query attempts cannot force ad rendering
+  ---
+  duration_ms: 34.007291
+  type: 'test'
+  ...
+# Subtest: do not implement payments/premium
+ok 17 - do not implement payments/premium
+  ---
+  duration_ms: 0.835174
+  type: 'test'
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 16
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 781.287911

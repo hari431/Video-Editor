@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Crop PDF · Admin · Learn with me</title><link rel="stylesheet" href="/styles.css"><%- include('partials/adsense-verification') %></head>
+<body><header class="topbar"><a class="brand" href="/">Learn with me</a><div class="user"><a href="/account" style="text-decoration: underline; font-weight: bold;"><%= user.name || user.email %></a><% if (typeof user !== 'undefined' && user) { %><span class="user-status-text" style="color: #64748b; font-size: 13px; margin-left: 6px;"><%= (typeof getUserHeaderStatus === 'function') ? getUserHeaderStatus(user) : (user.status ? (user.status.charAt(0).toUpperCase() + user.status.slice(1)) : 'Active') %><% if (user.access_expires_at) { %> <span class="user-access-until">(Access Until: <%= new Date(user.access_expires_at).toLocaleDateString() %>)</span><% } %></span><% } %><form method="post" action="/logout"><button type="submit">Sign out</button></form></div></header>
+<main class="container" style="max-width:900px;">
+<h1>Crop PDF</h1>
+<%- include('partials/admin-nav') %>
+
+<p class="muted">Admin/Owner only. Trim page edges of a local PDF by margins (in points, 72 per inch) and download a <strong>new</strong> file. Cropping only narrows the visible page rectangle — content is never re-rendered or removed. The original file is never modified. This tool is <strong>disabled in production</strong>.</p>
+
+<% const _available = typeof pdfCropAvailable !== 'undefined' ? !!pdfCropAvailable : false; %>
+<% const _maxMb = (typeof pdfCropMaxFileMb !== 'undefined' && Number.isFinite(Number(pdfCropMaxFileMb)) && Number(pdfCropMaxFileMb) >= 1) ? Math.floor(Number(pdfCropMaxFileMb)) : 50; %>
+<% if (!_available) { %>
+  <p class="flash flash-error" data-testid="pdf-crop-disabled">PDF crop is disabled in production. Run the app locally (development) to use it.</p>
+<% } %>
+
+<div data-testid="pdf-crop-root" data-available="<%= _available ? '1' : '0' %>" data-max-file-mb="<%= _maxMb %>">
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0;">
+    <button type="button" class="button small" id="pdfCropPick" data-testid="pdf-crop-pick" <%= _available ? '' : 'disabled' %>>📂 Select PDF</button>
+    <input type="file" id="pdfCropFile" data-testid="pdf-crop-file" accept=".pdf,application/pdf" style="display:none;" <%= _available ? '' : 'disabled' %>>
+    <span class="muted" style="font-size:12px;">One file · max <%= _maxMb %> MB</span>
+  </div>
+  <p class="muted" id="pdfCropFileInfo" data-testid="pdf-crop-fileinfo" style="font-size:13px;">No PDF selected yet.</p>
+  <fieldset style="border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;margin:12px 0;max-width:560px;">
+    <legend style="font-size:13px;font-weight:700;padding:0 6px;">Margins (points)</legend>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <label style="font-size:13px;">Top <input type="number" id="pdfCropTop" data-testid="pdf-crop-top" value="36" min="0" max="360" step="1" style="width:70px;" <%= _available ? '' : 'disabled' %>></label>
+      <label style="font-size:13px;">Right <input type="number" id="pdfCropRight" data-testid="pdf-crop-right" value="36" min="0" max="360" step="1" style="width:70px;" <%= _available ? '' : 'disabled' %>></label>
+      <label style="font-size:13px;">Bottom <input type="number" id="pdfCropBottom" data-testid="pdf-crop-bottom" value="36" min="0" max="360" step="1" style="width:70px;" <%= _available ? '' : 'disabled' %>></label>
+      <label style="font-size:13px;">Left <input type="number" id="pdfCropLeft" data-testid="pdf-crop-left" value="36" min="0" max="360" step="1" style="width:70px;" <%= _available ? '' : 'disabled' %>></label>
+    </div>
+  </fieldset>
+  <fieldset style="border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;margin:12px 0;max-width:560px;">
+    <legend style="font-size:13px;font-weight:700;padding:0 6px;">Pages to crop</legend>
+    <label style="display:block;font-size:13px;margin:6px 0;">
+      <input type="radio" name="pdfCropScope" value="all" data-testid="pdf-crop-scope-all" checked <%= _available ? '' : 'disabled' %>>
+      All pages
+    </label>
+    <label style="display:block;font-size:13px;margin:6px 0;">
+      <input type="radio" name="pdfCropScope" value="range" data-testid="pdf-crop-scope-range" <%= _available ? '' : 'disabled' %>>
+      Selected pages
+      <input type="text" id="pdfCropSelection" data-testid="pdf-crop-selection" placeholder="e.g. 1-3,5" autocomplete="off" spellcheck="false" style="width:200px;margin-left:8px;" <%= _available ? '' : 'disabled' %>>
+    </label>
+  </fieldset>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0;">
+    <button type="button" class="button small primary" id="pdfCropBtn" data-testid="pdf-crop-submit" <%= _available ? '' : 'disabled' %>>✂ Crop &amp; download</button>
+    <button type="button" class="button small secondary" id="pdfCropClear" data-testid="pdf-crop-clear" <%= _available ? '' : 'disabled' %>>Clear</button>
+  </div>
+  <div id="pdfCropProgress" data-testid="pdf-crop-progress" style="display:none;margin-top:8px;font-size:13px;font-weight:600;" role="status" aria-live="polite">Cropping… <span id="pdfCropProgressPct">0%</span></div>
+  <p class="muted" data-testid="pdf-crop-status" id="pdfCropStatus" style="font-size:13px;font-weight:600;"></p>
+  <p class="muted" data-testid="pdf-crop-result" id="pdfCropResult" style="font-size:13px;"></p>
+</div>
+
+</main>
+<%- include('partials/footer') %>
+<script type="module" src="/admin-pdf-crop.js?v=<%= Date.now() %>"></script>
+</body></html>

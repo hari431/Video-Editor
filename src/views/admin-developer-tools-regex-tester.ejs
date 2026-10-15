@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Regular Expression Tester · Admin · Learn with me</title>
+  <link rel="stylesheet" href="/styles.css">
+  <%- include('partials/adsense-verification') %>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/">Learn with me</a>
+    <div class="user">
+      <a href="/account" style="text-decoration: underline; font-weight: bold;"><%= user.name || user.email %></a>
+      <% if (typeof user !== 'undefined' && user) { %>
+        <span class="user-status-text" style="color: #64748b; font-size: 13px; margin-left: 6px;">
+          <%= (typeof getUserHeaderStatus === 'function') ? getUserHeaderStatus(user) : (user.status ? (user.status.charAt(0).toUpperCase() + user.status.slice(1)) : 'Active') %>
+          <% if (user.access_expires_at) { %>
+            <span class="user-access-until">(Access Until: <%= new Date(user.access_expires_at).toLocaleDateString() %>)</span>
+          <% } %>
+        </span>
+      <% } %>
+      <form method="post" action="/logout">
+        <button type="submit">Sign out</button>
+      </form>
+    </div>
+  </header>
+
+  <main class="container" style="max-width:1100px;">
+    <h1>Regular Expression Tester</h1>
+    <%- include('partials/admin-nav') %>
+
+    <p class="muted">
+      Admin/Owner only. Test regular expression pattern matching and search replace transformations instantly in-memory. **Uses secure browser sandboxed JavaScript RegExp engine execution semantics.** Everything runs fully offline.
+    </p>
+
+    <!-- Interactive Setup Panel -->
+    <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:20px; margin-top:20px;">
+      
+      <!-- Metadata parameters -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 pb-4 border-b border-slate-100">
+        <div class="md:col-span-3">
+          <label for="regexPatternInput" class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">RegExp Pattern</label>
+          <div class="flex items-center gap-1 bg-slate-50 border border-slate-300 rounded-lg overflow-hidden focus-within:ring-1 focus-within:ring-indigo-500">
+            <span class="px-2.5 font-bold font-mono text-slate-400 select-none text-sm">/</span>
+            <input type="text" id="regexPatternInput" placeholder="e.g. (?<prefix>cc|pc)-(\d{6})" class="py-2 border-0 bg-transparent text-sm w-full font-mono focus:outline-none" />
+            <span class="px-2.5 font-bold font-mono text-slate-400 select-none text-sm">/</span>
+          </div>
+        </div>
+        <div>
+          <label for="regexFlagsInput" class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Flags</label>
+          <input type="text" id="regexFlagsInput" value="g" placeholder="g, i, m, s" class="px-3 py-2 border border-slate-300 rounded-lg text-sm w-full font-mono bg-slate-50 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+        </div>
+      </div>
+
+      <!-- Substitution Input -->
+      <div class="mb-4">
+        <label for="regexReplaceInput" class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Replace Template (Optional)</label>
+        <input type="text" id="regexReplaceInput" placeholder="e.g. GW_ID: $1 (supports standard $1, $2, or $<name> groups)" class="px-3 py-2 border border-slate-300 rounded-lg text-sm w-full font-mono bg-slate-50 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+      </div>
+
+      <!-- Test text string -->
+      <div class="mb-4">
+        <label for="regexTestTextInput" class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Test Subject Text</label>
+        <textarea id="regexTestTextInput" placeholder="Paste your test text target here..." style="width:100%; height:130px; font-family:monospace; font-size:12px; padding:12px; border:1px solid #cbd5e1; border-radius:8px; resize:vertical; background:#f8fafc;"></textarea>
+      </div>
+
+      <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:24px;">
+        <button type="button" class="button small primary" id="btnTestRegex">⚡ Evaluate RegExp</button>
+        <button type="button" class="button small secondary" id="btnLoadSample">Load Sample</button>
+        <button type="button" class="button small secondary" id="btnClearAll" data-testid="clear-btn">Clear</button>
+      </div>
+
+      <!-- Error banner -->
+      <div id="errorContainer" class="hidden bg-red-50 border border-red-200 text-red-900 rounded-xl p-4 mb-6"></div>
+
+      <!-- Analysis Results panel -->
+      <div id="resultsPanel" class="hidden">
+        <hr style="border:0; border-top:1px solid #e2e8f0; margin:24px 0;">
+
+        <!-- Matching Stats Metrics -->
+        <div class="grid grid-cols-2 gap-4 mb-6">
+          <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center">
+            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Matches Found</span>
+            <span id="matchCountStat" class="text-2xl font-black text-slate-800">0</span>
+          </div>
+          <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center">
+            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Execution Scope</span>
+            <span class="text-sm font-bold text-indigo-700 block mt-1.5 uppercase font-mono">JS RegExp Engine</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+          
+          <!-- Live Highlighter view -->
+          <div class="space-y-4">
+            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100 pb-2">Visual Match Highlights</h3>
+            <div id="highlightedPreview" class="bg-slate-50 border border-slate-200 p-4 rounded-xl text-xs font-mono text-slate-800 leading-relaxed min-h-[120px] whitespace-pre-wrap select-all">
+              <!-- Rendered highlight HTML -->
+            </div>
+          </div>
+
+          <!-- Live Replace view -->
+          <div class="space-y-4">
+            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100 pb-2">Substitution Preview</h3>
+            <pre id="replacedPreviewPre" class="bg-slate-50 border border-slate-200 p-4 rounded-xl text-xs font-mono text-slate-800 leading-relaxed min-h-[120px] whitespace-pre-wrap select-all"></pre>
+          </div>
+        </div>
+
+        <!-- Capture groups detailed structure lists -->
+        <div class="mt-6">
+          <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100 pb-2">Extracted Group Captures</h3>
+          <div id="captureGroupsContainer" class="overflow-x-auto border rounded-xl mt-3 bg-white">
+            <!-- Captured tables rendered here -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <%- include('partials/footer') %>
+  <script type="module" src="/admin-developer-tools-regex-tester.js?v=<%= Date.now() %>"></script>
+</body>
+</html>

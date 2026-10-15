@@ -1,0 +1,34 @@
+REINSURANCE
+===========
+
+Reinsurance is insurance purchased by an insurer to transfer part of its exposure to another insurer or reinsurer.
+
+WHY IT EXISTS
+-------------
+Reinsurance can help manage catastrophe exposure, capacity, capital needs and portfolio volatility.
+
+CONCEPTUAL EXAMPLE
+------------------
+An insurer may retain a defined portion of losses and transfer another portion under a reinsurance agreement. The exact structure can be quota share, excess of loss or another arrangement.
+
+NOT THE SAME AS COINSURANCE
+---------------------------
+Reinsurance is primarily an arrangement between insurance organizations. Coinsurance can describe shared coverage between insurers in other contexts.
+
+COMMON MISTAKES
+---------------
+Thinking the policyholder automatically deals directly with the reinsurer or assuming all reinsurance structures work the same way.
+
+KEY TAKEAWAYS
+-------------
+Reinsurance helps insurers manage their own risk; it usually sits behind the primary insurance relationship.
+
+ORIGINAL INTERVIEW / CHECKPOINT QUESTIONS
+------------------------------------------
+1. Why do insurers buy reinsurance?
+2. Reinsurance vs primary insurance?
+3. What is catastrophe capacity?
+
+EDITORIAL NOTE
+--------------
+This article is original educational content written for the public knowledge library. Reference material may have been used to understand terminology and cross-check concepts; copyrighted or proprietary source text is not reproduced.

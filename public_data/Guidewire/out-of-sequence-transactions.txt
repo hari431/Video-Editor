@@ -1,0 +1,63 @@
+OUT-OF-SEQUENCE TRANSACTIONS
+============================
+
+An out-of-sequence transaction occurs when a transaction is effective earlier than a transaction that was already bound later in the policy timeline.
+
+CONCEPT
+-------
+Imagine a policy change was bound effective July 1, then another transaction is created later but needs an effective date of June 15. The second transaction is earlier in effective-date sequence.
+
+WHY IT IS DIFFICULT
+-------------------
+The system must preserve the meaning of the policy timeline and determine how later transactions are affected.
+
+PREEMPTION AND REWRITING
+------------------------
+When an OOS transaction binds, Guidewire may preempt (invalidate) the later-bound branch's slices after the OOS effective date, or rewrite them by replaying their edits on top of the new branch. Example:
+
+Branch A (Bound 2026-07-01)  [Jan 01 ------- July01 --------------- Dec31)
+Branch B (OOS 2026-06-15 later created, effective June15) [Jan01 -- June15 ------- Dec31)
+After Branch B binds, Branch A's slices after June15 are preempted; its non-conflicting changes are re-applied onto Branch B's slices where possible. Rating is re-run.
+
+REFERENCE GROUNDING
+-------------------
+The supplied PolicyCenter material defines out-of-sequence transactions in this general temporal sense and also discusses reinstatement scenarios.
+
+PRACTICAL THINKING WITH DATES
+-----------------------------
+Always distinguish `CreateTime` vs `EditEffectiveDate` vs `SliceDate`. Code that sorts Jobs by creation order and assumes that is the policy order will misreport coverage at loss. Use:
+
+var job = Job.finder.findJobByJobNumber("12345")
+var oosEffective = job.LatestPeriod.EditEffectiveDate
+var createdOn = job.CreateTime
+
+Comparison `job.CreateTime > other.CreateTime` does not imply `EditEffectiveDate` ordering.
+
+GOSU DETECTION PATTERN
+----------------------
+To list policy periods that may be OOS candidates for a given effective date:
+
+uses gw.api.database.Query
+var candidates = Query.make(entity.PolicyPeriod)
+  .compare(PolicyPeriod#PolicyNumber, Equals, policyNumber)
+  .compare(PolicyPeriod#EditEffectiveDate, GreaterThan, oosEffective)
+  .compare(PolicyPeriod#Job, NotEquals, null)
+  .select()
+
+COMMON MISTAKES
+---------------
+Assuming the latest transaction created is always the latest effective transaction. Also quoting an OOS PolicyChange without re-quoting downstream preempted branches, leading to stale premium.
+
+KEY TAKEAWAYS
+-------------
+Out-of-sequence reasoning is fundamentally about effective dates versus transaction order.
+
+ORIGINAL INTERVIEW / CHECKPOINT QUESTIONS
+------------------------------------------
+1. What makes a transaction out of sequence?
+2. Why is effective date important?
+3. Can a later-created transaction be earlier in time?
+
+EDITORIAL NOTE
+--------------
+This article is original educational content written for the public knowledge library. Reference material may have been used to understand terminology and cross-check concepts; copyrighted or proprietary source text is not reproduced.

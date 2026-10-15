@@ -1,0 +1,62 @@
+GUIDEWIRE POLICY HISTORY AND TRANSACTION THINKING
+=================================================
+
+Insurance policy systems need history because a policy is not a single static record; it evolves through effective-dated transactions.
+
+TEMPORAL MODEL
+--------------
+A policy can have terms and transactions with effective dates. Historical reconstruction requires knowing what transaction was effective at a particular point in time.
+
+WHY IT MATTERS
+--------------
+Claims, billing, audits, renewals and regulatory inquiries may all depend on historical policy state.
+
+BRANCH AND SLICE MODEL
+----------------------
+Guidewire implements history with Branch and Slice. A Policy has many Branches (one per Job). Each Branch contains many Slices (time segments). A Slice is effective from `SliceDate` until the next SliceDate or PeriodEnd. Example timeline:
+
+Branch 1 (Submission)         [2026-01-01 ------------------- 2026-07-01 End)
+Branch 2 (PolicyChange 06-15) [2026-01-01 ---- 2026-06-15 ---- 2026-07-01)
+Bound Branch is the winning branch per effective date after preemption.
+
+Querying historical state requires specifying AsOfDate:
+
+uses gw.api.database.Query
+
+var hist = Query.make(entity.PolicyPeriod)
+  .compare(PolicyPeriod#PolicyNumber, Equals, "12345")
+  .compare(PolicyPeriod#AsOfDate, Equals, lossDate)
+  .select()
+
+Upstream systems that read `PolicyPeriod` without `AsOfDate` often retrace the wrong deductible.
+
+GOSU TIME-AWARE ACCESS
+----------------------
+Period methods encapsulate date arithmetic:
+
+var coverageAtLoss = period.getCoverageAtDate("CollisionCov", lossDate)
+var isEffective = period.isEffectiveAt(lossDate)
+
+Avoid manual `if (effective <= date && date < expiration)` across slices; use the platform's slice accessors which respect branch preemption.
+
+REFERENCE GROUNDING
+-------------------
+The supplied PolicyCenter material discusses new versions, out-of-sequence transactions, preemption, rewrites and transaction history.
+
+COMMON MISTAKES
+---------------
+Looking only at the latest policy values when investigating a historical event. Also selecting `Policy` without a Branch/Slice filter and therefore reporting the most recent terms instead of the terms effective at loss.
+
+KEY TAKEAWAYS
+-------------
+Effective-dated transaction history is fundamental to understanding insurance policy administration.
+
+ORIGINAL INTERVIEW / CHECKPOINT QUESTIONS
+------------------------------------------
+1. Why does policy history matter?
+2. Why is latest-state data insufficient?
+3. How do OOS transactions challenge history?
+
+EDITORIAL NOTE
+--------------
+This article is original educational content written for the public knowledge library. Reference material may have been used to understand terminology and cross-check concepts; copyrighted or proprietary source text is not reproduced.

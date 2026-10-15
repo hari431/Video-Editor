@@ -1,0 +1,38 @@
+EXCEPTION HANDLING
+==================
+
+Exceptions represent abnormal conditions or failures that interrupt normal control flow. Good exception handling preserves context without hiding failures.
+
+CHECKED AND UNCHECKED
+---------------------
+Java distinguishes checked exceptions from unchecked RuntimeException-based failures. Checked exceptions can be useful when callers are expected to handle a recoverable condition; unchecked exceptions are common for programming errors and invalid state.
+
+TRY/CATCH/FINALLY
+-----------------
+Catch exceptions at a boundary where the application can take meaningful action. finally or try-with-resources can be used for cleanup.
+
+EXAMPLE
+-------
+try (var reader = Files.newBufferedReader(path)) {
+    return reader.readLine();
+} catch (IOException e) {
+    throw new ServiceException("Unable to read configuration", e);
+}
+
+COMMON MISTAKES
+---------------
+Empty catch blocks, catching Exception everywhere, losing the original cause, and using exceptions for ordinary branching create difficult-to-debug systems.
+
+KEY TAKEAWAYS
+-------------
+Catch exceptions where you can add value, preserve the cause, and avoid silently converting failures into success.
+
+ORIGINAL INTERVIEW / CHECKPOINT QUESTIONS
+------------------------------------------
+1. Checked vs unchecked exception?
+2. Why preserve the cause?
+3. Why is try-with-resources useful?
+
+EDITORIAL NOTE
+--------------
+This article is original educational content written for the public knowledge library. Reference material may have been used to understand terminology and cross-check concepts; copyrighted or proprietary source text is not reproduced.

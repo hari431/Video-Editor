@@ -1,0 +1,92 @@
+JAVA MEMORY LAYOUT: VARIABLES, DATA TYPES, & OPERATORS
+===================================================
+
+Java is a strongly, statically typed object-oriented programming language. Type safety guarantees that every variable, parameter, and expression has a declared type defined at compile-time, allowing the compiler to perform rigorous verification and optimize execution memory profiles.
+
+PRIMITIVE VS REFERENCE TYPES & JVM MEMORY ALLOCATION
+----------------------------------------------------
+Java splits its type system into two distinct categories, which govern how values are stored, manipulated, and accessed in memory:
+
+1. Primitive Types (Value Types)
+Java has 8 built-in primitive types: `byte`, `short`, `int`, `long`, `float`, `double`, `boolean`, and `char`. They represent raw, atomic values directly and do not have methods or object headers.
+- Memory Layout: Primitives are stored directly where they are declared. If defined as a local variable within a method, they reside directly on the **Thread Stack**. If defined as an instance field of a class, they reside inline within the object's memory block on the **Heap**.
+
+2. Reference Types (Object Types)
+Classes, interfaces, arrays, and enums are reference types. A reference variable does not hold the object's data directly; instead, it holds a 32-bit or 64-bit memory address pointing to the object's location on the Heap.
+- Memory Layout: Object instances are always allocated on the **Garbage-Collected Heap**. The reference variable itself resides on the Stack, acting as a pointer to that Heap address. Reference variables can be assigned `null` if they do not point to any object.
+
+INTEGER CACHING & WRAPPER EQUALITY PITFALLS
+-------------------------------------------
+Every primitive type has a corresponding object wrapper class (e.g. `int` maps to `Integer`). Converting primitives to wrappers is called "boxing", and the reverse is "unboxing". 
+
+To optimize performance, the JVM maintains an internal cache of `Integer` objects for values between **-128 and 127** (customizable via `-XX:AutoBoxCacheMax`).
+- Within the cached range, autoboxing reuse the same object reference, so `==` returns `true`.
+- Outside the cached range, autoboxing instantiates new objects, causing `==` (which compares reference addresses) to return `false` even if the values are identical.
+
+Integer a = 127, b = 127;   // a == b  → true  (referenced from JVM Cache)
+Integer c = 128, d = 128;   // c == d  → false (different heap objects!)
+boolean match = c.equals(d);// match  → true  (compares inner numeric value)
+
+int x = 128;                // c == x  → true  (unboxing: c is converted to primitive 128 before comparison)
+
+MONETARY PRECISION & DECIMAL SYSTEMS
+------------------------------------
+Using `double` or `float` for financial calculations is a severe architectural error. Floating-point numbers are stored as binary fractions under the IEEE 754 standard, which cannot represent exact base-10 decimal fractions like `0.1` or `0.2`.
+
+double wrongTotal = 0.1 + 0.2; // wrongTotal evaluates to 0.30000000000000004
+
+To prevent rounding errors in monetary applications, developers must use:
+- BigDecimal: Represents exact, arbitrary-precision signed decimals. (Always use the string constructor: `new BigDecimal("0.1")`).
+- Long Cents: Store monetary values as integers representing the smallest currency unit (e.g., storing $19.99 as `1999L` cents).
+
+JAVA OPERATORS & LOGICAL SHORT-CIRCUITING
+-----------------------------------------
+Operators evaluate values according to strict precedence rules:
+1. Arithmetic Operators: `+`, `-`, `*`, `/`, `%` (modulo)
+2. Shift & Bitwise Operators: `<<`, `>>`, `>>>` (unsigned right-shift), `&`, `|`, `^` (bitwise XOR)
+3. Logical Operators: `&&` (logical AND), `||` (logical OR), `!` (logical NOT)
+
+*Logical Short-Circuiting:* The double operators `&&` and `||` evaluate the right-hand operand only if the left-hand operand is insufficient to determine the final result:
+- In `A && B`, if `A` is `false`, `B` is skipped.
+- In `A || B`, if `A` is `true`, `B` is skipped.
+
+This behavior is critical for avoiding `NullPointerExceptions` in single-line guards:
+```java
+// Safe null and length check because of short-circuiting
+if (name != null && name.length() > 0) {
+    System.out.println("Valid Name: " + name);
+}
+```
+
+TYPE CASTING: WIDENING, NARROWING, & OVERFLOWS
+----------------------------------------------
+Converting a value from one primitive type to another occurs in two ways:
+1. Widening Cast (Implicit): Converting a smaller type to a larger type (e.g. `int` to `long`). It is safe and performed automatically by the compiler because no data can be lost.
+2. Narrowing Cast (Explicit): Converting a larger type to a smaller type (e.g. `long` to `int`, or `double` to `int`). It requires an explicit cast operator `(type)` because it risks loss of precision or numeric overflow.
+
+```java
+long bigVal = 100L;
+int truncated = (int) bigVal; // Explicit cast required
+
+// Integer Overflow Example
+int maxInt = Integer.MAX_VALUE; // 2,147,483,647
+int overflowed = maxInt + 1;    // Evaluates to -2,147,483,648 (wraps around to minimum value)
+```
+
+COMMON MISTAKES
+---------------
+1. Using == on Object Wrappers: Comparing wrapper instances using `==` instead of `.equals()`. This works in test environments for small numbers due to the Integer Cache, but breaks randomly in production when inputs exceed 127.
+2. Underestimating Integer Overflow: Assuming that adding integers is always mathematically safe. If numbers are unbounded, use `long` or the safe math classes `Math.addExact()`, which throw an ArithmeticException on overflow.
+3. Floats for Money: Utilizing `double` for currency calculations, causing fractional pennies to accumulate or disappear.
+
+KEY TAKEAWAYS
+-------------
+- Primitive variables store values directly on the Stack (local) or Heap (inline in objects); reference variables store a Heap address.
+- Wrapper classes feature an Integer Cache between -128 and 127; always compare wrappers using `.equals()`.
+- Use logical short-circuiting operators (`&&`, `||`) to construct safe, null-resistant conditional checks.
+
+ORIGINAL INTERVIEW / CHECKPOINT QUESTIONS
+------------------------------------------
+1. Why does `Integer a = 128; Integer b = 128; a == b` evaluate to false, while `Integer a = 10; Integer b = 10; a == b` evaluates to true?
+2. What are the CPU and memory layout differences between a primitive `int` array and an `Integer` object array?
+3. Explain the difference between logical AND (`&&`) and bitwise AND (`&`) when evaluated inside a conditional statement.

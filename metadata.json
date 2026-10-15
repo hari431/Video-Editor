@@ -1,0 +1,8 @@
+{
+  "name": "Gosu Query Library",
+  "description": "Private learning library with Guidewire Gosu query files, video guides, discussions, role-based access, generic role-controlled private learner notes across library and interview content, and a public educational knowledge base.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

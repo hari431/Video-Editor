@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>CSV / TSV Analyzer · Admin · Learn with me</title>
+  <link rel="stylesheet" href="/styles.css">
+  <%- include('partials/adsense-verification') %>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/">Learn with me</a>
+    <div class="user">
+      <a href="/account" style="text-decoration: underline; font-weight: bold;"><%= user.name || user.email %></a>
+      <% if (typeof user !== 'undefined' && user) { %>
+        <span class="user-status-text" style="color: #64748b; font-size: 13px; margin-left: 6px;">
+          <%= (typeof getUserHeaderStatus === 'function') ? getUserHeaderStatus(user) : (user.status ? (user.status.charAt(0).toUpperCase() + user.status.slice(1)) : 'Active') %>
+          <% if (user.access_expires_at) { %>
+            <span class="user-access-until">(Access Until: <%= new Date(user.access_expires_at).toLocaleDateString() %>)</span>
+          <% } %>
+        </span>
+      <% } %>
+      <form method="post" action="/logout">
+        <button type="submit">Sign out</button>
+      </form>
+    </div>
+  </header>
+
+  <main class="container" style="max-width:1100px;">
+    <h1>CSV / TSV Layout Analyzer &amp; Audit Tool</h1>
+    <%- include('partials/admin-nav') %>
+
+    <p class="muted">
+      Admin/Owner only. Upload or paste any raw CSV/TSV data to validate row alignments, analyze header duplication, identify completely empty columns, audit inconsistent data row length distributions, and browse interactive previews. **Runs fully local and handles escaped multi-line fields cleanly.**
+    </p>
+
+    <!-- Interactive Panel -->
+    <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:20px; margin-top:20px;">
+      
+      <!-- Configurations Row -->
+      <div class="flex items-center justify-between gap-4 mb-4 flex-wrap border-b border-slate-100 pb-3">
+        <h2 style="font-size:16px; margin:0;">Source Configuration</h2>
+        <div class="flex items-center gap-3 flex-wrap">
+          <select id="delimiterSelect" class="px-3 py-1.5 border border-slate-300 rounded-lg text-xs bg-slate-50 focus:bg-white focus:outline-none">
+            <option value="auto">Auto-Detect Delimiter</option>
+            <option value=",">Comma (CSV)</option>
+            <option value="&#9;">Tab (TSV)</option>
+            <option value=";">Semicolon</option>
+          </select>
+          <button type="button" class="button small secondary font-semibold" id="loadSampleBtn">Load Sample CSV</button>
+        </div>
+      </div>
+
+      <!-- File Inputs & Paste Box -->
+      <div class="grid grid-cols-1 gap-4 mb-4">
+        <div>
+          <label for="csvFileInput" class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Select Local CSV/TSV File</label>
+          <input type="file" id="csvFileInput" accept=".csv,.tsv,.txt" style="width:100%; max-width:400px; font-size:13px; padding:8px; border:1px solid #cbd5e1; border-radius:8px; background:#f8fafc;" />
+        </div>
+        <div>
+          <label for="csvInput" class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Paste Raw Data</label>
+          <textarea id="csvInput" placeholder="Paste CSV or TSV contents here..." style="width:100%; height:180px; font-family:monospace; font-size:12px; padding:12px; border:1px solid #cbd5e1; border-radius:8px; resize:vertical; background:#f8fafc;"></textarea>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:24px;">
+        <button type="button" class="button small primary" id="analyzeBtn">⚡ Analyze &amp; Audit Data</button>
+        <button type="button" class="button small secondary" id="clearBtn">Clear</button>
+      </div>
+
+      <!-- Error display banner -->
+      <div id="errorContainer" class="hidden bg-red-50 border border-red-200 text-red-900 rounded-xl p-4 mb-6"></div>
+
+      <!-- Result View Block -->
+      <div id="resultsPanel" class="hidden">
+        <hr style="border:0; border-top:1px solid #e2e8f0; margin:24px 0;">
+
+        <!-- Metadata Metrics -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center">
+            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Total Rows</span>
+            <span id="statRows" class="text-2xl font-black text-slate-800">0</span>
+          </div>
+          <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center">
+            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Columns Count</span>
+            <span id="statCols" class="text-2xl font-black text-slate-800">0</span>
+          </div>
+          <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center">
+            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">File Format</span>
+            <span class="text-lg font-black text-indigo-800 uppercase block mt-1">UTF-8 Local</span>
+          </div>
+          <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center">
+            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Scope</span>
+            <span class="text-sm font-bold text-slate-700 block mt-1">Local Browser</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+          
+          <!-- Column Analysis & Table Preview Panel -->
+          <div class="md:col-span-2 space-y-4">
+            
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2 flex-wrap gap-2">
+              <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                Parsed Data Grid Preview
+              </h3>
+              
+              <!-- Search Table Input -->
+              <input type="text" id="tableFilterInput" placeholder="Search rows..." class="px-2.5 py-1 border rounded-lg text-xs bg-slate-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 w-full sm:w-48" />
+            </div>
+
+            <div class="overflow-x-auto border rounded-xl bg-white shadow-sm max-h-[350px]">
+              <table class="w-full text-left border-collapse">
+                <thead id="tableHeader"></thead>
+                <tbody id="tableBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Integrity Audits / Alerts Sidebar -->
+          <div class="space-y-4">
+            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100 pb-2">Integrity Audit Checks</h3>
+            <div id="auditAlertsContainer" class="space-y-3">
+              <!-- Rendered Alerts -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <%- include('partials/footer') %>
+  <script type="module" src="/admin-developer-tools-csv-analyzer.js?v=<%= Date.now() %>"></script>
+</body>
+</html>

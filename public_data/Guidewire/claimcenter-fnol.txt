@@ -1,0 +1,60 @@
+CLAIMCENTER FNOL
+================
+
+First Notice of Loss (FNOL) is the initial intake of information about a reported loss.
+
+PURPOSE
+-------
+FNOL establishes the initial claim record, captures who reported the loss, when and where it happened, what may have been damaged, and other information required for triage.
+
+VALIDATION LEVELS
+-----------------
+Claim validation is staged. Typical levels include:
+
+NewClaimSaved        Minimal data to persist a draft claim; many fields may be missing.
+AbilityToPay         Checks that payment is plausible (coverage, deductible) without full investigation.
+ExternalSubmission   Stricter checks before sending to external systems.
+LoadSave             Full save-time validation for most fields.
+PreUpdate            Runs only if certain fields changed.
+
+Each level is triggered at a different point in the wizard or API call. A claim can pass `AbilityToPay` but fail `LoadSave` until an adjuster completes missing exposures.
+
+PRACTICAL FLOW AND DATA REFINEMENT
+----------------------------------
+FNOL captures reporter, loss date/time, location, loss cause, damaged items, and initial contacts. After creation, investigation adds police reports, photos, estimates, and coverage verification. The initial loss cause may be recoded from “Vehicle Collision” to “Weather” after inspection; the Claim entity retains history via Notes and changing Exposures. Treat FNOL as a starting snapshot, not the final truth.
+
+GOSU CREATION SKETCH
+--------------------
+FNOL can be created via entity builders inside a transaction bundle (simplified):
+
+uses gw.api.database.Query
+uses gw.transaction.Transaction
+
+Transaction.runWithNewBundle(\bundle -> {
+  var claim = new ClaimBuilder()
+    .withLossDate(Date.Today)
+    .withLossCause(LossCause.TC_COLLISION)
+    .withReportedBy(ReporterType.TC_INSURED)
+    .create(bundle)
+  // Add a linked VehicleIncident → Exposure → ReserveLine later in same bundle or subsequent bundle
+})
+
+Real implementations populate LOB-specific incidents (VehicleIncident vs PropertyIncident) before creating Exposures; omitting the Incident causes exposure creation errors.
+
+COMMON MISTAKES
+---------------
+Trying to collect every possible investigation detail at FNOL or assuming missing initial information can never be updated. Also assuming FNOL validation is final; many fields are intentionally allowed empty at `NewClaimSaved` and enforced later at `LoadSave`.
+
+KEY TAKEAWAYS
+-------------
+FNOL is the starting point for claim intake; investigation and validation continue after initial reporting.
+
+ORIGINAL INTERVIEW / CHECKPOINT QUESTIONS
+------------------------------------------
+1. What is FNOL?
+2. Why are validation levels useful?
+3. Can FNOL information change?
+
+EDITORIAL NOTE
+--------------
+This article is original educational content written for the public knowledge library. Reference material may have been used to understand terminology and cross-check concepts; copyrighted or proprietary source text is not reproduced.

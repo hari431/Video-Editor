@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Unlock PDF · Admin · Learn with me</title><link rel="stylesheet" href="/styles.css"><%- include('partials/adsense-verification') %></head>
+<body><header class="topbar"><a class="brand" href="/">Learn with me</a><div class="user"><a href="/account" style="text-decoration: underline; font-weight: bold;"><%= user.name || user.email %></a><% if (typeof user !== 'undefined' && user) { %><span class="user-status-text" style="color: #64748b; font-size: 13px; margin-left: 6px;"><%= (typeof getUserHeaderStatus === 'function') ? getUserHeaderStatus(user) : (user.status ? (user.status.charAt(0).toUpperCase() + user.status.slice(1)) : 'Active') %><% if (user.access_expires_at) { %> <span class="user-access-until">(Access Until: <%= new Date(user.access_expires_at).toLocaleDateString() %>)</span><% } %></span><% } %><form method="post" action="/logout"><button type="submit">Sign out</button></form></div></header>
+<main class="container" style="max-width:900px;">
+<h1>Unlock PDF</h1>
+<%- include('partials/admin-nav') %>
+
+<p class="muted">Admin/Owner only. Upload one password-protected PDF and enter its document password to download a <strong>new</strong> unlocked copy. The original file is never modified. The password is tried exactly once — it is never guessed, brute-forced, bypassed, recovered, stored or logged. This tool is <strong>disabled in production</strong>.</p>
+<p class="muted" style="font-size:12px;">Fidelity note: page count, page sizes and extractable text are preserved; images, vector graphics, annotations and forms are not carried over to the unlocked copy.</p>
+
+<% const _available = typeof pdfUnlockAvailable !== 'undefined' ? !!pdfUnlockAvailable : false; %>
+<% const _maxMb = (typeof pdfUnlockMaxFileMb !== 'undefined' && Number.isFinite(Number(pdfUnlockMaxFileMb)) && Number(pdfUnlockMaxFileMb) >= 1) ? Math.floor(Number(pdfUnlockMaxFileMb)) : 50; %>
+<% if (!_available) { %>
+  <p class="flash flash-error" data-testid="pdf-unlock-disabled">PDF unlock is disabled in production. Run the app locally (development) to use it.</p>
+<% } %>
+
+<div data-testid="pdf-unlock-root" data-available="<%= _available ? '1' : '0' %>" data-max-file-mb="<%= _maxMb %>">
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0;">
+    <button type="button" class="button small" id="pdfUnlockPick" data-testid="pdf-unlock-pick" <%= _available ? '' : 'disabled' %>>📂 Select PDF</button>
+    <input type="file" id="pdfUnlockFile" data-testid="pdf-unlock-file" accept=".pdf,application/pdf" style="display:none;" <%= _available ? '' : 'disabled' %>>
+    <label style="font-size:13px;">Password
+      <input type="password" id="pdfUnlockPassword" data-testid="pdf-unlock-password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Document password" style="width:220px;" <%= _available ? '' : 'disabled' %>>
+    </label>
+    <button type="button" class="button small primary" id="pdfUnlockBtn" data-testid="pdf-unlock-submit" <%= _available ? '' : 'disabled' %>>🔓 Unlock &amp; download</button>
+    <button type="button" class="button small secondary" id="pdfUnlockClear" data-testid="pdf-unlock-clear" <%= _available ? '' : 'disabled' %>>Clear</button>
+    <span class="muted" style="font-size:12px;">One file · max <%= _maxMb %> MB</span>
+  </div>
+  <p class="muted" id="pdfUnlockFileInfo" data-testid="pdf-unlock-fileinfo" style="font-size:13px;">No PDF selected yet.</p>
+  <div id="pdfUnlockProgress" data-testid="pdf-unlock-progress" style="display:none;margin-top:8px;font-size:13px;font-weight:600;" role="status" aria-live="polite">Unlocking… <span id="pdfUnlockProgressPct">0%</span></div>
+  <p class="muted" data-testid="pdf-unlock-status" id="pdfUnlockStatus" style="font-size:13px;font-weight:600;"></p>
+</div>
+
+</main>
+<%- include('partials/footer') %>
+<script type="module" src="/admin-pdf-unlock.js?v=<%= Date.now() %>"></script>
+</body></html>

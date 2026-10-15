@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Local Expense Tracker</title><link rel="stylesheet" href="/styles.css">
+<style>
+.et-wrap{max-width:1200px;margin:28px auto;padding:0 18px 48px}.et-hero{padding:24px;border-radius:20px;color:#fff;background:linear-gradient(125deg,#4338ca 0%,#7c3aed 48%,#db2777 100%);box-shadow:0 12px 30px #4338ca24}.et-hero h1{margin:0 0 8px;font-size:clamp(26px,4vw,36px)}.et-hero p{margin:0;color:#f5f3ff}.et-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin:16px 0}.et-metric{border:1px solid #e0e7ff;border-radius:16px;padding:16px;background:linear-gradient(145deg,#fff,#f5f3ff);box-shadow:0 5px 16px #4338ca0b}.et-metric:nth-child(2){background:linear-gradient(145deg,#fff,#ecfdf5);border-color:#bbf7d0}.et-metric:nth-child(3){background:linear-gradient(145deg,#fff,#fff7ed);border-color:#fed7aa}.et-metric:nth-child(4){background:linear-gradient(145deg,#fff,#fdf2f8);border-color:#fbcfe8}.et-metric span{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#64748b;font-weight:700}.et-metric strong{display:block;margin-top:7px;font-size:24px;color:#172554}.et-card{border:1px solid #e2e8f0;border-radius:16px;padding:18px;background:#fff;margin:16px 0;box-shadow:0 7px 22px #0f172a08;min-width:0}.et-card h2{margin-top:0;color:#312e81}.et-row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}.et-row label{display:flex;flex-direction:column;gap:5px;flex:1;min-width:130px}.et-wrap input,.et-wrap select,.et-wrap textarea{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:9px;background:#fff}.et-wrap button{cursor:pointer;border:1px solid #c4b5fd;border-radius:9px;padding:9px 13px;background:#f5f3ff;color:#4338ca;font-weight:650}.et-wrap button:hover{background:#ede9fe}.et-wrap button:disabled{opacity:.5;cursor:not-allowed}.et-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}.et-tabs button{padding:10px 14px;background:#fff;border-color:#dbeafe;color:#334155}.et-tabs button.active{color:#fff;background:linear-gradient(120deg,#4f46e5,#9333ea);border-color:transparent;box-shadow:0 5px 12px #4f46e533}.et-list{width:100%;border-collapse:collapse;font-size:13px}.et-list th,.et-list td{padding:10px 9px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top}.et-list th{background:#f5f3ff;color:#4338ca;white-space:nowrap}.et-list tr:hover td{background:#fafaff}.et-table-wrap{overflow-x:auto;border:1px solid #e2e8f0;border-radius:10px}.et-note{font-size:13px;color:#64748b}.et-danger{color:#991b1b}.et-status{margin:14px 0;padding:12px 14px;border-radius:10px;background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af}.et-status.et-danger{background:#fff1f2;border-color:#fecdd3;color:#9f1239}.et-panel[hidden]{display:none}.et-pill{display:inline-block;padding:4px 9px;border-radius:999px;background:#ede9fe;color:#5b21b6;font-size:12px;font-weight:700}.et-positive{color:#047857;font-weight:700}.et-negative{color:#be123c;font-weight:700}.et-section-title{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.et-cta{background:linear-gradient(120deg,#4f46e5,#9333ea)!important;color:white!important;border:0!important}.et-empty{padding:18px;text-align:center;color:#64748b;background:#f8fafc;border-radius:10px}
+</style></head>
+<body><header class="topbar"><a class="brand" href="/admin">Admin Home</a><div class="user"><form method="post" action="/admin/expense-tracker/lock"><button type="submit">Lock Tracker</button></form></div></header>
+<main class="et-wrap">
+<h1>Local Expense Tracker</h1><p class="et-note">Development-only private workspace. Data is stored in an ignored local JSON file, not the application database. Never use on production or expose this development server to a network.</p>
+<div id="status" class="et-status" role="status">Loading local data…</div>
+<div class="et-tabs" role="tablist"><button class="active" data-tab="monthly">💸 Monthly expenses</button><button data-tab="templates">📋 Recurring templates</button><button data-tab="banks">🏦 Bank balances</button><button data-tab="stocks">📈 Stocks</button><button data-tab="mutualFunds">🌱 Mutual funds</button><button data-tab="settings">⚙️ Settings</button></div>
+<section class="et-panel" id="monthly">
+<div class="et-card" style="background:#f8fafc;border-color:#cbd5e1;margin-bottom:16px">
+  <div class="et-row" style="align-items:center;justify-content:space-between">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <label style="font-weight:700;color:#1e293b;min-width:auto;display:flex;align-items:center;gap:8px">📅 Selected Month:
+        <input id="month" type="month" required style="width:auto;padding:8px 12px;font-size:15px;font-weight:600;border-radius:8px;border:1px solid #cbd5e1">
+      </label>
+      <button id="prevMonth" type="button" style="padding:7px 12px">← Prev</button>
+      <button id="nextMonth" type="button" style="padding:7px 12px">Next →</button>
+      <button id="todayMonth" type="button" style="padding:7px 12px">Current Month</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <button id="btnResetFutureMonth" type="button" class="et-danger" style="border-color:#fecaca;background:#fff1f2;color:#b91c1c;padding:6px 12px;font-size:13px" hidden>🔄 Reset Month</button>
+      <div id="monthLockBadge"></div>
+    </div>
+  </div>
+</div>
+<div id="newMonthSetupCard" class="et-card" style="background:#f0fdf4;border-color:#bbf7d0" hidden>
+  <div class="et-section-title">
+    <div>
+      <h2 style="color:#166534;margin-bottom:4px">✨ Set up new month</h2>
+      <p class="et-note" style="color:#15803d">No transactions recorded for this month yet. Choose an option below to pre-fill transactions, or add entries manually.</p>
+    </div>
+  </div>
+  <div class="et-row" style="margin-top:10px;gap:12px">
+    <button id="btnStartFromTemplate" type="button" class="et-cta">📋 Start from templates</button>
+    <button id="btnCopyPrevMonth" type="button" style="background:#fff;border:1px solid #16a34a;color:#15803d;font-weight:600">📄 Copy previous month (<span id="prevMonthName"></span>)</button>
+  </div>
+</div>
+<div id="peopleView">
+  <div class="et-section-title"><div><h2>People</h2><p class="et-note">Choose a person to open their personal income and expense ledger.</p></div><button id="addPerson" class="et-cta">+ Add a person</button></div>
+  <div id="peopleCards" class="et-grid"></div>
+</div>
+<div id="ledgerView" hidden>
+<div class="et-section-title"><div><button id="backToPeople">← Back to people</button><h2 id="ledgerTitle">Monthly income / expenses</h2></div></div>
+<div id="historicalLockBanner" class="et-status" style="background:#fffbebf0;border-color:#fde68a;color:#92400e;margin-bottom:14px" hidden>🔒 Historical month is read-only. Entries, amounts, and statuses cannot be modified.</div>
+<div class="et-card" id="salaryWorkbookMigration">
+<h2>Import monthly salary and expenses</h2>
+<p class="et-note">Import salary and negative expense values from your monthly Expense Tracker workbook. Bank remaining balances and summary totals are excluded. Review the preview before saving.</p>
+<label>Choose Expense Tracker workbook (.xlsx)<input id="salaryWorkbook" type="file" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"></label>
+<div class="et-row" style="margin-top:10px"><button id="previewSalaryWorkbook">Preview workbook</button><button id="confirmSalaryWorkbook" disabled>Confirm and import</button></div>
+<div id="salaryWorkbookPreview"></div>
+</div>
+<div id="monthlyAnalytics" class="et-card">
+<div class="et-grid" style="margin-top:0">
+<div class="et-metric"><span>Incoming</span><strong id="analyticsIncome">₹0</strong><small>Money received this month</small></div>
+<div class="et-metric"><span>Outgoing</span><strong id="analyticsExpenses">₹0</strong><small>Money spent this month</small></div>
+<div class="et-metric"><span>Net remaining</span><strong id="analyticsNet">₹0</strong><small>Incoming minus outgoing</small></div>
+</div>
+<div class="et-grid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))">
+<div class="et-card" style="margin:0"><h3>Incoming vs outgoing</h3><div id="incomeExpenseChart" role="img" aria-label="Bar chart comparing incoming and outgoing amounts"></div></div>
+<div class="et-card" style="margin:0"><h3>Spending breakdown</h3><div id="expenseDonutChart" role="img" aria-label="Donut chart grouping expenses by description"></div></div>
+</div>
+</div>
+<div class="et-card" id="addEntryCard"><h2>Add new transaction</h2><div class="et-row"><label>Entry type<select id="entryType"><option value="income">Income / salary</option><option value="expenses">Expense</option></select></label><label>Description<input id="description" maxlength="160" placeholder="Salary, rent, groceries"></label><label>Amount (₹)<input id="amount" type="number" min="0" step=".01"></label><label>Status<select id="entryStatus"><option value="Pending">Pending</option><option value="Received">Received</option><option value="Paid">Paid</option><option value="Invested">Invested</option><option value="Transferred">Transferred</option><option value="Unknown">Unknown</option></select></label><label>Note<input id="entryNote" maxlength="250"></label></div>
+<div class="et-row" style="margin-top:10px;align-items:center"><label style="flex:1;flex-direction:row;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="saveToTemplate" style="width:auto"> Save description as recurring template</label><button id="addEntry" class="et-cta">Add entry</button></div></div>
+<div class="et-card"><h2>Entries for selected month</h2><div id="monthlySummary"></div><div id="entries"></div></div>
+</div>
+</section>
+<section class="et-panel" id="templates" hidden>
+<div class="et-card">
+  <h2>📋 Recurring Description Templates</h2>
+  <p class="et-note">Templates pre-fill transaction descriptions when opening a new month. Editing templates affects future months only.</p>
+  <div class="et-row">
+    <label>Description<input id="tplDesc" maxlength="160" placeholder="e.g. Salary, House Rent, Tax"></label>
+    <label>Type<select id="tplType"><option value="expenses">Expense</option><option value="income">Income / salary</option><option value="brokerFunds">Broker funds</option></select></label>
+    <label>Category<input id="tplCategory" maxlength="120" placeholder="Rent, Investments, Other"></label>
+    <label>Person<select id="tplPerson"></select></label>
+    <button id="addTemplate" class="et-cta">+ Add template</button>
+  </div>
+  <div id="templatesList" style="margin-top:16px"></div>
+</div>
+</section>
+<section class="et-panel" id="banks" hidden><div class="et-card"><h2>Bank balances</h2><div class="et-row"><label>Account name<input id="bankAccount" maxlength="80" placeholder="Savings account"></label><label>Opening balance (₹)<input id="bankOpening" type="number" min="0" step=".01"></label><label>Closing balance (₹)<input id="bankClosing" type="number" min="0" step=".01"></label><label>Note<input id="bankNote" maxlength="250"></label><button id="saveBank">Save balance</button></div><p class="et-note">Opening is the start-of-month balance; closing is the end-of-month balance. Each month is stored separately.</p><div id="banksList"></div></div></section>
+<section class="et-panel" id="stocks" hidden><div class="et-card"><div class="et-section-title"><h2>📈 Stock portfolio</h2><span class="et-pill">Account-level performance</span></div><div id="stockSummary" class="et-grid"></div><h3>Import stock holdings</h3><div class="et-row"><label>Source<select id="broker"><option>Zerodha</option><option>INDmoney</option></select></label><label>Report month<input id="importMonth" type="month"></label><label>Account label<input id="importAccount" list="accountsList" maxlength="100" placeholder="e.g. Zerodha - Account 1"><datalist id="accountsList"></datalist></label><label>Asset type<select id="assetType"><option value="auto">Auto-detect & split Zerodha holdings</option><option value="stock">Stocks only</option><option value="mutualFund">Mutual funds only</option></select></label></div><label>Upload Excel or CSV holdings<input id="csvFile" type="file" accept=".xls,.xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"></label><label>Or paste holdings CSV<textarea id="csv" rows="8" placeholder="Choose a .csv file above or paste its contents here. Zerodha mixed holdings are split into Stocks and Mutual funds during preview."></textarea></label><div class="et-row"><button id="previewImport">Preview CSV</button><button id="confirmImport" disabled>Confirm & save import</button></div><div id="importPreview"></div><p class="et-note">Upload Zerodha or INDmoney Excel statements (.xls/.xlsx) directly, or use CSV/paste. Excel files are read in your browser; the detected holdings sheet is converted for preview, and the original workbook is not uploaded. Zerodha mixed stock and mutual-fund rows are separated during preview. INDmoney selects HOLDINGS_BOOK when available. USD remains separate from INR; no currency conversion is applied. Preview first; nothing is saved until confirmation.</p><div id="stockHoldings"></div><div id="savedImports"></div></div></section>
+<section class="et-panel" id="mutualFunds" hidden><div class="et-card"><div class="et-section-title"><h2>🌱 Mutual Fund Management</h2><span class="et-pill">Purpose stays with account + fund</span></div><p class="et-note">Import mutual funds from the Stocks tab by selecting Asset type → Mutual funds. Assign a purpose to each fund here; it is saved per account and retained when you import updated holdings.</p><div class="et-row"><label>Filter by account<select id="mfAccountFilter"><option value="">All accounts</option></select></label><button class="et-cta" id="saveFundPurposes">Save fund purposes</button></div><div id="mfHoldings"></div></div></section>
+<section class="et-panel" id="settings" hidden><div class="et-card"><h2>Workspace settings</h2><div class="et-row"><label>Accounts (comma-separated)<input id="accountsSetting"></label><button id="saveSettings">Save settings</button></div><p class="et-note">Monthly entries use one household ledger. Categories are entered as free text when adding an entry.</p></div></section>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+(() => {
+const $=id=>document.getElementById(id);
+let data=null, pendingRows=null, loadFailed=false, selectedPerson=null;
+let editingEntryKey=null, editingTemplateIndex=null;
+const currentMonth=()=>new Date().toISOString().slice(0,7);
+$('month').value=currentMonth(); $('importMonth').value=currentMonth();
+const status=(s,bad=false)=>{$('status').textContent=s;$('status').classList.toggle('et-danger',bad)};
+async function api(url,body){const r=await fetch(url,{method:body?'POST':'GET',headers:body?{'Content-Type':'application/json'}:{},body:body?JSON.stringify(body):undefined,credentials:'same-origin'});const j=await r.json().catch(()=>({error:'Request failed'}));if(!r.ok)throw Error(j.error||'Request failed');return j}
+function monthRecord(){data.months ||= {};return data.months[$('month').value] ||= {people:{},bankBalances:[],brokerFunds:[]}}
+function personRecord(){const m=monthRecord();m.people ||= {};if(!selectedPerson)throw Error('Choose a person before adding an entry.');return m.people[selectedPerson] ||= {income:[],expenses:[]}}
+function fillOptions(el,values,selected){el.replaceChildren(...values.map((v,i)=>{const o=document.createElement('option');o.value=v;o.textContent=v;if(v===selected||(!selected&&i===0))o.selected=true;return o}))}
+function escape(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function money(v,currency='INR'){return new Intl.NumberFormat('en-IN',{style:'currency',currency:currency==='USD'?'USD':'INR',maximumFractionDigits:2}).format(Number(v||0))}
+
+function getRollingCutoffMonth() {
+  const d = new Date();
+  let y = d.getFullYear();
+  let m = d.getMonth() - 3;
+  if (m < 0) { m += 12; y -= 1; }
+  return y + '-' + String(m + 1).padStart(2, '0');
+}
+
+function isLockedMonth(mStr) {
+  if (!mStr || typeof mStr !== 'string' || !/^\d{4}-(0[1-9]|1[0-2])$/.test(mStr)) return false;
+  return mStr < getRollingCutoffMonth();
+}
+
+function isFutureMonth(mStr) {
+  if (!mStr || typeof mStr !== 'string' || !/^\d{4}-(0[1-9]|1[0-2])$/.test(mStr)) return false;
+  return mStr > currentMonth();
+}
+
+function getPrevMonthKey(mVal) {
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(mVal)) return null;
+  const [yStr, mStr] = mVal.split('-');
+  let y = Number(yStr), m = Number(mStr) - 1;
+  if (m < 1) { m = 12; y -= 1; }
+  return y + '-' + String(m).padStart(2, '0');
+}
+
+function prefillMonthFromTemplatesClient(monthKey) {
+  data.months ||= {};
+  const m = data.months[monthKey] ||= { people: {}, bankBalances: [], brokerFunds: [] };
+  m.people ||= {};
+  const templates = Array.isArray(data.templates) && data.templates.length ? data.templates : [];
+  for (const tpl of templates) {
+    const person = tpl.person && data.people.includes(tpl.person) ? tpl.person : (data.people[0] || 'You');
+    m.people[person] ||= { income: [], expenses: [] };
+    const p = m.people[person];
+    if (tpl.type === 'brokerFunds') {
+      m.brokerFunds ||= [];
+      if (!m.brokerFunds.some(b => b.person === person && b.description === tpl.description)) {
+        m.brokerFunds.push({ person, account: tpl.description, description: tpl.description, amount: 0, note: '', status: 'Pending' });
+      }
+    } else if (tpl.type === 'income' || tpl.type === 'expenses') {
+      p[tpl.type] ||= [];
+      if (!p[tpl.type].some(e => e.description === tpl.description)) {
+        p[tpl.type].push({ description: tpl.description, category: tpl.category || 'Other', amount: 0, note: '', status: 'Pending' });
+      }
+    }
+  }
+}
+
+function copyPreviousMonthClient(targetKey) {
+  const prevKey = getPrevMonthKey(targetKey);
+  if (!prevKey || !data.months?.[prevKey]) throw Error('Previous month (' + prevKey + ') has no recorded entries to copy.');
+  const prevRecord = data.months[prevKey];
+  data.months ||= {};
+  const targetRecord = data.months[targetKey] ||= { people: {}, bankBalances: [], brokerFunds: [] };
+  targetRecord.people ||= {};
+  targetRecord.bankBalances ||= [];
+  targetRecord.brokerFunds ||= [];
+
+  let copiedCount = 0;
+  for (const [person, p] of Object.entries(prevRecord.people || {})) {
+    targetRecord.people[person] ||= { income: [], expenses: [] };
+    const tp = targetRecord.people[person];
+    tp.income ||= [];
+    tp.expenses ||= [];
+
+    for (const type of ['income', 'expenses']) {
+      for (const entry of p[type] || []) {
+        const exists = tp[type].some(e => e.description === entry.description && Number(e.amount) === Number(entry.amount));
+        if (!exists) {
+          tp[type].push({
+            description: entry.description,
+            category: entry.category || 'Other',
+            amount: Number(entry.amount) || 0,
+            note: entry.note || '',
+            status: 'Pending'
+          });
+          copiedCount++;
+        }
+      }
+    }
+  }
+
+  for (const broker of prevRecord.brokerFunds || []) {
+    const exists = targetRecord.brokerFunds.some(b => b.person === broker.person && b.description === broker.description);
+    if (!exists) {
+      targetRecord.brokerFunds.push({
+        person: broker.person || 'You',
+        account: broker.account || broker.description,
+        description: broker.description,
+        amount: Number(broker.amount) || 0,
+        note: broker.note || '',
+        status: 'Pending'
+      });
+      copiedCount++;
+    }
+  }
+  if (!copiedCount) throw Error('No new entries were copied (all transactions already exist in target month).');
+}
+
+function latestHoldings(assetType){
+ const latestReports=new Map(), latestFunds=new Map();
+ for(let ri=data.imports.length-1;ri>=0;ri--){
+  const report=data.imports[ri];if((report.assetType||'stock')!==assetType)continue;
+  if(assetType==='stock'){
+   const grouped=new Map();for(let rj=0;rj<report.rows.length;rj++){const row=report.rows[rj],account=String(row.account||report.source).trim()||report.source;const key=account.toLowerCase();if(!grouped.has(key))grouped.set(key,[]);grouped.get(key).push({row,report,ri,rj,account})}
+   for(const [key,items] of grouped)if(!latestReports.has(key))latestReports.set(key,items);
+  }else{
+   for(let rj=0;rj<report.rows.length;rj++){const row=report.rows[rj],account=String(row.account||report.source).trim()||report.source;const key=account.toLowerCase()+'\u0000'+String(row.isin||row.symbol).toLowerCase();if(!latestFunds.has(key))latestFunds.set(key,{row,report,ri,rj,account})}
+  }
+ }
+ return assetType==='stock'?[...latestReports.values()].flat():[...latestFunds.values()];
+}
+function renderPeople(){
+ const people=Array.isArray(data.people)?data.people:[];
+ $('peopleCards').innerHTML=people.length?people.map(person=>{
+  let income=0,expenses=0;const p=data.months?.[$('month').value]?.people?.[person]||{};
+  for(const e of (p.income||[]))income+=Number(e.amount)||0;
+  for(const e of (p.expenses||[]))expenses+=Number(e.amount)||0;
+  return '<div class="et-card" style="background:#f5f3ff;border-color:#c4b5fd;min-height:150px"><strong style="display:block;font-size:20px;margin-bottom:14px">'+escape(person)+'</strong><span class="et-note">This month</span><div style="margin-top:10px;font-size:13px">Income: <b>'+money(income)+'</b></div><div style="font-size:13px">Expenses: <b>'+money(expenses)+'</b></div><div style="font-size:15px;margin-top:6px">Net: <b class="'+(income-expenses>=0?'et-positive':'et-negative')+'">'+money(income-expenses)+'</b></div><div class="et-row" style="margin-top:12px;align-items:center"><button data-person="'+escape(person)+'">Open ledger →</button><button data-delete-person="'+escape(person)+'" class="et-danger" style="border-color:#fecaca;background:#fff1f2;color:#b91c1c">Delete</button></div></div>';
+ }).join(''):'<div class="et-empty">No people added yet. Select “Add a person” to create the first person.</div>';
+ $('peopleView').hidden=!!selectedPerson;$('ledgerView').hidden=!selectedPerson;
+ if(selectedPerson)$('ledgerTitle').textContent=selectedPerson+' — Monthly ledger';
+}
+function openPerson(person){selectedPerson=person;render();$('peopleView').hidden=true;$('ledgerView').hidden=false;}
+const STATUS_OPTIONS = ['Unknown', 'Pending', 'Received', 'Paid', 'Invested', 'Transferred'];
+
+function renderTemplates(){
+ const tpls = Array.isArray(data.templates) ? data.templates : [];
+ fillOptions($('tplPerson'), data.people, 'You');
+ $('templatesList').innerHTML = tpls.length ? '<div class="et-table-wrap"><table class="et-list"><thead><tr><th>Description</th><th>Type</th><th>Category</th><th>Person</th><th>Actions</th></tr></thead><tbody>'+tpls.map((t,i)=>{
+  if (editingTemplateIndex === i) {
+    return '<tr>'+
+      '<td><input id="editTplDesc" value="'+escape(t.description)+'" style="padding:4px 6px"></td>'+
+      '<td><select id="editTplType"><option value="expenses" '+(t.type==='expenses'?'selected':'')+'>expenses</option><option value="income" '+(t.type==='income'?'selected':'')+'>income</option><option value="brokerFunds" '+(t.type==='brokerFunds'?'selected':'')+'>brokerFunds</option></select></td>'+
+      '<td><input id="editTplCategory" value="'+escape(t.category)+'" style="padding:4px 6px"></td>'+
+      '<td><select id="editTplPerson">'+data.people.map(p=>'<option value="'+escape(p)+'" '+(p===t.person?'selected':'')+'>'+escape(p)+'</option>').join('')+'</select></td>'+
+      '<td><button id="saveTplBtn" class="et-cta" style="padding:4px 8px;font-size:12px">Save</button> <button id="cancelTplBtn" style="padding:4px 8px;font-size:12px">Cancel</button></td>'+
+      '</tr>';
+  }
+  return '<tr><td><b>'+escape(t.description)+'</b></td><td><span class="et-pill">'+escape(t.type)+'</span></td><td>'+escape(t.category)+'</td><td>'+escape(t.person)+'</td><td><button data-edit-template="'+i+'" style="padding:4px 8px;font-size:12px">Edit</button> <button data-remove-template="'+i+'" class="et-danger" style="padding:4px 8px;font-size:12px">Delete</button></td></tr>';
+ }).join('')+'</tbody></table></div>' : '<div class="et-empty">No recurring templates configured. Add templates above.</div>';
+}
+
+function render(){
+ data ||= {};data.people=Array.isArray(data.people)&&data.people.length?data.people:[];data.categories=Array.isArray(data.categories)&&data.categories.length?data.categories:['Other'];data.accounts=Array.isArray(data.accounts)?data.accounts:[];data.months=data.months&&typeof data.months==='object'?data.months:{};data.imports=Array.isArray(data.imports)?data.imports:[];
+ data.templates = Array.isArray(data.templates) && data.templates.length ? data.templates : [];
+ $('accountsSetting').value=data.accounts.join(', ');$('accountsList').replaceChildren(...data.accounts.map(name=>{const o=document.createElement('option');o.value=name;return o}));
+ 
+ const mVal = $('month').value || currentMonth();
+ const cutoff = getRollingCutoffMonth();
+ const locked = isLockedMonth(mVal);
+ const isFuture = isFutureMonth(mVal);
+
+ $('btnResetFutureMonth').hidden = !isFuture;
+ $('monthLockBadge').innerHTML = locked ? '<span class="et-pill" style="background:#fef3c7;color:#92400e">🔒 Read-Only</span>' : '<span class="et-pill" style="background:#dcfce7;color:#15803d">✏️ Editable</span>';
+ $('historicalLockBanner').hidden = !locked;
+ $('historicalLockBanner').textContent = '🔒 Historical month (' + mVal + ') is read-only. Entries, amounts, and statuses cannot be modified. (Editable window: ' + cutoff + ' onwards)';
+ $('addEntryCard').hidden = locked;
+ if ($('salaryWorkbookMigration')) $('salaryWorkbookMigration').hidden = locked;
+
+ const rec = monthRecord();
+ const hasEntries = Object.values(rec.people || {}).some(p => (p.income?.length || 0) + (p.expenses?.length || 0) > 0) || (rec.brokerFunds?.length || 0) > 0;
+ if (!locked && !hasEntries) {
+   $('newMonthSetupCard').hidden = false;
+   const prevK = getPrevMonthKey(mVal);
+   $('prevMonthName').textContent = prevK || 'Previous Month';
+ } else {
+   $('newMonthSetupCard').hidden = true;
+ }
+
+ renderPeople();
+ renderTemplates();
+
+ let income=0,expenses=0,rows=[];
+ const pr=selectedPerson?(rec.people?.[selectedPerson]||{income:[],expenses:[]}):{income:[],expenses:[]};
+ for(const type of ['income','expenses'])for(const [entryIndex,e] of (pr[type]||[]).entries()){const n=Number(e.amount)||0;if(type==='income')income+=n;else expenses+=n;rows.push({p:selectedPerson,type,entryIndex,...e})}
+ $('monthlySummary').innerHTML='<p><b>Income:</b> '+money(income)+' &nbsp; <b>Expenses:</b> '+money(expenses)+' &nbsp; <b>Net:</b> '+money(income-expenses)+'</p>';
+ $('analyticsIncome').textContent=money(income);$('analyticsExpenses').textContent=money(expenses);$('analyticsNet').textContent=money(income-expenses);
+ const maxAmount=Math.max(income,expenses,1);
+ $('incomeExpenseChart').innerHTML='<div style="display:grid;gap:16px;padding:12px 0">'+[{label:'Incoming',value:income,color:'#16a34a'},{label:'Outgoing',value:expenses,color:'#dc2626'}].map(item=>'<div><div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:6px"><b>'+item.label+'</b><span>'+money(item.value)+'</span></div><div style="height:18px;border-radius:99px;background:#e2e8f0;overflow:hidden"><div style="height:100%;width:'+(item.value/maxAmount*100)+'%;background:'+item.color+';border-radius:99px;min-width:'+(item.value>0?'2px':'0')+'"></div></div></div>').join('')+'</div>';
+ const palette=['#4f46e5','#0d9488','#f97316','#db2777','#2563eb','#84cc16','#9333ea','#eab308','#0891b2','#64748b'];
+ const grouped=new Map();for(const entry of pr.expenses||[]){const label=String(entry.description||'Unspecified expense').trim()||'Unspecified expense';grouped.set(label,(grouped.get(label)||0)+(Number(entry.amount)||0))}
+ const expenseGroups=[...grouped].filter(([,value])=>value>0).sort((a,b)=>b[1]-a[1]);const totalExpense=expenseGroups.reduce((sum,item)=>sum+item[1],0);
+ if(!expenseGroups.length){$('expenseDonutChart').innerHTML='<div class="et-empty">Add expenses to see your spending breakdown.</div>'}
+ else {
+  const radius=58,circumference=2*Math.PI*radius;let offset=0;
+  const circles=expenseGroups.map(([label,value],i)=>{const length=value/totalExpense*circumference;const circle='<circle cx="80" cy="80" r="'+radius+'" fill="none" stroke="'+palette[i%palette.length]+'" stroke-width="22" stroke-dasharray="'+length+' '+(circumference-length)+'" stroke-dashoffset="'+(-offset)+'" transform="rotate(-90 80 80)"><title>'+escape(label)+': '+money(value)+'</title></circle>';offset+=length;return circle}).join('');
+  $('expenseDonutChart').innerHTML='<div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap"><svg viewBox="0 0 160 160" style="width:150px;max-width:100%;flex:0 0 150px" aria-label="Expense proportions">'+circles+'<text x="80" y="76" text-anchor="middle" font-size="10" fill="#64748b">TOTAL SPENT</text><text x="80" y="92" text-anchor="middle" font-size="12" font-weight="700" fill="#172554">'+escape(money(totalExpense))+'</text></svg><div style="flex:1;min-width:140px;display:grid;gap:8px">'+expenseGroups.map(([label,value],i)=>'<div style="display:grid;grid-template-columns:12px minmax(0,1fr) auto;gap:7px;align-items:center;font-size:13px"><span style="width:11px;height:11px;border-radius:3px;background:'+palette[i%palette.length]+'"></span><span style="overflow-wrap:anywhere">'+escape(label)+'</span><b>'+escape(money(value))+' <span style="color:#64748b;font-weight:400">('+Math.round(value/totalExpense*100)+'%)</span></b></div>').join('')+'</div></div>';
+ }
+
+ $('entries').innerHTML=rows.length?'<div class="et-table-wrap"><table class="et-list"><thead><tr><th>Type</th><th>Description</th><th>Amount</th><th>Status</th><th>Note</th><th>Actions</th></tr></thead><tbody>'+rows.map(e=>{
+  if (editingEntryKey === `${e.type}:${e.entryIndex}`) {
+    return '<tr>'+
+      '<td>'+escape(e.type)+'</td>'+
+      '<td><input id="editDesc" value="'+escape(e.description)+'" style="padding:4px 6px"></td>'+
+      '<td><input id="editAmt" type="number" min="0" step=".01" value="'+e.amount+'" style="padding:4px 6px;width:100px"></td>'+
+      '<td><select id="editStatus">'+STATUS_OPTIONS.map(s=>'<option value="'+s+'" '+(s===(e.status||'Pending')?'selected':'')+'>'+s+'</option>').join('')+'</select></td>'+
+      '<td><input id="editNote" value="'+escape(e.note)+'" style="padding:4px 6px"></td>'+
+      '<td><button id="saveEditBtn" class="et-cta" style="padding:4px 8px;font-size:12px">Save</button> <button id="cancelEditBtn" style="padding:4px 8px;font-size:12px">Cancel</button></td>'+
+      '</tr>';
+  }
+  const statusHtml = locked ? '<span class="et-pill">'+escape(e.status || 'Unknown')+'</span>' : '<select data-status-change="'+e.type+':'+e.entryIndex+'">'+STATUS_OPTIONS.map(s=>'<option value="'+s+'" '+(s===(e.status||'Pending')?'selected':'')+'>'+s+'</option>').join('')+'</select>';
+  const actionHtml = locked ? '<span class="et-note">Locked</span>' : '<button data-edit="'+e.type+':'+e.entryIndex+'" style="padding:4px 8px;font-size:12px">Edit</button> <button data-remove="'+e.type+':'+e.entryIndex+'" class="et-danger" style="padding:4px 8px;font-size:12px">Remove</button>';
+  return '<tr><td>'+escape(e.type)+'</td><td>'+escape(e.description)+'</td><td>'+money(e.amount)+'</td><td>'+statusHtml+'</td><td>'+escape(e.note)+'</td><td>'+actionHtml+'</td></tr>';
+ }).join('')+'</tbody></table></div>':'<div class="et-empty">No entries for this person and month yet.</div>';
+
+ $('banksList').innerHTML=(rec.bankBalances||[]).length?'<div class="et-table-wrap"><table class="et-list"><thead><tr><th>Account</th><th>Opening</th><th>Closing</th><th>Change</th><th>Note</th></tr></thead><tbody>'+rec.bankBalances.map(b=>'<tr><td>'+escape(b.account)+'</td><td>'+money(b.opening)+'</td><td>'+money(b.closing)+'</td><td>'+money(b.closing-b.opening)+'</td><td>'+escape(b.note)+'</td></tr>').join('')+'</tbody></table></div>':'<div class="et-empty">No bank balances recorded for this month.</div>';
+ const stocks=latestHoldings('stock'), funds=latestHoldings('mutualFund');
+ const stockAccounts=new Map();for(const h of stocks){const currency=h.row.currency==='USD'?'USD':'INR';const old=stockAccounts.get(h.account)||{invested:0,value:0,currency};old.invested+=Number(h.row.invested)||0;old.value+=Number(h.row.currentValue)||0;stockAccounts.set(h.account,old)}
+ $('stockSummary').innerHTML=stockAccounts.size?[...stockAccounts].map(([account,v])=>'<div class="et-metric"><span>'+escape(account)+' · '+v.currency+'</span><strong>'+money(v.value-v.invested,v.currency)+'</strong><small>Invested '+money(v.invested,v.currency)+' · Current '+money(v.value,v.currency)+'</small><p class="'+(v.value>=v.invested?'et-positive':'et-negative')+'">'+(v.invested?((v.value-v.invested)/v.invested*100).toFixed(2):'0.00')+'% P/L</p></div>').join(''):'<div class="et-empty">Import stock holdings to see account-level invested value, current value and P/L.</div>';
+ $('stockHoldings').innerHTML=stocks.length?'<h3>Latest stock holdings by account</h3><div class="et-table-wrap"><table class="et-list"><thead><tr><th>Account</th><th>Invested</th><th>Current value</th><th>P/L</th></tr></thead><tbody>'+[...stockAccounts].map(([account,v])=>'<tr><td>'+escape(account)+' ('+v.currency+')</td><td>'+money(v.invested,v.currency)+'</td><td>'+money(v.value,v.currency)+'</td><td class="'+(v.value>=v.invested?'et-positive':'et-negative')+'">'+money(v.value-v.invested,v.currency)+'</td></tr>').join('')+'</tbody></table></div>':'';
+ const accountNames=[...new Set(funds.map(h=>h.account))].sort();const filter=$('mfAccountFilter').value;
+ fillOptions($('mfAccountFilter'),['',...accountNames],filter);
+ const visibleFunds=funds.filter(h=>!$('mfAccountFilter').value||h.account===$('mfAccountFilter').value);
+ $('mfHoldings').innerHTML=visibleFunds.length?'<div class="et-table-wrap"><table class="et-list"><thead><tr><th>Account</th><th>Fund / scheme</th><th>ISIN</th><th>Units</th><th>Invested</th><th>Current value</th><th>P/L</th><th>Purpose</th></tr></thead><tbody>'+visibleFunds.map(h=>{const r=h.row,gain=(Number(r.currentValue)||0)-(Number(r.invested)||0);return '<tr><td>'+escape(h.account)+'</td><td>'+escape(r.symbol)+'</td><td>'+escape(r.isin)+'</td><td>'+Number((r.units ?? r.quantity) || 0).toLocaleString('en-IN',{maximumFractionDigits:4})+'</td><td>'+money(r.invested)+'</td><td>'+money(r.currentValue)+'</td><td class="'+(gain>=0?'et-positive':'et-negative')+'">'+money(gain)+'</td><td><input data-mf-purpose="'+h.ri+':'+h.rj+'" value="'+escape(r.purpose)+'" maxlength="250" placeholder="e.g. Child education, long-term wealth" aria-label="Purpose for '+escape(r.symbol)+'"></td></tr>'}).join('')+'</tbody></table></div>':'<div class="et-empty">No mutual fund holdings yet. Choose Mutual funds in the import Asset type, preview the CSV and confirm it.</div>';
+ $('savedImports').innerHTML=data.imports.length?'<h3>Import history</h3>'+data.imports.slice().reverse().map(i=>{const invested=i.rows.reduce((n,r)=>n+Number(r.invested||0),0),value=i.rows.reduce((n,r)=>n+Number(r.currentValue||0),0),gain=value-invested;return '<p><span class="et-pill">'+(i.assetType==='mutualFund'?'Mutual funds':'Stocks')+'</span> <b>'+escape(i.source)+'</b> · '+escape(i.month)+' · '+i.rows.length+' holdings · Invested '+money(invested,i.currency||i.rows[0]?.currency)+' · Current '+money(value,i.currency||i.rows[0]?.currency)+' · P/L '+money(gain,i.currency||i.rows[0]?.currency)+'</p>'}).join(''):'<p>No reports imported.</p>';
+}
+async function save(){if(loadFailed)throw Error('Saved data could not be loaded. Refresh after fixing the local database connection; changes are not being saved to avoid overwriting existing data.');await api('/api/admin/expense-tracker/data',{data});render();status('Saved to this machine.');}
+document.querySelectorAll('[data-tab]').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.et-panel').forEach(p=>p.hidden=p.id!==btn.dataset.tab);document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b===btn))}));
+
+function shiftMonth(offset) {
+  const mVal = $('month').value || currentMonth();
+  const [yStr, mStr] = mVal.split('-');
+  const d = new Date(Number(yStr), Number(mStr) - 1 + offset, 1);
+  const newY = d.getFullYear();
+  const newM = String(d.getMonth() + 1).padStart(2, '0');
+  $('month').value = `${newY}-${newM}`;
+  render();
+}
+
+$('prevMonth').addEventListener('click', () => shiftMonth(-1));
+$('nextMonth').addEventListener('click', () => shiftMonth(1));
+$('todayMonth').addEventListener('click', () => { $('month').value = currentMonth(); render(); });
+$('month').addEventListener('change', render);
+
+$('btnStartFromTemplate').addEventListener('click', async () => {
+  try {
+    const mVal = $('month').value;
+    if (isLockedMonth(mVal)) throw Error('Cannot modify a locked month.');
+    prefillMonthFromTemplatesClient(mVal);
+    await save();
+    status('Pre-filled ' + mVal + ' from templates.');
+  } catch (e) { status(e.message, true); }
+});
+
+$('btnCopyPrevMonth').addEventListener('click', async () => {
+  try {
+    const mVal = $('month').value;
+    if (isLockedMonth(mVal)) throw Error('Cannot modify a locked month.');
+    copyPreviousMonthClient(mVal);
+    await save();
+    status('Copied entries from previous month to ' + mVal + '.');
+  } catch (e) { status(e.message, true); }
+});
+
+$('btnResetFutureMonth').addEventListener('click', async () => {
+  try {
+    const mVal = $('month').value;
+    if (!isFutureMonth(mVal)) throw Error('Reset is allowed only for future months.');
+    if (!window.confirm('Reset upcoming month ' + mVal + (selectedPerson ? (' for ' + selectedPerson) : '') + '? All transactions in this future month will be removed.')) return;
+    const res = await api('/api/admin/expense-tracker/reset-month', { month: mVal, person: selectedPerson || '' });
+    if (res?.data) data = res.data;
+    render();
+    status('Reset upcoming month ' + mVal + (selectedPerson ? (' for ' + selectedPerson) : '') + '.');
+  } catch (e) { status(e.message, true); }
+});
+
+let pendingSalaryImport=null;
+const salaryImportNote='Imported from Expense Tracker - 2026 workbook';
+function parseSalaryWorkbook(workbook){
+ const result=[];const skipped=[];const monthMap={'jan':'01','january':'01','feb':'02','february':'02','mar':'03','march':'03','apr':'04','april':'04','may':'05','jun':'06','june':'06','jul':'07','july':'07','aug':'08','august':'08','sep':'09','sept':'09','september':'09','oct':'10','october':'10','nov':'11','november':'11','dec':'12','december':'12'};
+ for(const sheetName of workbook.SheetNames){
+  const match=sheetName.match(/^([A-Za-z]+)[ -]+(20\d{2})$/);if(!match){skipped.push(sheetName+': unrecognized month tab format');continue}
+  const monthNum=monthMap[match[1].toLowerCase()];if(!monthNum){skipped.push(sheetName+': unrecognized month name');continue}
+  const month=match[2]+'-'+monthNum;const sheet=workbook.Sheets[sheetName];if(!sheet){skipped.push(sheetName+': missing sheet');continue}
+  const rows=XLSX.utils.sheet_to_json(sheet,{header:1,raw:true,defval:null});
+  const headerIndex=rows.findIndex(row => row && row.some(v => /my salary/i.test(String(v || '')) ) && row.some(v => /chandu salary/i.test(String(v || ''))));
+  if(headerIndex<0){skipped.push(sheetName+': salary columns not found');continue}
+  const headers=rows[headerIndex].map(v=>String(v||'').trim().toLowerCase());
+  const youCol=headers.findIndex(v=>v==='my salary'),chanduCol=headers.findIndex(v=>v==='chandu salary');
+  let salaryFound=false;
+  for(let i=headerIndex+1;i<rows.length;i++){
+   const row=rows[i]||[];const description=String(row[0]??'').replace(/\s+/g,' ').trim();if(!description)continue;
+   if(/^(remaining money|total|opening balance|closing balance|total salary|total savings|total expenses)$/i.test(description)){
+    skipped.push(sheetName+': excluded summary row ('+description+')');continue;
+   }
+   for(const [person,col] of [['You',youCol],['Chandu',chanduCol]]){
+    if(col<0)continue;
+    const cellRef=XLSX.utils.encode_cell({c:col,r:i});const cell=sheet[cellRef];if(!cell)continue;
+    let rawVal=cell.v;if(rawVal===null||rawVal===undefined)continue;
+    let val=null;
+    if(typeof rawVal==='number'){val=rawVal}
+    else if(typeof rawVal==='string'){const cleaned=rawVal.replace(/[₹$€£,\s]/g,'');const parsedNum=Number(cleaned);if(!isNaN(parsedNum)&&cleaned!=='')val=parsedNum}
+    if(val===null||!Number.isFinite(val)||val===0)continue;
+    if(/^salary$/i.test(description)){
+     if(val>0){result.push({month,person,type:'income',description:'Salary',amount:Math.round(val),note:salaryImportNote});salaryFound=true}
+     else skipped.push(sheetName+': negative salary value for '+person+' was skipped');
+    }else if(val<0){
+     result.push({month,person,type:'expenses',description,amount:Math.round(Math.abs(val)),note:salaryImportNote});
+    }else if(val>0){
+     if(/kite|broker/i.test(description)){
+      result.push({month,person,type:'brokerFunds',description,amount:Math.round(val),note:salaryImportNote});
+     }else{
+      skipped.push(sheetName+': positive non-salary value for '+description+' ('+person+') was skipped');
+     }
+    }
+   }
+  }
+  if(!salaryFound)skipped.push(sheetName+': no positive salary values found');
+ }
+ return {rows:result,skipped};
+}
+$('previewSalaryWorkbook').addEventListener('click',async()=>{try{
+ const file=$('salaryWorkbook').files?.[0];if(!file)throw Error('Choose the monthly Expense Tracker workbook first.');
+ if(file.size>5*1024*1024)throw Error('Please choose a workbook under 5 MB.');
+ if(!window.XLSX)throw Error('Excel reader could not load. Check your internet connection and refresh.');
+ const workbook=XLSX.read(await file.arrayBuffer(),{type:'array'});const parsed=parseSalaryWorkbook(workbook);
+ if(!parsed.rows.length)throw Error('No salary, expense, or broker fund rows were recognized.');
+ pendingSalaryImport=parsed.rows;
+ const counts={income:parsed.rows.filter(r=>r.type==='income').length,expenses:parsed.rows.filter(r=>r.type==='expenses').length,brokerFunds:parsed.rows.filter(r=>r.type==='brokerFunds').length};
+ $('confirmSalaryWorkbook').disabled=false;
+ $('salaryWorkbookPreview').innerHTML='<p><b>'+parsed.rows.length+' entries recognized</b> across '+new Set(parsed.rows.map(r=>r.month)).size+' months: '+counts.income+' salary entries, '+counts.expenses+' expense entries, and '+counts.brokerFunds+' broker fund entries.</p><p class="et-note">Positive Salary-row values become income. Negative values in the You and Chandu columns become expenses. Kite Money amounts are preserved as broker funds. Summary totals are excluded.</p><div class="et-table-wrap"><table class="et-list"><thead><tr><th>Month</th><th>Person</th><th>Type</th><th>Description</th><th>Amount</th></tr></thead><tbody>'+parsed.rows.slice(0,150).map(r=>'<tr><td>'+escape(r.month)+'</td><td>'+escape(r.person)+'</td><td>'+escape(r.type)+'</td><td>'+escape(r.description)+'</td><td>'+money(r.amount)+'</td></tr>').join('')+'</tbody></table></div>'+(parsed.rows.length>150?'<p>Showing first 150 entries.</p>':'')+(parsed.skipped.length?'<details><summary>Notes / skipped items ('+parsed.skipped.length+')</summary><ul>'+parsed.skipped.map(s=>'<li>'+escape(s)+'</li>').join('')+'</ul></details>':'');
+ status('Workbook preview ready. No data saved yet.');
+}catch(e){pendingSalaryImport=null;$('confirmSalaryWorkbook').disabled=true;status(e.message,true)}});
+$('confirmSalaryWorkbook').addEventListener('click',async()=>{if(!pendingSalaryImport)return;const previous=JSON.parse(JSON.stringify(data));try{
+ const seen=new Set();let added=0,duplicates=0;
+ for(const row of pendingSalaryImport){
+  const key=[row.month,row.person,row.type,row.description,row.amount,row.note].join('|');
+  if(row.type==='brokerFunds'){
+   data.months ||= {};data.months[row.month] ||= {people:{},bankBalances:[],brokerFunds:[]};
+   const m=data.months[row.month];m.brokerFunds ||= [];
+   const existing=m.brokerFunds.some(b=>b.person===row.person&&(b.account===row.description||b.description===row.description)&&Number(b.amount)===row.amount);
+   if(existing||seen.has(key)){duplicates++;continue}seen.add(key);
+   m.brokerFunds.push({person:row.person,account:row.description,description:row.description,amount:row.amount,note:salaryImportNote});added++;
+  }else{
+   const existing=data.months?.[row.month]?.people?.[row.person]?.[row.type]||[];
+   if(existing.some(e=>e.description===row.description&&Number(e.amount)===row.amount&&String(e.note||'')===salaryImportNote)){duplicates++;continue}
+   if(seen.has(key)){duplicates++;continue}seen.add(key);
+   data.months ||= {};data.months[row.month] ||= {people:{},bankBalances:[],brokerFunds:[]};const m=data.months[row.month];m.people ||= {};m.people[row.person] ||= {income:[],expenses:[]};m.people[row.person][row.type] ||= [];m.people[row.person][row.type].push({description:row.description,amount:row.amount,note:salaryImportNote});added++;
+  }
+ }
+ if(!data.people.includes('You'))data.people.push('You');if(!data.people.includes('Chandu'))data.people.push('Chandu');
+ await save();status('Workbook import complete: '+added+' added, '+duplicates+' duplicates skipped.');pendingSalaryImport=null;$('confirmSalaryWorkbook').disabled=true;$('salaryWorkbookPreview').innerHTML='<p><b>Import complete.</b> '+added+' entries added; '+duplicates+' duplicates skipped.</p>';
+ }catch(e){data=previous;render();status('Import was not saved: '+e.message,true)}});
+$('csvFile').addEventListener('change',async()=>{try{const file=$('csvFile').files?.[0];if(!file)return;if(file.size>2*1024*1024)throw Error('Please keep the statement under 2 MB.');let csv;if(/\.csv$/i.test(file.name)){csv=await file.text()}else{if(!window.XLSX)throw Error('Excel reader could not load. Check your internet connection and refresh the page.');const workbook=XLSX.read(await file.arrayBuffer(),{type:'array'});const preferred=workbook.SheetNames.find(n=>/^HOLDINGS_BOOK$/i.test(n));const candidate=preferred||workbook.SheetNames.find(n=>{const rows=XLSX.utils.sheet_to_json(workbook.Sheets[n],{header:1,raw:false,blankrows:false});return rows.some(row=>{const h=row.map(v=>String(v??'').toLowerCase().replace(/[^a-z0-9]/g,''));return h.some(v=>['instrument','stocksymbol','tradingsymbol','schemename','fundname'].includes(v))&&h.some(v=>['quantity','qty','units','totalquantity'].includes(v))})})||workbook.SheetNames[0];if(!candidate)throw Error('No worksheet found in this workbook.');csv=XLSX.utils.sheet_to_csv(workbook.Sheets[candidate]);$('importPreview').textContent='Excel worksheet selected: '+candidate+' ('+workbook.SheetNames.length+' sheet(s)).'}if(csv.length>1024*1024)throw Error('Converted holdings data exceeds 1 MB.');$('csv').value=csv;pendingRows=null;$('confirmImport').disabled=true;if(/\.csv$/i.test(file.name))$('importPreview').textContent='CSV loaded: '+file.name;status('Statement loaded. Select Preview CSV to review the holdings.')}catch(e){$('csvFile').value='';status(e.message,true)}});
+$('addPerson').addEventListener('click',async()=>{const name=window.prompt('Enter person name:');if(name===null)return;const clean=name.replace(/[\u0000-\u001f\u007f]/g,'').trim().slice(0,120);if(!clean){status('Enter a person name.',true);return}if(data.people.some(p=>p.toLocaleLowerCase()===clean.toLocaleLowerCase())){status('A person with that name already exists.',true);return}if(data.people.length>=20){status('The tracker supports up to 20 people.',true);return}try{data.people.push(clean);data.months ||= {};await save();openPerson(clean)}catch(e){data.people=data.people.filter(p=>p!==clean);status(e.message,true)}});
+$('peopleCards').addEventListener('click',async e=>{const remove=e.target.closest('[data-delete-person]');if(remove){const person=remove.dataset.deletePerson;const hasEntries=Object.values(data.months||{}).some(month=>{const ledger=month?.people?.[person];return ['income','expenses'].some(type=>Array.isArray(ledger?.[type])&&ledger[type].length>0)});if(hasEntries){status('Cannot delete '+person+' because they have income or expense entries. Their financial history is protected.',true);return}if(!window.confirm('Delete '+person+'? This is allowed only because they have no income or expense entries.'))return;const oldPeople=data.people.slice();const oldMonths=JSON.parse(JSON.stringify(data.months||{}));try{data.people=data.people.filter(name=>name!==person);for(const month of Object.values(data.months||{})){if(month?.people)delete month.people[person]}if(selectedPerson===person)selectedPerson=null;await save();status(person+' deleted.')}catch(err){data.people=oldPeople;data.months=oldMonths;render();status(err.message,true)}return}const open=e.target.closest('[data-person]');if(open)openPerson(open.dataset.person)});
+$('backToPeople').addEventListener('click',()=>{selectedPerson=null;render()});
+$('addEntry').addEventListener('click',async()=>{try{if(!selectedPerson)throw Error('Choose a person first.');const amount=Number($('amount').value);if(!Number.isFinite(amount)||amount<0||!$('description').value.trim())throw Error('Enter a description and valid non-negative amount.');const p=personRecord();p[$('entryType').value].push({description:$('description').value.trim(),amount,note:$('entryNote').value.trim(),status:$('entryStatus').value});await save();$('description').value='';$('amount').value='';$('entryNote').value=''}catch(e){status(e.message,true)}});
+
+$('entries').addEventListener('click',async e=>{
+  const removeKey = e.target.dataset.remove;
+  if (removeKey) {
+    if (!window.confirm('Are you sure you want to delete this transaction?')) return;
+    try {
+      const [type, idx] = removeKey.split(':');
+      personRecord()[type].splice(Number(idx), 1);
+      await save();
+    } catch (err) { status(err.message, true); }
+    return;
+  }
+  const editKey = e.target.dataset.edit;
+  if (editKey) {
+    editingEntryKey = editKey;
+    render();
+    return;
+  }
+  if (e.target.id === 'saveEditBtn') {
+    try {
+      const [type, idx] = editingEntryKey.split(':');
+      const desc = $('editDesc').value.trim();
+      const amt = Number($('editAmt').value);
+      if (!desc || !Number.isFinite(amt) || amt < 0) throw Error('Enter a valid description and non-negative amount.');
+      const entry = personRecord()[type][Number(idx)];
+      entry.description = desc;
+      entry.amount = amt;
+      entry.status = $('editStatus').value;
+      entry.note = $('editNote').value.trim();
+      editingEntryKey = null;
+      await save();
+    } catch (err) { status(err.message, true); }
+    return;
+  }
+  if (e.target.id === 'cancelEditBtn') {
+    editingEntryKey = null;
+    render();
+    return;
+  }
+});
+
+$('entries').addEventListener('change',async e=>{
+  const statusKey = e.target.dataset.statusChange;
+  if (!statusKey) return;
+  try {
+    const [type, idx] = statusKey.split(':');
+    personRecord()[type][Number(idx)].status = e.target.value;
+    await save();
+  } catch (err) { status(err.message, true); }
+});
+
+$('addTemplate').addEventListener('click',async()=>{try{const desc=$('tplDesc').value.trim();if(!desc)throw Error('Enter a template description.');data.templates.push({id:`tpl_${Date.now()}`,description:desc,type:$('tplType').value,category:$('tplCategory').value.trim()||'Other',person:$('tplPerson').value});await save();$('tplDesc').value='';$('tplCategory').value=''}catch(e){status(e.message,true)}});
+
+$('templatesList').addEventListener('click',async e=>{
+  const removeIdx = e.target.dataset.removeTemplate;
+  if (removeIdx !== undefined && removeIdx !== null) {
+    if (!window.confirm('Delete this template?')) return;
+    try {
+      data.templates.splice(Number(removeIdx), 1);
+      await save();
+    } catch (err) { status(err.message, true); }
+    return;
+  }
+  const editIdx = e.target.dataset.editTemplate;
+  if (editIdx !== undefined && editIdx !== null) {
+    editingTemplateIndex = Number(editIdx);
+    renderTemplates();
+    return;
+  }
+  if (e.target.id === 'saveTplBtn') {
+    try {
+      const desc = $('editTplDesc').value.trim();
+      if (!desc) throw Error('Enter a template description.');
+      data.templates[editingTemplateIndex] = {
+        id: data.templates[editingTemplateIndex].id || `tpl_${editingTemplateIndex + 1}`,
+        description: desc,
+        type: $('editTplType').value,
+        category: $('editTplCategory').value.trim() || 'Other',
+        person: $('editTplPerson').value
+      };
+      editingTemplateIndex = null;
+      await save();
+    } catch (err) { status(err.message, true); }
+    return;
+  }
+  if (e.target.id === 'cancelTplBtn') {
+    editingTemplateIndex = null;
+    renderTemplates();
+    return;
+  }
+});
+
+$('saveBank').addEventListener('click',async()=>{try{const account=$('bankAccount').value.trim();if(!account)throw Error('Enter an account name.');const rec=monthRecord();const b={account,opening:Number($('bankOpening').value)||0,closing:Number($('bankClosing').value)||0,note:$('bankNote').value.trim()};const i=rec.bankBalances.findIndex(x=>x.account===account);if(i>=0)rec.bankBalances[i]=b;else rec.bankBalances.push(b);if(!data.accounts.includes(account))data.accounts.push(account);await save()}catch(e){status(e.message,true)}});
+$('mfAccountFilter').addEventListener('change',render);
+$('mfHoldings').addEventListener('input',e=>{const key=e.target.dataset.mfPurpose;if(!key)return;const [ri,rj]=key.split(':').map(Number);if(data.imports[ri]?.rows[rj])data.imports[ri].rows[rj].purpose=e.target.value.slice(0,250)});
+$('saveFundPurposes').addEventListener('click',async()=>{try{await save();status('Mutual fund purposes saved to the local database.')}catch(e){status(e.message,true)}});
+$('importPreview').addEventListener('input',e=>{const i=Number(e.target.dataset.purposeIndex);if(Number.isInteger(i)&&pendingRows?.[i])pendingRows[i].purpose=e.target.value.slice(0,250)});
+$('saveSettings').addEventListener('click',async()=>{try{data.accounts=$('accountsSetting').value.split(',').map(s=>s.trim()).filter(Boolean);await save()}catch(e){status(e.message,true)}});
+$('previewImport').addEventListener('click',async()=>{try{pendingRows=(await api('/api/admin/expense-tracker/import-preview',{csv:$('csv').value,source:$('broker').value,assetType:$('assetType').value,account:$('importAccount').value.trim()})).rows;if($('importAccount').value.trim())pendingRows=pendingRows.map(row=>({...row,account:$('importAccount').value.trim()}));const stockCount=pendingRows.filter(r=>r.assetType!=='mutualFund').length, fundCount=pendingRows.filter(r=>r.assetType==='mutualFund').length;$('confirmImport').disabled=false;$('importPreview').innerHTML='<p><b>'+pendingRows.length+' holdings recognized.</b> '+(fundCount&&stockCount?'Will save as '+stockCount+' stock holdings and '+fundCount+' mutual fund holdings.':(fundCount?'Mutual fund holdings.':'Stock holdings.'))+' Review before saving.</p><div class="et-table-wrap"><table class="et-list"><thead><tr><th>Detected type</th><th>Symbol / scheme</th><th>ISIN</th><th>Quantity / units</th><th>Avg price</th><th>Current price</th><th>Invested</th><th>Current value</th><th>Account</th><th>Purpose</th></tr></thead><tbody>'+pendingRows.slice(0,100).map((r,i)=>'<tr><td>'+(r.assetType==='mutualFund'?'Mutual fund':'Stock')+'</td>'+[r.symbol,r.isin,r.quantity,r.averagePrice,r.currentPrice,r.invested,r.currentValue,r.account].map(v=>'<td>'+escape(v)+'</td>').join('')+'<td><input data-purpose-index="'+i+'" value="'+escape(r.purpose)+'" aria-label="Purpose for '+escape(r.symbol)+'"></td></tr>').join('')+'</tbody></table></div>'+(pendingRows.length>100?'<p>Showing first 100 rows.</p>':'');status('Preview only — no data saved yet.')}catch(e){pendingRows=null;$('confirmImport').disabled=true;status(e.message,true)}});
+
+$('confirmImport').addEventListener('click',async()=>{try{if(!pendingRows?.length)throw Error('Preview a report before confirming.');const importedAt=new Date().toISOString(),source=$('broker').value,month=$('importMonth').value;const stockRows=pendingRows.filter(row=>row.assetType!=='mutualFund'),fundRows=pendingRows.filter(row=>row.assetType==='mutualFund');for(const row of fundRows){if(!row.purpose){const prior=latestHoldings('mutualFund').find(h=>h.account.toLowerCase()===(row.account||source).toLowerCase()&&String(h.row.isin||h.row.symbol).toLowerCase()===String(row.isin||row.symbol).toLowerCase());if(prior)row.purpose=prior.row.purpose||''}}if(stockRows.length)data.imports.push({source,assetType:'stock',currency:stockRows[0]?.currency||'INR',month,importedAt,rows:stockRows});if(fundRows.length)data.imports.push({source,assetType:'mutualFund',currency:fundRows[0]?.currency||'INR',month,importedAt,rows:fundRows});await save();pendingRows=null;$('confirmImport').disabled=true;$('csv').value='';$('csvFile').value='';$('importPreview').textContent='Import saved'+(stockRows.length&&fundRows.length?' as separate Stocks and Mutual funds reports.':'.')}catch(e){status(e.message,true)}});
+(async()=>{try{const response=await api('/api/admin/expense-tracker/data');data=response?.data&&typeof response.data==='object'?response.data:null;if(!data){data={version:1,people:['Household'],categories:['Other'],accounts:[],months:{},imports:[]};}data.people=Array.isArray(data.people)?data.people:[];data.categories=Array.isArray(data.categories)&&data.categories.length?data.categories:['Other'];data.accounts=Array.isArray(data.accounts)?data.accounts:[];data.months=data.months&&typeof data.months==='object'?data.months:{};data.imports=Array.isArray(data.imports)?data.imports:[];render();status('Local data ready.')}catch(e){loadFailed=true;data={version:1,people:['Household'],categories:['Other'],accounts:[],months:{},imports:[]};render();status('Could not load saved data: '+e.message,true)}})();
+})();
+</script></body></html>

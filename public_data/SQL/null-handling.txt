@@ -1,0 +1,36 @@
+NULL HANDLING
+=============
+
+NULL represents missing or unknown information and follows three-valued logic in SQL.
+
+THREE-VALUED LOGIC
+------------------
+A comparison involving NULL generally produces UNKNOWN rather than TRUE or FALSE. WHERE returns rows only when the predicate is TRUE.
+
+FUNCTIONS
+---------
+COALESCE can choose the first non-null expression. NULLIF can turn a matching value into NULL and is useful in some calculations.
+
+EXAMPLE
+-------
+SELECT policy_number,
+       COALESCE(agent_name, 'Unassigned') AS agent_name
+FROM policies;
+
+COMMON MISTAKES
+---------------
+Using = NULL, assuming COUNT(column) counts NULLs, and replacing NULL blindly with zero even when zero has a different business meaning.
+
+KEY TAKEAWAYS
+-------------
+NULL is a semantic value, not merely an empty string or zero. Preserve the distinction when it matters.
+
+ORIGINAL INTERVIEW / CHECKPOINT QUESTIONS
+------------------------------------------
+1. Why is NULL not equal to NULL in normal SQL comparison?
+2. What does COALESCE do?
+3. Why can replacing NULL with zero be dangerous?
+
+EDITORIAL NOTE
+--------------
+This article is original educational content written for the public knowledge library. Reference material may have been used to understand terminology and cross-check concepts; copyrighted or proprietary source text is not reproduced.

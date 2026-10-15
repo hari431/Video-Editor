@@ -1,0 +1,34 @@
+POLICYCENTER AUTHORITY AND UNDERWRITING ISSUES
+==============================================
+
+Authority determines what a user or role is permitted to approve or perform. Underwriting issues identify conditions that may require review or resolution.
+
+SEPARATION OF CONCERNS
+----------------------
+A system can identify an underwriting issue and then route it to someone with appropriate authority. Assignment and authority are related but different.
+
+REFERENCE GROUNDING
+-------------------
+The supplied PolicyCenter material states that producers cannot approve underwriting issues and describes multiple authority profiles per user.
+
+PRACTICAL EXAMPLE
+-----------------
+A risk outside a producer's authority can be referred to an underwriter whose authority profile permits the decision.
+
+COMMON MISTAKES
+---------------
+Assuming a user who can see an issue can automatically approve it.
+
+KEY TAKEAWAYS
+-------------
+Underwriting issues create decision points; authority controls who can make those decisions.
+
+ORIGINAL INTERVIEW / CHECKPOINT QUESTIONS
+------------------------------------------
+1. What is an underwriting issue?
+2. What is authority?
+3. Why separate assignment from authority?
+
+EDITORIAL NOTE
+--------------
+This article is original educational content written for the public knowledge library. Reference material may have been used to understand terminology and cross-check concepts; copyrighted or proprietary source text is not reproduced.

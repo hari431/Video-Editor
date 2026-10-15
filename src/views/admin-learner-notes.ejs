@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Admin — Learner Notes · Learn with me</title><link rel="stylesheet" href="/styles.css"><%- include('partials/adsense-verification') %></head>
+<body><header class="topbar"><a class="brand" href="/">Learn with me</a><div class="user"><a href="/account" style="text-decoration: underline; font-weight: bold;"><%= user.name || user.email %></a><% if (typeof user !== 'undefined' && user) { %><span class="user-status-text" style="color: #64748b; font-size: 13px; margin-left: 6px;"><%= (typeof getUserHeaderStatus === 'function') ? getUserHeaderStatus(user) : (user.status ? (user.status.charAt(0).toUpperCase() + user.status.slice(1)) : 'Active') %><% if (user.access_expires_at) { %> <span class="user-access-until">(Access Until: <%= new Date(user.access_expires_at).toLocaleDateString() %>)</span><% } %></span><% } %><form method="post" action="/logout"><button type="submit">Sign out</button></form></div></header>
+<main class="container">
+<h1>Learner Notes Dashboard</h1>
+<p class="muted" style="margin-top:-8px;margin-bottom:16px;">Private preparation notes and answers written by learners — interview questions and library files.</p>
+<%- include('partials/admin-nav') %>
+<section id="learner-notes" style="margin-top:20px;">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:6px;">
+    <h2 style="margin:0;font-size:20px;font-weight:700;color:#1e293b;display:flex;align-items:center;gap:8px;">
+      <span>📝</span> Learner Notes (Interview Questions)
+    </h2>
+    <% if (typeof learnerNotesStats !== 'undefined' && learnerNotesStats) { %>
+      <span style="font-size:13px;font-weight:normal;color:#64748b;">
+        <%= learnerNotesStats.total_notes %> total note<%= learnerNotesStats.total_notes === 1 ? '' : 's' %> &bull; <%= learnerNotesStats.unique_learners %> learner<%= learnerNotesStats.unique_learners === 1 ? '' : 's' %> &bull; <%= learnerNotesStats.unique_questions %> question<%= learnerNotesStats.unique_questions === 1 ? '' : 's' %>
+      </span>
+    <% } %>
+  </div>
+  <p class="muted" style="margin-top:0;margin-bottom:14px;font-size:13.5px;">
+    Private preparation notes and answers written by learners against technical checkpoint and interview questions.
+  </p>
+
+  <div data-testid="learner-notes-table-container">
+    <% const lNotes = (typeof learnerNotes !== 'undefined' && Array.isArray(learnerNotes)) ? learnerNotes : []; %>
+    <% if (lNotes.length === 0) { %>
+      <div style="background:#fff;border:1px dashed #cbd5e1;border-radius:12px;padding:24px;text-align:center;color:#64748b;font-size:14px;margin-bottom:30px;">
+        No learner notes recorded yet.
+      </div>
+    <% } else { %>
+      <table class="admin-table" data-testid="learner-notes-table" style="margin-bottom:30px;">
+        <thead>
+          <tr>
+            <th style="min-width:180px;">Learner</th>
+            <th style="min-width:140px;">Topic / Category</th>
+            <th style="min-width:220px;">Interview Question</th>
+            <th>Private Note Preview</th>
+            <th style="min-width:130px;">Last Updated</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% lNotes.forEach(n => { 
+            const isFile = n.question_key && !n.question_key.includes('/q');
+            let fileHref = '';
+            if (isFile) {
+              const routePrefix = (typeof contentRouteForPath === 'function') ? contentRouteForPath(n.question_key) : (n.question_key.toLowerCase().endsWith('.txt') ? '/query/' : '/item/');
+              fileHref = routePrefix + n.question_key.split('/').map(encodeURIComponent).join('/');
+            }
+          %>
+            <tr>
+              <td>
+                <strong><%= n.user_name || '—' %></strong><br>
+                <span class="muted" style="font-size:12px;"><%= n.user_email %></span>
+              </td>
+              <td>
+                <% if (n.category_slug) { %>
+                  <span class="badge badge-info" style="font-size:11px;"><%= n.category_slug %></span>
+                <% } %>
+                <% if (n.article_slug) { %>
+                  <div style="margin-top:4px;">
+                    <a href="/knowledge/<%= n.category_slug || 'general' %>/<%= n.article_slug %>" target="_blank" rel="noopener noreferrer" style="font-size:12px;color:#2563eb;text-decoration:none;">
+                      <%= n.article_slug %> &nearr;
+                    </a>
+                  </div>
+                <% } else if (isFile) { %>
+                  <div style="margin-top:4px;">
+                    <a href="<%= fileHref %>" target="_blank" rel="noopener noreferrer" style="font-size:12px;color:#2563eb;text-decoration:none;">
+                      <%= n.question_key.split('/').slice(0, -1).join('/') || 'Library' %> &nearr;
+                    </a>
+                  </div>
+                <% } %>
+              </td>
+              <td>
+                <div style="font-weight:600;font-size:13px;color:#1e293b;line-height:1.4;">
+                  <% if (isFile) { %>
+                    <a href="<%= fileHref %>" target="_blank" rel="noopener noreferrer" style="color:#0284c7;text-decoration:underline;">
+                      <%= n.question_text || n.question_key.split('/').pop() %> ↗
+                    </a>
+                  <% } else if (n.category_slug && n.article_slug) { %>
+                    <a href="/knowledge/<%= n.category_slug %>/<%= n.article_slug %>#iqn-<%= n.question_key.replace(/[^a-zA-Z0-9_-]/g, '_') %>" target="_blank" rel="noopener noreferrer" style="color:#0284c7;text-decoration:underline;">
+                      <%= n.question_text || n.question_key %> ↗
+                    </a>
+                  <% } else { %>
+                    <%= n.question_text || n.question_key %>
+                  <% } %>
+                </div>
+                <div class="muted" style="font-size:11px;margin-top:2px;">
+                  <% if (isFile) { %>
+                    <a href="<%= fileHref %>" target="_blank" rel="noopener noreferrer" style="color:#64748b;text-decoration:underline;">
+                      <code><%= n.question_key %></code> &nearr;
+                    </a>
+                  <% } else { %>
+                    <code><%= n.question_key %></code>
+                  <% } %>
+                </div>
+              </td>
+              <td>
+                <div style="font-size:13px;color:#334155;line-height:1.5;max-width:420px;white-space:pre-wrap;background:#f8fafc;padding:8px 10px;border-radius:6px;border:1px solid #e2e8f0;">
+                  <%= n.note_text %>
+                </div>
+              </td>
+              <td style="font-size:12.5px;color:#64748b;white-space:nowrap;">
+                <%= new Date(n.updated_at).toLocaleString() %>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } %>
+  </div>
+</section>
+</main>
+<%- include('partials/footer') %>
+</body></html>

@@ -1,0 +1,35 @@
+LAMBDA EXPRESSIONS AND FUNCTIONAL INTERFACES
+============================================
+
+Lambda expressions provide a compact way to represent behavior where a functional interface is expected.
+
+FUNCTIONAL INTERFACE
+--------------------
+A functional interface has one abstract method. Common examples include Predicate, Function, Consumer and Supplier.
+
+EXAMPLE
+-------
+Predicate<String> nonEmpty = value -> value != null && !value.isBlank();
+List<String> result = values.stream().filter(nonEmpty).toList();
+
+METHOD REFERENCES
+-----------------
+Method references such as String::trim can improve readability when they directly express an existing method call.
+
+COMMON MISTAKES
+---------------
+Using lambdas for complex multi-step logic, capturing mutable state carelessly, and forgetting that readability still matters.
+
+KEY TAKEAWAYS
+-------------
+Lambdas are most useful when a small piece of behavior can be expressed clearly as a value.
+
+ORIGINAL INTERVIEW / CHECKPOINT QUESTIONS
+------------------------------------------
+1. What makes an interface functional?
+2. Predicate vs Function?
+3. When is a normal method clearer than a lambda?
+
+EDITORIAL NOTE
+--------------
+This article is original educational content written for the public knowledge library. Reference material may have been used to understand terminology and cross-check concepts; copyrighted or proprietary source text is not reproduced.

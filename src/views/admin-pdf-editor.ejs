@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Local PDF Editor · Admin · Learn with me</title><link rel="stylesheet" href="/styles.css"><link rel="modulepreload" href="/pdf-editor-project.js"><%- include('partials/adsense-verification') %></head>
+<body><header class="topbar"><a class="brand" href="/">Learn with me</a><div class="user"><a href="/account" style="text-decoration: underline; font-weight: bold;"><%= user.name || user.email %></a><% if (typeof user !== 'undefined' && user) { %><span class="user-status-text" style="color: #64748b; font-size: 13px; margin-left: 6px;"><%= (typeof getUserHeaderStatus === 'function') ? getUserHeaderStatus(user) : (user.status ? (user.status.charAt(0).toUpperCase() + user.status.slice(1)) : 'Active') %><% if (user.access_expires_at) { %> <span class="user-access-until">(Access Until: <%= new Date(user.access_expires_at).toLocaleDateString() %>)</span><% } %></span><% } %><form method="post" action="/logout"><button type="submit">Sign out</button></form></div></header>
+<main class="container" style="max-width:1600px;">
+<h1>Local PDF Editor</h1>
+<%- include('partials/admin-nav') %>
+
+<p class="muted">Admin/Owner only. Works on <strong>local PDF files you select</strong> (or a library PDF loaded read-only below) — everything runs locally in this browser and the local Node process (pdf.js + pdf-lib, no external services). The original file is never modified; export downloads a <strong>new</strong> PDF. This editor is <strong>disabled in production</strong>.</p>
+
+<% const _available = typeof pdfEditorAvailable !== 'undefined' ? !!pdfEditorAvailable : false; %>
+<% const _pre = (typeof preselectedPath !== 'undefined' && preselectedPath) ? String(preselectedPath) : ''; %>
+<% const _maxMb = (typeof pdfEditorMaxFileMb !== 'undefined' && Number.isFinite(Number(pdfEditorMaxFileMb)) && Number(pdfEditorMaxFileMb) >= 1) ? Math.floor(Number(pdfEditorMaxFileMb)) : 50; %>
+<% if (!_available) { %>
+  <p class="flash flash-error" data-testid="pdf-editor-disabled">The PDF editor is disabled in production. Run the app locally (development) to use it.</p>
+<% } %>
+<% if (_pre) { %>
+  <p class="muted" data-testid="pdf-editor-preselected">Library PDF preselected: <code><%= _pre %></code> — loading it below. The original file is never modified.</p>
+<% } %>
+
+<div data-testid="pdf-editor-root" data-available="<%= _available ? '1' : '0' %>" data-preselected="<%= _pre %>" data-max-file-mb="<%= _maxMb %>" class="pdf-studio">
+  <div class="pdf-toolbar" role="toolbar" aria-label="Editor toolbar">
+    <button type="button" class="button small" id="pdfOpenBtn" data-testid="pdf-editor-open" <%= _available ? '' : 'disabled' %>>📂 Open</button>
+    <input type="file" id="pdfFile" data-testid="pdf-editor-file" accept=".pdf,application/pdf" multiple style="display: none;" <%= _available ? '' : 'disabled' %>>
+    <input type="file" id="pdfImageFile" data-testid="pdf-editor-image" accept=".png,.jpg,.jpeg,image/png,image/jpeg" multiple style="display: none;" <%= _available ? '' : 'disabled' %>>
+    <button type="button" class="button small primary" id="pdfExportBtn" data-testid="pdf-editor-export" <%= _available ? '' : 'disabled' %>>💾 Export new PDF</button>
+    <span class="pdf-sep"></span>
+    <button type="button" class="button small secondary" id="pdfUndoBtn" data-testid="pdf-editor-undo" disabled>↩ Undo</button>
+    <button type="button" class="button small secondary" id="pdfRedoBtn" data-testid="pdf-editor-redo" disabled>↪ Redo</button>
+    <span class="pdf-sep"></span>
+    <button type="button" class="button small secondary" id="pdfZoomOut" data-testid="pdf-editor-zoom-out" <%= _available ? '' : 'disabled' %>>−</button>
+    <span data-testid="pdf-editor-zoom-label" id="pdfZoomLabel" style="font-size:12px;min-width:44px;text-align:center;">100%</span>
+    <button type="button" class="button small secondary" id="pdfZoomIn" data-testid="pdf-editor-zoom-in" <%= _available ? '' : 'disabled' %>>+</button>
+    <button type="button" class="button small secondary" id="pdfFitBtn" data-testid="pdf-editor-fit" <%= _available ? '' : 'disabled' %>>⤢ Fit</button>
+    <span class="pdf-sep"></span>
+    <button type="button" class="button small secondary" id="pdfPrevPage" data-testid="pdf-editor-prev-page" <%= _available ? '' : 'disabled' %>>← Prev</button>
+    <span data-testid="pdf-editor-page-indicator" id="pdfPageIndicator" style="font-variant-numeric:tabular-nums;font-size:13px;font-weight:600;">No pages</span>
+    <button type="button" class="button small secondary" id="pdfNextPage" data-testid="pdf-editor-next-page" <%= _available ? '' : 'disabled' %>>Next →</button>
+  </div>
+  <div class="pdf-studio-body">
+    <aside class="pdf-rail" aria-label="Pages">
+      <div class="pdf-rail-head">Pages</div>
+      <div id="pdfPageList" data-testid="pdf-editor-page-list"></div>
+      <div class="pdf-rail-foot">
+        <button type="button" class="button small" id="pdfRotatePage" data-testid="pdf-editor-rotate-page" <%= _available ? '' : 'disabled' %>>⟳ Rotate</button>
+        <button type="button" class="button small secondary" id="pdfDuplicatePage" data-testid="pdf-editor-duplicate-page" <%= _available ? '' : 'disabled' %>>⧉ Duplicate</button>
+        <button type="button" class="button small secondary" id="pdfExtractPage" data-testid="pdf-editor-extract-page" <%= _available ? '' : 'disabled' %>>✂ Extract</button>
+        <button type="button" class="button small secondary" id="pdfDeletePage" data-testid="pdf-editor-delete-page" <%= _available ? '' : 'disabled' %>>✕ Delete</button>
+      </div>
+    </aside>
+    <section class="pdf-canvas-col">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin:0 0 8px;" role="toolbar" aria-label="Content tools">
+        <button type="button" class="button small secondary" data-tool="select" data-testid="pdf-editor-tool-select" <%= _available ? '' : 'disabled' %>>➤ Select</button>
+        <button type="button" class="button small secondary" data-tool="edit" data-testid="pdf-editor-tool-edit" <%= _available ? '' : 'disabled' %>>✎ Edit text</button>
+        <button type="button" class="button small secondary" data-tool="text" data-testid="pdf-editor-tool-text" <%= _available ? '' : 'disabled' %>>T Text</button>
+        <button type="button" class="button small secondary" data-tool="image" data-testid="pdf-editor-tool-image" <%= _available ? '' : 'disabled' %>>🖼 Image</button>
+        <button type="button" class="button small secondary" data-tool="pen" data-testid="pdf-editor-tool-pen" <%= _available ? '' : 'disabled' %>>✏ Draw</button>
+        <button type="button" class="button small secondary" data-tool="highlight" data-testid="pdf-editor-tool-highlight" <%= _available ? '' : 'disabled' %>>🖍 Highlight</button>
+        <button type="button" class="button small secondary" data-tool="rect" data-testid="pdf-editor-tool-rect" <%= _available ? '' : 'disabled' %>>▭ Shape</button>
+        <button type="button" class="button small secondary" data-tool="ellipse" data-testid="pdf-editor-tool-ellipse" <%= _available ? '' : 'disabled' %>>⬭ Ellipse</button>
+        <button type="button" class="button small secondary" data-tool="line" data-testid="pdf-editor-tool-line" <%= _available ? '' : 'disabled' %>>⁄ Line</button>
+        <button type="button" class="button small secondary" data-tool="whiteout" data-testid="pdf-editor-tool-whiteout" <%= _available ? '' : 'disabled' %>>⬜ Whiteout</button>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin:0 0 8px;align-items:center;">
+        <label style="font-size:12px;">Text <input type="text" id="pdfTextInput" data-testid="pdf-editor-text-input" value="New text" maxlength="500" style="width:160px;" <%= _available ? '' : 'disabled' %>></label>
+        <label style="font-size:12px;">Color <input type="color" id="pdfColorInput" data-testid="pdf-editor-color-input" value="#000000" <%= _available ? '' : 'disabled' %>></label>
+        <label style="font-size:12px;">Size % <input type="number" id="pdfSizeInput" data-testid="pdf-editor-size-input" value="4" min="1" max="40" step="0.5" style="width:64px;" <%= _available ? '' : 'disabled' %>></label>
+        <button type="button" class="button small secondary" id="pdfDeleteMarkup" data-testid="pdf-editor-delete-markup" <%= _available ? '' : 'disabled' %>>Delete selected</button>
+      </div>
+      <div id="pdfPreviewWrap" data-testid="pdf-editor-preview-wrap" style="position:relative;background:#1e1e1f;padding:24px;border-radius:12px;overflow:auto;flex:1;min-height:0;height:100%;scroll-behavior:smooth;">
+        <div id="pdfCanvasStack" style="position:relative;margin:0 auto;">
+          <canvas id="pdfPageCanvas" data-testid="pdf-editor-canvas" style="display:block;"></canvas>
+          <canvas id="pdfOverlayCanvas" data-testid="pdf-editor-overlay" style="position:absolute;left:0;top:0;touch-action:none;"></canvas>
+        </div>
+      </div>
+      <p class="muted" id="pdfMeta" data-testid="pdf-editor-meta" style="font-size:12px; margin-top: 4px; margin-bottom: 2px;"></p>
+      <p class="muted" data-testid="pdf-editor-status" id="pdfExportStatus" style="font-size:12px;font-weight:600;margin-bottom:2px;"></p>
+    </section>
+    <aside class="pdf-inspector-col" aria-label="Inspector">
+      <h2 style="font-size:15px;margin:0 0 8px;flex:0 0 auto;">Inspector</h2>
+      <div id="pdfInspector" data-testid="pdf-editor-inspector" style="border:1px solid #e2e8f0;border-radius:12px;padding:12px;background:#fff;font-size:13px;flex:1;overflow-y:auto;">
+        <p class="muted" style="margin:0;">Add source PDFs, then select a page, markup, or existing text to edit exact values here.</p>
+      </div>
+    </aside>
+  </div>
+</div>
+
+</main>
+<%- include('partials/footer') %>
+<style>
+  /* Override main container max-width to allow full-width workspace */
+  main.container { max-width: 100% !important; width: 100% !important; padding: 0 24px !important; }
+
+  .pdf-studio { display:flex;flex-direction:column;gap:12px;height:calc(100vh - 180px);min-height:600px; }
+  .pdf-toolbar { display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:8px 12px; }
+  .pdf-sep { width:1px;align-self:stretch;background:#e2e8f0;margin:0 2px; }
+  .pdf-studio-body { display:flex;gap:12px;align-items:stretch;flex:1;min-height:0; }
+  
+  .pdf-rail { flex:0 0 160px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:8px;display:flex;flex-direction:column;height:100%;min-height:0; }
+  .pdf-rail-head { font-size:12px;font-weight:700;color:#475569;margin-bottom:6px;text-transform:uppercase;flex:0 0 auto; }
+  #pdfPageList { display:flex;flex-direction:column;gap:8px;margin:0;flex:1;overflow-y:auto;padding-right:2px; }
+  .pdf-rail-foot { display:flex;flex-direction:column;gap:6px;margin-top:8px;flex:0 0 auto; }
+  
+  .pdf-canvas-col { flex:1;min-width:0;display:flex;flex-direction:column;height:100%; }
+  
+  .pdf-inspector-col { flex:0 0 260px;background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;padding:12px;display:flex;flex-direction:column;height:100%;min-height:0; }
+  
+  #pdfPageList .pdf-thumb { border:2px solid #e2e8f0;border-radius:8px;padding:4px;background:#fff;cursor:pointer;text-align:center;font-size:11px;position:relative; }
+  #pdfPageList .pdf-thumb.pdf-selected { border-color:#1d4ed8;box-shadow: 0 0 0 2px rgba(29, 78, 216, 0.15); }
+  #pdfPageList .pdf-thumb canvas { display:block;max-width:100%;height:auto;margin:0 auto;border-radius:4px; }
+  
+  #pdfInspector label { display:flex;flex-direction:column;gap:4px;margin-bottom:10px;font-weight:500;color:#475569; }
+  #pdfInspector input[type="number"], #pdfInspector input[type="text"], #pdfInspector textarea, #pdfInspector select {
+    width: 100% !important;
+    padding: 6px 8px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    background: #fff;
+    font-size: 13px;
+  }
+  #pdfInspector input[readonly] { background:#f1f5f9;color:#64748b;cursor:not-allowed; }
+  
+  .pdf-textedit {
+    position: absolute;
+    box-sizing: border-box;
+    font: inherit;
+    color: inherit;
+    background: #ffffff !important;
+    border: 1px solid #1d4ed8 !important;
+    outline: 3px solid rgba(29, 78, 216, 0.25) !important;
+    border-radius: 6px !important;
+    padding: 6px 10px !important;
+    box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1) !important;
+    z-index: 50;
+    min-height: 28px;
+    resize: none;
+    line-height: 1.25;
+  }
+  .pdf-spanedit { background:#ffffff !important; }
+  [data-tool="edit"].button:not(.secondary) { outline:2px solid #1d4ed8; }
+</style>
+<script type="module" src="/admin-pdf-editor.js?v=<%= Date.now() %>"></script>
+</body></html>

@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Video Protection Events · Admin · Learn with me</title><link rel="stylesheet" href="/styles.css"><%- include('partials/adsense-verification') %></head>
+<body><header class="topbar"><a class="brand" href="/">Learn with me</a><div class="user"><a href="/account" style="text-decoration: underline; font-weight: bold;"><%= user.name || user.email %></a><% if (typeof user !== 'undefined' && user) { %><span class="user-status-text" style="color: #64748b; font-size: 13px; margin-left: 6px;"><%= (typeof getUserHeaderStatus === 'function') ? getUserHeaderStatus(user) : (user.status ? (user.status.charAt(0).toUpperCase() + user.status.slice(1)) : 'Active') %><% if (user.access_expires_at) { %> <span class="user-access-until">(Access Until: <%= new Date(user.access_expires_at).toLocaleDateString() %>)</span><% } %></span><% } %><form method="post" action="/logout"><button type="submit">Sign out</button></form></div></header>
+<main class="container">
+<h1>Video Protection Events</h1>
+<%- include('partials/admin-nav') %>
+
+<p class="muted">Identify a viewer's protected-video session from the 8-character Protection Session code shown in the video watermark (e.g. <code>HFBZ7R7G</code>). Only the 8-character code is ever shown — full session identifiers are never displayed.</p>
+
+<% const _code = typeof sessionCode !== 'undefined' ? sessionCode : ''; %>
+<% const _res = typeof result !== 'undefined' ? result : null; %>
+
+<form method="get" action="/admin/video-protection" data-testid="protection-search-form" style="margin:14px 0 18px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+  <label for="protectionSession" style="font-weight:600">Protection Session code</label>
+  <input id="protectionSession" name="session" value="<%= _code %>" maxlength="8" pattern="[A-Za-z0-9]{8}" placeholder="HFBZ7R7G" autocomplete="off" spellcheck="false" style="padding:6px 10px;border:1px solid #cbd5e1;border-radius:6px;font-family:monospace;text-transform:uppercase">
+  <button type="submit" class="button primary">Search</button>
+</form>
+
+<% if (_res && !_res.ok) { %>
+  <p class="flash flash-error" data-testid="protection-error"><%= _res.error %></p>
+<% } else if (_res && _res.ok && !_res.session) { %>
+  <p class="flash flash-ok" data-testid="protection-no-match">No protection session found for code <code><%= _res.code %></code>.</p>
+<% } else if (_res && _res.ok && _res.session) { %>
+  <% const _s = _res.session; %>
+  <h2 data-testid="protection-session-heading">Session <code><%= _res.code %></code></h2>
+  <table class="admin-table" data-testid="protection-session-table">
+    <thead><tr><th>User</th><th>Role</th><th>Status</th><th>First seen</th><th>Last seen</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><%= _s.user_email %><% if (_s.user_name) { %> (<%= _s.user_name %>)<% } %></td>
+        <td><%= _s.user_role || '—' %></td>
+        <td><%= _s.user_status || '—' %></td>
+        <td><%= _s.first_seen ? new Date(_s.first_seen).toLocaleString() : '—' %></td>
+        <td><%= _s.last_seen ? new Date(_s.last_seen).toLocaleString() : '—' %></td>
+      </tr>
+    </tbody>
+  </table>
+<% } else { %>
+  <p class="muted" data-testid="protection-prompt">Enter a session code above to look up the viewer and their first/last activity.</p>
+<% } %>
+
+</main>
+<%- include('partials/footer') %>
+</body></html>

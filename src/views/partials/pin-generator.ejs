@@ -1,0 +1,118 @@
+<% if (typeof pinGen !== 'undefined' && pinGen && pinGen.path) { %>
+<section class="pin-generator" data-testid="pin-generator" style="margin:18px 0;padding:16px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;">
+  <h3 style="margin:0 0 12px;font-size:15px;font-weight:700;color:#172033;">🔗 Generate Reference</h3>
+  <label style="display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#334155;cursor:pointer;">
+    <input type="checkbox" data-testid="pin-gen-toggle">
+    <span data-testid="pin-gen-toggle-label">OFF</span>
+  </label>
+  <div data-testid="pin-gen-panel" hidden style="margin-top:12px;">
+    <div style="font-size:13px;color:#334155;margin-bottom:10px;">
+      <div style="font-weight:700;margin-bottom:4px;">Reference Path:</div>
+      <code data-testid="pin-gen-path" style="display:block;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:7px 12px;word-break:break-all;"><%= pinGen.path %></code>
+    </div>
+    <div style="font-size:13px;color:#334155;margin-bottom:10px;">
+      <div style="font-weight:700;margin-bottom:4px;">Pin Access:</div>
+      <label style="margin-right:12px;cursor:pointer;"><input type="radio" name="pin-gen-access" value="normal" checked> Normal</label>
+      <label style="cursor:pointer;"><input type="radio" name="pin-gen-access" value="premium"> Premium</label>
+    </div>
+    <div style="font-size:13px;color:#334155;margin-bottom:10px;">
+      <div style="font-weight:700;margin-bottom:4px;"><label>Reference Name:</label></div>
+      <input type="text" data-testid="pin-gen-name" value="<%= pinGen.name %>" maxlength="200" style="width:100%;max-width:480px;border:1px solid #cbd5e1;border-radius:8px;padding:7px 12px;font-size:13px;">
+    </div>
+    <div style="margin-bottom:10px;">
+      <button type="button" class="button small" data-testid="pin-gen-generate">Generate Pin</button>
+    </div>
+    <div data-testid="pin-gen-result" hidden style="font-size:13px;color:#334155;">
+      <div style="font-weight:700;margin-bottom:4px;">Generated Pin:</div>
+      <textarea data-testid="pin-gen-output" readonly rows="3" style="width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:7px 12px;font-size:13px;font-family:inherit;"></textarea>
+      <div style="margin-top:8px;display:flex;align-items:center;gap:8px;">
+        <button type="button" class="button small" data-testid="pin-gen-copy">Copy</button>
+        <span data-testid="pin-gen-copied" hidden style="font-size:12px;font-weight:700;color:#15803d;">Copied</span>
+      </div>
+    </div>
+  </div>
+<script>
+(function () {
+  // Runtime-only authoring helper: builds the Pin string client-side from the
+  // server-rendered reference path + editable name. No requests, no storage.
+  // String format mirrors buildPinString() in src/library/pin-generator.js.
+  function init(root) {
+    var toggle = root.querySelector('[data-testid="pin-gen-toggle"]');
+    var toggleLabel = root.querySelector('[data-testid="pin-gen-toggle-label"]');
+    var panel = root.querySelector('[data-testid="pin-gen-panel"]');
+    var pathEl = root.querySelector('[data-testid="pin-gen-path"]');
+    var nameInput = root.querySelector('[data-testid="pin-gen-name"]');
+    var generateBtn = root.querySelector('[data-testid="pin-gen-generate"]');
+    var result = root.querySelector('[data-testid="pin-gen-result"]');
+    var output = root.querySelector('[data-testid="pin-gen-output"]');
+    var copyBtn = root.querySelector('[data-testid="pin-gen-copy"]');
+    var copied = root.querySelector('[data-testid="pin-gen-copied"]');
+    if (!toggle || !panel || !pathEl || !nameInput || !generateBtn || !output || !copyBtn) return;
+    function isPanelOpen() {
+      return toggle.checked && !panel.hidden;
+    }
+    toggle.addEventListener('change', function () {
+      panel.hidden = !toggle.checked;
+      if (toggleLabel) toggleLabel.textContent = toggle.checked ? 'ON' : 'OFF';
+      if (!toggle.checked) {
+        // Switched OFF: hide and clear generated state so Generate/Copy
+        // have nothing to act on until the panel is opened again.
+        result.hidden = true;
+        output.value = '';
+        if (copied) copied.hidden = true;
+      }
+    });
+    generateBtn.addEventListener('click', function () {
+      if (!isPanelOpen()) return;
+      var url = pathEl.textContent.trim();
+      var title = nameInput.value.trim();
+      var accessEl = root.querySelector('input[type="radio"][value="premium"]');
+      var pin = (accessEl && accessEl.checked)
+        ? 'Pinned: Premium | ' + title + ' | ' + url
+        : 'Pinned: ' + title + ' | ' + url;
+      output.value = pin;
+      result.hidden = false;
+      if (copied) copied.hidden = true;
+    });
+    function copyText(text) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        return navigator.clipboard.writeText(text);
+      }
+      return new Promise(function (resolve, reject) {
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try {
+          if (document.execCommand('copy')) resolve();
+          else reject(new Error('copy failed'));
+        } catch (e) {
+          reject(e);
+        } finally {
+          document.body.removeChild(ta);
+        }
+      });
+    }
+    copyBtn.addEventListener('click', function () {
+      if (!isPanelOpen() || !output.value) return;
+      var original = copyBtn.textContent;
+      copyText(output.value).then(function () {
+        if (copied) copied.hidden = false;
+        copyBtn.textContent = 'Copied';
+      }).catch(function () {
+        copyBtn.textContent = 'Copy failed';
+      }).then(function () {
+        setTimeout(function () {
+          copyBtn.textContent = original;
+          if (copied) copied.hidden = true;
+        }, 1400);
+      });
+    });
+  }
+  document.querySelectorAll('[data-testid="pin-generator"]').forEach(init);
+})();
+</script>
+</section>
+<% } %>

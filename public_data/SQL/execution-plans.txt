@@ -1,0 +1,34 @@
+EXECUTION PLANS
+===============
+
+An execution plan describes how the database intends to retrieve and process data. It is one of the most useful tools for diagnosing query performance.
+
+WHAT TO INSPECT
+---------------
+Look for scans, index access, join methods, estimated vs actual row counts where available, sorts, aggregation cost, and expensive operators.
+
+CARDINALITY
+-----------
+Bad row-count estimates can lead the optimizer to choose a poor plan. Statistics and data distribution influence these estimates.
+
+PRACTICAL WORKFLOW
+------------------
+Capture the query, inspect the plan, identify the expensive or surprising operator, make a targeted change, then compare measurements.
+
+COMMON MISTAKES
+---------------
+Reading only one plan, ignoring actual runtime, and assuming a named index in a plan automatically means the query is optimized.
+
+KEY TAKEAWAYS
+-------------
+Execution plans turn performance discussions from guesses into evidence.
+
+ORIGINAL INTERVIEW / CHECKPOINT QUESTIONS
+------------------------------------------
+1. What is cardinality estimation?
+2. Estimated vs actual rows?
+3. Why compare plans before and after a change?
+
+EDITORIAL NOTE
+--------------
+This article is original educational content written for the public knowledge library. Reference material may have been used to understand terminology and cross-check concepts; copyrighted or proprietary source text is not reproduced.

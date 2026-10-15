@@ -1,0 +1,61 @@
+GUIDEWIRE CLAIMCENTER OVERVIEW
+==============================
+
+ClaimCenter is Guidewire's claims management product. It supports claims from first notice through investigation, evaluation, payments, recoveries and closure.
+
+CORE CONCEPTS
+-------------
+A claim can contain incidents, exposures, reserves, payments, recoveries, contacts, activities and other information.
+
+FNOL
+----
+First Notice of Loss captures initial information about the event. Later investigation can refine the facts.
+
+EXPOSURE AND COVERAGE RELATIONSHIP
+----------------------------------
+A Claim has many Exposures. Each Exposure points to one Coverage that may apply. An Incident (e.g., VehicleIncident, PropertyIncident) describes what was damaged. Example taxonomy:
+
+Claim (12345) → Incident (VehicleIncident: 2018 Honda) → Exposure (Collision coverage) → ReserveLine (Exposure + CostType=ClaimCost + CostCategory=VehicleBody)
+ReserveLine → Reserve → Payment (Check → CheckLineItem)
+A reserve estimates future cost; a payment moves money. Reserves use the same triple (exposure, costType, costCategory) so reporting can pivot by exposure.
+
+FNOL WORKFLOW AND VALIDATION LEVELS
+-----------------------------------
+FNOL wizard stages: NewClaimSaved → AbilityToPay → ExternalData → LoadSave → ReadyToClose (varies by LOB). Each stage runs different validation rules. Early stages allow missing data so the claim can be opened quickly; later stages block binding to finance until required fields are present. The Claim validation level progresses as data is refined.
+
+GOSU QUERY EXAMPLE
+------------------
+Finding open exposures for a claim number:
+
+uses gw.api.database.Query
+uses gw.api.database.Relop
+
+var exposures = Query.make(entity.Exposure)
+  .join(Exposure#Claim)
+  .compare(Claim#ClaimNumber, Relop.Equals, "000-00-000001")
+  .compare(Exposure#State, Relop.Equals, ExposureState.TC_OPEN)
+  .select()
+
+Joining through Claim avoids a separate Claim lookup. Filter by State when you need only open exposures; otherwise you retrieve closed exposures and reserves that are no longer actionable.
+
+REFERENCE GROUNDING
+-------------------
+The supplied ClaimCenter material covers FNOL, exposures, reserves, payments, recoveries, catastrophes, contacts, activities and claim validation.
+
+COMMON MISTAKES
+---------------
+Confusing an incident with an exposure or a reserve with an actual payment. Also creating a new Exposure when a Coverage was not verified; linking a reserve to the wrong CostType; treating AbilityToPay validation as final data quality.
+
+KEY TAKEAWAYS
+-------------
+ClaimCenter is a claims workflow and financial-management platform, not merely a claim database.
+
+ORIGINAL INTERVIEW / CHECKPOINT QUESTIONS
+------------------------------------------
+1. What is FNOL?
+2. Incident vs exposure?
+3. Reserve vs payment?
+
+EDITORIAL NOTE
+--------------
+This article is original educational content written for the public knowledge library. Reference material may have been used to understand terminology and cross-check concepts; copyrighted or proprietary source text is not reproduced.

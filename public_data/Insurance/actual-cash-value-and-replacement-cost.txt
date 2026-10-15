@@ -1,0 +1,38 @@
+ACTUAL CASH VALUE AND REPLACEMENT COST
+======================================
+
+Actual cash value (ACV) and replacement cost (RC) are different approaches to valuing covered property losses.
+
+ACV
+---
+ACV commonly reflects replacement cost less applicable depreciation, although exact definitions vary by policy and jurisdiction.
+
+REPLACEMENT COST
+----------------
+Replacement cost aims to pay the cost to repair or replace with like kind and quality subject to the policy's terms, limits and conditions.
+
+EXAMPLE
+-------
+If replacing an item costs 2,000 and applicable depreciation is 800, a simplified ACV calculation would be 1,200 before deductible and other policy provisions.
+
+REFERENCE GROUNDING
+-------------------
+The supplied NAIC home-insurance guide discusses replacement cost, market value and actual cash value. This article independently explains the concepts rather than reproducing the guide.
+
+COMMON MISTAKES
+---------------
+Assuming ACV always equals market value or assuming replacement cost automatically ignores policy limits.
+
+KEY TAKEAWAYS
+-------------
+Valuation basis matters. Always check the policy definition, applicable limits, depreciation rules and deductible.
+
+ORIGINAL INTERVIEW / CHECKPOINT QUESTIONS
+------------------------------------------
+1. ACV vs replacement cost?
+2. Is ACV always market value?
+3. What else can affect a replacement-cost claim?
+
+EDITORIAL NOTE
+--------------
+This article is original educational content written for the public knowledge library. Reference material may have been used to understand terminology and cross-check concepts; copyrighted or proprietary source text is not reproduced.

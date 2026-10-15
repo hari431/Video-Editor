@@ -1,0 +1,35 @@
+DATE AND TIME API
+=================
+
+java.time provides immutable, clearer date/time types such as LocalDate, Instant, ZonedDateTime and Duration.
+
+CHOOSING A TYPE
+---------------
+LocalDate represents a date without a time zone. Instant represents a point on the global timeline. ZonedDateTime combines a date-time with a time zone. The correct type depends on the business meaning.
+
+EXAMPLE
+-------
+LocalDate renewalDate = LocalDate.of(2026, 9, 9);
+Instant eventTime = Instant.now();
+
+TIME ZONES
+----------
+Never assume a server's default time zone represents the business time zone. Store and transmit instants when appropriate, and convert to a business zone at the presentation or domain boundary.
+
+COMMON MISTAKES
+---------------
+Using legacy Date/Calendar APIs for new code, treating local time as an instant, and ignoring daylight-saving transitions.
+
+KEY TAKEAWAYS
+-------------
+Model time according to business meaning. Separate dates, local times, instants, and zoned times instead of treating them as interchangeable.
+
+ORIGINAL INTERVIEW / CHECKPOINT QUESTIONS
+------------------------------------------
+1. LocalDate vs Instant?
+2. Why are time zones important?
+3. Why prefer java.time for new code?
+
+EDITORIAL NOTE
+--------------
+This article is original educational content written for the public knowledge library. Reference material may have been used to understand terminology and cross-check concepts; copyrighted or proprietary source text is not reproduced.

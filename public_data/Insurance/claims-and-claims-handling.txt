@@ -1,0 +1,38 @@
+CLAIMS AND CLAIMS HANDLING
+==========================
+
+A claim is a request for policy benefits following a loss or event. Claims handling determines whether and how the policy responds.
+
+TYPICAL FLOW
+------------
+A simplified flow is notice/FNOL, coverage and policy verification, investigation, evaluation, reserve/payment decisions, settlement and closure. Actual workflows vary by product and jurisdiction.
+
+EVIDENCE
+--------
+Claims may use statements, photographs, estimates, reports, invoices, inspections and other evidence.
+
+ADJUSTER ROLE
+-------------
+An adjuster or claims professional evaluates facts, policy provisions and damages and communicates with involved parties.
+
+REFERENCE GROUNDING
+-------------------
+The supplied ClaimCenter reference material covers concepts such as FNOL, exposures, reserves, payments, recoveries, activities and catastrophe handling. This article explains the concepts independently.
+
+COMMON MISTAKES
+---------------
+Confusing an incident with a covered loss, treating a reserve as a payment, or assuming an initial estimate is always final.
+
+KEY TAKEAWAYS
+-------------
+Claims handling combines policy interpretation, investigation, financial controls and communication.
+
+ORIGINAL INTERVIEW / CHECKPOINT QUESTIONS
+------------------------------------------
+1. What is FNOL?
+2. Reserve vs payment?
+3. Why can claim estimates change?
+
+EDITORIAL NOTE
+--------------
+This article is original educational content written for the public knowledge library. Reference material may have been used to understand terminology and cross-check concepts; copyrighted or proprietary source text is not reproduced.

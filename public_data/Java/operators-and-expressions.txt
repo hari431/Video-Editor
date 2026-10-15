@@ -1,0 +1,40 @@
+OPERATORS AND EXPRESSIONS
+=========================
+
+Operators combine values into expressions. Java includes arithmetic, comparison, logical, assignment, bitwise, shift, conditional, and type-related operators.
+
+CATEGORIES
+----------
+Arithmetic operators calculate numeric values. Relational operators compare values. Logical operators combine boolean expressions. The conditional operator can select between two expressions.
+
+SHORT-CIRCUITING
+----------------
+The && and || operators may avoid evaluating the right-hand expression when the result is already known. This is useful for safe checks such as obj != null && obj.isValid().
+
+EXAMPLE
+-------
+if (user != null && user.isActive()) {
+    process(user);
+}
+
+PRECEDENCE
+----------
+Operator precedence determines grouping, but parentheses improve readability and reduce mistakes. Do not depend on readers remembering a long precedence table.
+
+COMMON MISTAKES
+---------------
+Using == when value equality is intended for objects, mixing integer and floating-point arithmetic unexpectedly, and writing overly clever expressions are avoidable sources of bugs.
+
+KEY TAKEAWAYS
+-------------
+Prefer clear expressions and parentheses when intent is not obvious; remember that == and object value equality are different concerns.
+
+ORIGINAL INTERVIEW / CHECKPOINT QUESTIONS
+------------------------------------------
+1. What is short-circuit evaluation?
+2. When is == appropriate for objects?
+3. Why can parentheses improve maintainability?
+
+EDITORIAL NOTE
+--------------
+This article is original educational content written for the public knowledge library. Reference material may have been used to understand terminology and cross-check concepts; copyrighted or proprietary source text is not reproduced.

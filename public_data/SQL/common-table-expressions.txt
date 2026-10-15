@@ -1,0 +1,113 @@
+COMMON TABLE EXPRESSIONS (CTES)
+===============================
+
+Common Table Expressions (CTEs) are temporary, named result sets defined within the scope of a single SELECT, INSERT, UPDATE, DELETE, or CREATE VIEW statement. Introduced in the SQL:1999 standard, CTEs act as virtual tables or inline views that exist only during the execution of the query, significantly improving query readability, maintainability, and structure.
+
+CONCEPT OVERVIEW
+----------------
+A Common Table Expression provides a clean way to break complex queries down into modular, readable steps. Instead of nesting deep subqueries within from-clauses—which obfuscates columns and operations—a CTE allows you to define auxiliary query blocks at the beginning of your script using the WITH keyword, referencing them throughout the main query block like standard relational tables.
+
+BASIC PATTERN
+-------------
+The fundamental syntax of a CTE starts with the WITH clause, followed by the identifier (the name of the temporary table), an optional column list, the AS keyword, and the subquery parenthesized.
+
+WITH active_policies AS (
+    SELECT 
+        id, 
+        customer_id, 
+        policy_number, 
+        effective_date,
+        total_premium
+    FROM policies
+    WHERE status = 'ACTIVE'
+      AND effective_date <= CURRENT_DATE
+)
+SELECT 
+    customer_id, 
+    COUNT(id) AS active_policy_count,
+    SUM(total_premium) AS total_active_premium
+FROM active_policies
+GROUP BY customer_id
+HAVING COUNT(id) >= 1;
+
+RECURSIVE CTES
+--------------
+One of the most powerful capabilities of CTEs is self-reference, known as a Recursive CTE. A recursive CTE is indispensable when querying hierarchical, graph-structured, or network data, such as organizational charts (employee-manager hierarchies), bill-of-materials listings, or category trees.
+
+A recursive CTE consists of three logical components combined via a UNION or UNION ALL operator:
+1. Anchor Member: A non-recursive query that initializes the starting point of the recursion.
+2. Recursive Member: A query that references the CTE itself, joining it back to the base table to fetch child levels.
+3. Termination Condition: An implicit condition where the recursive member returns an empty set, stopping the execution loop.
+
+-- Real-World Organizational Hierarchy Traversal
+WITH RECURSIVE org_chart AS (
+    -- Anchor Member: Find the ultimate manager (e.g., CEO with no manager)
+    SELECT 
+        employee_id,
+        manager_id,
+        employee_name,
+        role_title,
+        1 AS org_level,
+        employee_name::VARCHAR(255) AS reporting_path
+    FROM employees
+    WHERE manager_id IS NULL
+
+    UNION ALL
+
+    -- Recursive Member: Join children to their parents loaded in previous step
+    SELECT 
+        e.employee_id,
+        e.manager_id,
+        e.employee_name,
+        e.role_title,
+        o.org_level + 1 AS org_level,
+        (o.reporting_path || ' -> ' || e.employee_name)::VARCHAR(255) AS reporting_path
+    FROM employees e
+    INNER JOIN org_chart o 
+        ON e.manager_id = o.employee_id
+)
+SELECT 
+    employee_id,
+    reporting_path,
+    org_level,
+    role_title
+FROM org_chart
+ORDER BY org_level, employee_id;
+
+PERFORMANCE AND MATERIALIZATION
+-------------------------------
+Historically, database engines treated CTEs as optimization barriers. When a query referenced a CTE multiple times, the engine materialized the CTE (wrote it to temporary disk storage or memory) and scanned it repeatedly, which could be extremely slow.
+
+In modern database systems (including PostgreSQL 12+, SQL Server, and Oracle), the query optimizer can decide whether to inline the CTE (merging it into the outer query as if it were a subquery) or materialize it based on statistics and index availability:
+- Non-Materialized (Inlined): The query planner pushes filters down into the CTE, allowing index scans to be utilized on the underlying tables.
+- Materialized: The database computes the CTE once and saves the result cache. This is useful when the CTE does heavy computation (e.g., aggregation) and is referenced multiple times in the main query.
+
+In PostgreSQL, you can explicitly control this behavior using the MATERIALIZED or NOT MATERIALIZED hints:
+WITH summary_data AS NOT MATERIALIZED (
+    SELECT category_id, SUM(amount) AS total
+    FROM sales
+    GROUP BY category_id
+)
+SELECT * FROM summary_data WHERE category_id = 42;
+
+COMMON MISTAKES
+---------------
+1. Unbounded Infinite Recursion: Forgetting a proper join condition or cyclic path checking in recursive CTEs can cause the recursion to run infinitely, causing a stack overflow or database lock.
+2. Nesting Overkill: Creating massive chains of CTEs (10+ steps) merely to split tiny operations. This can confuse the optimizer and degrade execution plans.
+3. Assuming Performance Benefits: Believing that a CTE is inherently faster than a subquery. CTEs are primarily a readability and composition tool; always inspect the EXPLAIN query plan to analyze execution paths.
+
+KEY TAKEAWAYS
+-------------
+- Common Table Expressions (CTEs) modularize complex SQL statements into a readable top-down linear sequence.
+- Recursive CTEs are the standard relational pattern to traverse parent-child, hierarchical, or graph-like relations in single queries.
+- Optimize high-volume CTEs by reviewing execution plans, understanding materialize thresholds, and utilizing proper indexing on underlying tables.
+
+ORIGINAL INTERVIEW / CHECKPOINT QUESTIONS
+------------------------------------------
+1. What is the syntax difference between a standard subquery and a CTE?
+2. How do you prevent infinite loops in recursive CTEs when cyclic data is present?
+3. In PostgreSQL, what does the 'NOT MATERIALIZED' hint do and when should you use it?
+
+EDITORIAL NOTE
+--------------
+This article is original educational content written for the public knowledge library. Reference material may have been used to understand terminology and cross-check concepts; copyrighted or proprietary source text is not reproduced.

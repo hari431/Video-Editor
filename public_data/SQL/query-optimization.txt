@@ -1,0 +1,47 @@
+QUERY OPTIMIZATION
+==================
+
+Query optimization is the process of making database work more efficient while preserving correctness.
+
+START WITH MEASUREMENT
+----------------------
+Use representative data and inspect execution plans before changing indexes or rewriting SQL. A query that looks expensive may be cheap at current scale, and a query that looks simple may become expensive as data grows.
+
+COMMON LEVERS
+-------------
+Reduce unnecessary rows and columns, use appropriate indexes, avoid accidental row multiplication, and design pagination carefully.
+
+BEFORE AND AFTER WITH EXPLAIN
+------------------------------
+Filtering a large table before joining can reduce work conceptually, although the optimizer may perform equivalent transformations.
+
+-- Before: joins then filters (scans large joined set)
+SELECT p.policy_number, c.name
+FROM policies p JOIN customers c ON c.id = p.customer_id
+WHERE c.status = 'ACTIVE' AND p.effective_date > '2025-01-01';
+
+EXPLAIN shows Hash Join cost=1200 rows=50k.
+-- After: push predicate and use composite index
+SELECT p.policy_number, c.name
+FROM (SELECT * FROM policies WHERE effective_date > '2025-01-01') p
+JOIN customers c ON c.id = p.customer_id AND c.status = 'ACTIVE';
+
+With INDEX ON policies(effective_date) and ON customers(id) the plan becomes Index Scan + Nested Loop cost=45 rows=800. The win appears only at scale; on 100 rows both plans cost similarly — hence measurement first.
+
+COMMON MISTAKES
+---------------
+Optimizing without measurement, forcing hints prematurely, and making SQL unreadable for a theoretical performance gain that has not been demonstrated. Also rewriting `OFFSET 100000` pagination without keyset (`WHERE id > lastId ORDER BY id LIMIT 20`) which avoids scanning 100k rows.
+
+KEY TAKEAWAYS
+-------------
+Optimization should be evidence-driven: identify the bottleneck, measure, change one thing, and verify.
+
+ORIGINAL INTERVIEW / CHECKPOINT QUESTIONS
+------------------------------------------
+1. What should you inspect before rewriting a query?
+2. Why can data volume change query behavior?
+3. Why are optimizer hints not a first resort?
+
+EDITORIAL NOTE
+--------------
+This article is original educational content written for the public knowledge library. Reference material may have been used to understand terminology and cross-check concepts; copyrighted or proprietary source text is not reproduced.

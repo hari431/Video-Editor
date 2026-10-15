@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Header/Footer · Admin · Learn with me</title><link rel="stylesheet" href="/styles.css"><%- include('partials/adsense-verification') %></head>
+<body><header class="topbar"><a class="brand" href="/">Learn with me</a><div class="user"><a href="/account" style="text-decoration: underline; font-weight: bold;"><%= user.name || user.email %></a><% if (typeof user !== 'undefined' && user) { %><span class="user-status-text" style="color: #64748b; font-size: 13px; margin-left: 6px;"><%= (typeof getUserHeaderStatus === 'function') ? getUserHeaderStatus(user) : (user.status ? (user.status.charAt(0).toUpperCase() + user.status.slice(1)) : 'Active') %><% if (user.access_expires_at) { %> <span class="user-access-until">(Access Until: <%= new Date(user.access_expires_at).toLocaleDateString() %>)</span><% } %></span><% } %><form method="post" action="/logout"><button type="submit">Sign out</button></form></div></header>
+<main class="container" style="max-width:900px;">
+<h1>Header / Footer</h1>
+<%- include('partials/admin-nav') %>
+
+<p class="muted">Admin/Owner only. Stamp header and/or footer text onto a local PDF and download a <strong>new</strong> file. Use <code>{page}</code> for the page number and <code>{total}</code> for the page count. Text is drawn onto the pages; existing content is otherwise untouched. The original file is never modified. This tool is <strong>disabled in production</strong>.</p>
+
+<% const _available = typeof pdfHeaderFooterAvailable !== 'undefined' ? !!pdfHeaderFooterAvailable : false; %>
+<% const _maxMb = (typeof pdfHeaderFooterMaxFileMb !== 'undefined' && Number.isFinite(Number(pdfHeaderFooterMaxFileMb)) && Number(pdfHeaderFooterMaxFileMb) >= 1) ? Math.floor(Number(pdfHeaderFooterMaxFileMb)) : 50; %>
+<% if (!_available) { %>
+  <p class="flash flash-error" data-testid="pdf-header-footer-disabled">Headers/footers are disabled in production. Run the app locally.</p>
+<% } %>
+
+<div data-testid="pdf-header-footer-root" data-available="<%= _available ? '1' : '0' %>" data-max-file-mb="<%= _maxMb %>">
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0;">
+    <button type="button" class="button small" id="pdfHeaderFooterPick" data-testid="pdf-header-footer-pick" <%= _available ? '' : 'disabled' %>>📂 Select PDF</button>
+    <input type="file" id="pdfHeaderFooterFile" data-testid="pdf-header-footer-file" accept=".pdf,application/pdf" style="display:none;" <%= _available ? '' : 'disabled' %>>
+    <label style="font-size:13px;">Align
+      <select id="pdfHeaderFooterAlign" data-testid="pdf-header-footer-align" <%= _available ? '' : 'disabled' %>>
+        <option value="center" selected>Center</option>
+        <option value="left">Left</option>
+        <option value="right">Right</option>
+      </select>
+    </label>
+    <label style="font-size:13px;">Size (pt) <input type="number" id="pdfHeaderFooterSize" data-testid="pdf-header-footer-size" value="10" min="6" max="48" step="1" style="width:64px;" <%= _available ? '' : 'disabled' %>></label>
+    <span class="muted" style="font-size:12px;">One file · max <%= _maxMb %> MB</span>
+  </div>
+  <p class="muted" id="pdfHeaderFooterFileInfo" data-testid="pdf-header-footer-fileinfo" style="font-size:13px;">No PDF selected yet.</p>
+  <fieldset style="border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;margin:12px 0;max-width:560px;">
+    <legend style="font-size:13px;font-weight:700;padding:0 6px;">Text (at least one required)</legend>
+    <label style="display:block;font-size:13px;margin:6px 0;">Header
+      <input type="text" id="pdfHeaderFooterHeader" data-testid="pdf-header-footer-header" value="" maxlength="200" placeholder="e.g. Confidential — {page} of {total}" style="width:100%;max-width:460px;" <%= _available ? '' : 'disabled' %>>
+    </label>
+    <label style="display:block;font-size:13px;margin:6px 0;">Footer
+      <input type="text" id="pdfHeaderFooterFooter" data-testid="pdf-header-footer-footer" value="Page {page} of {total}" maxlength="200" placeholder="e.g. Page {page} of {total}" style="width:100%;max-width:460px;" <%= _available ? '' : 'disabled' %>>
+    </label>
+  </fieldset>
+  <fieldset style="border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;margin:12px 0;max-width:560px;">
+    <legend style="font-size:13px;font-weight:700;padding:0 6px;">Pages</legend>
+    <label style="display:block;font-size:13px;margin:6px 0;">
+      <input type="radio" name="pdfHeaderFooterScope" value="all" data-testid="pdf-header-footer-scope-all" checked <%= _available ? '' : 'disabled' %>>
+      All pages
+    </label>
+    <label style="display:block;font-size:13px;margin:6px 0;">
+      <input type="radio" name="pdfHeaderFooterScope" value="range" data-testid="pdf-header-footer-scope-range" <%= _available ? '' : 'disabled' %>>
+      Selected pages
+      <input type="text" id="pdfHeaderFooterSelection" data-testid="pdf-header-footer-selection" placeholder="e.g. 1-3,5" autocomplete="off" spellcheck="false" style="width:200px;margin-left:8px;" <%= _available ? '' : 'disabled' %>>
+    </label>
+  </fieldset>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0;">
+    <button type="button" class="button small primary" id="pdfHeaderFooterBtn" data-testid="pdf-header-footer-submit" <%= _available ? '' : 'disabled' %>>📄 Add &amp; download</button>
+    <button type="button" class="button small secondary" id="pdfHeaderFooterClear" data-testid="pdf-header-footer-clear" <%= _available ? '' : 'disabled' %>>Clear</button>
+  </div>
+  <div id="pdfHeaderFooterProgress" data-testid="pdf-header-footer-progress" style="display:none;margin-top:8px;font-size:13px;font-weight:600;" role="status" aria-live="polite">Working… <span id="pdfHeaderFooterProgressPct">0%</span></div>
+  <p class="muted" data-testid="pdf-header-footer-status" id="pdfHeaderFooterStatus" style="font-size:13px;font-weight:600;"></p>
+  <p class="muted" data-testid="pdf-header-footer-result" id="pdfHeaderFooterResult" style="font-size:13px;"></p>
+</div>
+
+</main>
+<%- include('partials/footer') %>
+<script type="module" src="/admin-pdf-header-footer.js?v=<%= Date.now() %>"></script>
+</body></html>

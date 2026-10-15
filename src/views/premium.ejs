@@ -1,0 +1,665 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Premium Membership · Learn with me</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<%
+  const currencySymbol = premiumCurrency === 'INR' ? '₹' : premiumCurrency + ' ';
+%>
+<header class="topbar">
+  <a class="brand" href="/">Learn with me</a>
+  <a class="nav-link" href="/">📚 Browse Library</a>
+  <% if (typeof paidPlansEnabled !== 'undefined' && paidPlansEnabled) { %>
+    <a class="nav-link" href="/plans">💎 Available Plans</a>
+  <% } %>
+  <% const _canLikesNav = (typeof hasNotes !== 'undefined' ? hasNotes : (typeof hasNotesPermission !== 'undefined' ? hasNotesPermission : false)); if (_canLikesNav) { %><a class="nav-link" href="/my/likes">❤️ My Liked Items</a><% } %>
+  <% if (typeof hasActiveAccess !== 'undefined' ? hasActiveAccess : (typeof user !== 'undefined' && user && ((typeof hasUserActiveAccess === 'function') ? hasUserActiveAccess(user) : (user.status === 'active' && (!user.access_expires_at || new Date(user.access_expires_at) > new Date()))))) { %>
+    <a class="nav-link" href="/my/notes" id="notesLink">📝 My Notes</a>
+  <% } %>
+  <% if (typeof user !== 'undefined' && user && (user.app_role === 'ADMIN' || user.app_role === 'OWNER')) { %>
+    <a class="nav-link" href="/admin" data-testid="admin-nav-link" style="font-weight: bold; color: #dc2626;">🛠️ Admin</a>
+  <% } %>
+  <div class="user">
+    <a href="/account" style="text-decoration: underline; font-weight: bold;"><%= user.name || user.email %></a>
+    <% if (typeof user !== 'undefined' && user) { %>
+      <span class="user-status-text" style="color: #64748b; font-size: 13px; margin-left: 6px;"><%= (typeof getUserHeaderStatus === 'function') ? getUserHeaderStatus(user) : (user.status ? (user.status.charAt(0).toUpperCase() + user.status.slice(1)) : 'Active') %><% if (user.access_expires_at) { %> <span class="user-access-until">(Access Until: <%= new Date(user.access_expires_at).toLocaleDateString() %>)</span><% } %></span>
+    <% } %>
+    <form method="post" action="/logout"><button type="submit">Sign out</button></form>
+  </div>
+</header>
+
+<main class="container">
+  <div class="premium-page-wrapper" style="max-width: 1000px; margin: 40px auto; padding: 0 16px;">
+    
+    <section class="page-heading" style="text-align: center; margin-bottom: 40px;">
+      <h1 style="font-size: 36px; font-weight: 800; margin-bottom: 12px; color: #12203c; letter-spacing: -0.02em;">✨ Premium Membership</h1>
+      <p class="muted" style="font-size: 16px; color: #64748b; max-width: 540px; margin: 0 auto; line-height: 1.5;">Choose the membership option that suits you. Enjoy completely ad-free browsing and premium learning content.</p>
+    </section>
+
+    <% if (successMessage) { %>
+      <div style="background: #ecfdf5; border: 1px solid #a7f3d0; color: #047857; padding: 16px; border-radius: 10px; margin-bottom: 32px; font-size: 14px; text-align: center; font-weight: 500;">
+        <%= successMessage %>
+      </div>
+    <% } %>
+    
+    <% if (errorMessage) { %>
+      <div style="background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; padding: 16px; border-radius: 10px; margin-bottom: 32px; font-size: 14px; text-align: center; font-weight: 500;">
+        <%= errorMessage %>
+      </div>
+    <% } %>
+
+    <!-- Status Card -->
+    <div class="card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); margin-bottom: 36px; display: block;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+        <h2 style="font-size: 20px; font-weight: 700; color: #12203c; margin: 0;">Subscription Status</h2>
+        <% if (user.app_role === 'PREMIUM') { %>
+          <span class="badge badge-premium" style="padding: 8px 16px; border-radius: 999px; font-weight: 700; font-size: 12px; background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0;">⭐ PREMIUM ACTIVE</span>
+        <% } else { %>
+          <span class="badge" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 999px; font-weight: 700; font-size: 12px;">STANDARD USER</span>
+        <% } %>
+      </div>
+
+      <% if (user.app_role === 'PREMIUM') { %>
+        <% if (user.premium_source === 'subscription' && subscription) { %>
+          <!-- Subscription Details -->
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; font-size: 14px; line-height: 1.6; color: #334155;">
+            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+              <strong style="color: #475569;">Provider</strong>
+              <span style="font-weight: 600; color: #12203c;">Razorpay</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+              <strong style="color: #475569;">Subscription ID</strong>
+              <code style="background: #eef2f6; padding: 2px 6px; border-radius: 4px; font-size: 13px; color: #1e293b;"><%= subscription.provider_subscription_id %></code>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+              <strong style="color: #475569;">Status</strong>
+              <span style="font-weight: 700; text-transform: uppercase; color: #10b981;"><%= subscription.status %></span>
+            </div>
+            <% if (subscription.current_period_start) { %>
+              <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+                <strong style="color: #475569;">Billing Period Starts</strong>
+                <span style="font-weight: 500; color: #1e293b;"><%= new Date(subscription.current_period_start).toLocaleDateString() %></span>
+              </div>
+            <% } %>
+            <% if (subscription.current_period_end) { %>
+              <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+                <strong style="color: #475569;">Next Renewal Date</strong>
+                <span style="font-weight: 500; color: #1e293b;"><%= new Date(subscription.current_period_end).toLocaleDateString() %></span>
+              </div>
+            <% } %>
+            <% if (subscription.cancel_at_period_end) { %>
+              <div style="margin-top: 16px; font-size: 14px; color: #b45309; font-weight: 500; background: #fffbeb; border: 1px solid #fde68a; padding: 12px; border-radius: 8px;">
+                ⚠️ This subscription has been cancelled and will expire at the end of the current billing cycle on <%= new Date(subscription.current_period_end).toLocaleDateString() %>.
+              </div>
+            <% } %>
+          </div>
+
+          <% if (subscription.status === 'active' || subscription.status === 'authenticated') { %>
+            <% if (!subscription.cancel_at_period_end) { %>
+              <form method="post" action="/api/premium/cancel" style="margin-top: 24px; text-align: right;">
+                <button type="submit" class="button danger small" style="background: #ef4444; color: #fff; border: 1px solid #ef4444; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; transition: all 0.15s;">Cancel Subscription</button>
+              </form>
+            <% } else { %>
+              <div style="margin-top: 24px; text-align: right; display:flex; gap:12px; justify-content:flex-end;">
+                <button type="button" id="premiumResumeBtn" onclick="resumePremium()" style="background:#0284c7; color:#fff; border:1px solid #0284c7; padding:10px 20px; border-radius:8px; font-weight:600; cursor:pointer; font-size:14px;">↩ Resume Subscription</button>
+              </div>
+            <% } %>
+          <% } %>
+
+        <% } else if (user.premium_source === 'one_time') { %>
+          <!-- One Time Premium Info -->
+          <div style="background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; border-radius: 12px; padding: 20px; font-size: 15px; line-height: 1.6;">
+            <strong style="display: block; font-size: 16px; margin-bottom: 6px;">⚡ One-Time Premium Pass Active</strong>
+            <p style="margin: 0;">Your one-time premium access is currently active. You enjoy completely ad-free browsing until <strong><%= new Date(user.access_expires_at).toLocaleDateString() %></strong>.</p>
+          </div>
+        <% } else { %>
+          <!-- Manual Premium Info -->
+          <div style="background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; border-radius: 12px; padding: 20px; font-size: 15px; line-height: 1.6;">
+            <strong style="display: block; font-size: 16px; margin-bottom: 6px;">👑 Lifetime Admin Premium</strong>
+            <p style="margin: 0;">Your premium access has been manually assigned by an administrator. You have permanent ad-free access to all resources and queries.</p>
+          </div>
+        <% } %>
+
+      <% } else { %>
+        <!-- Standard User / Upgrade Options -->
+        <p style="font-size: 15px; line-height: 1.6; color: #475569; margin: 0 0 24px;">
+          You currently have a Standard Account with standard ad eligibility. Upgrade to a Premium Membership to support the library and browse completely ad-free.
+        </p>
+
+        <% if (enabled) { %>
+          <!-- TWO CARDS SIDE BY SIDE / STACKED -->
+          <div class="plans-container" style="display: flex; flex-direction: row; gap: 24px; margin-bottom: 32px;">
+            
+            <!-- CARD 1 — RECURRING -->
+            <div id="cardRecurring" style="flex: 1; display: flex; flex-direction: column; background: #fff; border: 2px solid #5670a0; border-radius: 16px; padding: 28px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 12px rgba(86,112,160,0.06); position: relative;">
+              <div style="position: absolute; top: 16px; right: 16px; background: #eef2ff; color: #4f46e5; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px; letter-spacing: 0.5px; text-transform: uppercase;" id="badgeRecurringSelected">Selected</div>
+              
+              <div style="font-size: 18px; font-weight: 700; color: #12203c; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                <span>🔄</span> Monthly Recurring
+              </div>
+              
+              <div style="margin-bottom: 20px;">
+                <span style="font-size: 32px; font-weight: 800; color: #12203c;"><%= currencySymbol %><%= premiumMonthlyAmount %></span>
+                <span style="font-size: 15px; color: #64748b; font-weight: 500;">/ month</span>
+              </div>
+
+              <ul style="list-style: none; padding: 0; margin: 0 0 28px; font-size: 14px; color: #475569; line-height: 1.8; flex-grow: 1;">
+                <li style="margin-bottom: 10px; display: flex; align-items: flex-start; gap: 8px;">
+                  <span style="color: #10b981;">✓</span> <span>Automatically renews every month</span>
+                </li>
+                <li style="margin-bottom: 10px; display: flex; align-items: flex-start; gap: 8px;">
+                  <span style="color: #10b981;">✓</span> <span>Premium remains active while payments continue</span>
+                </li>
+                <li style="margin-bottom: 10px; display: flex; align-items: flex-start; gap: 8px;">
+                  <span style="color: #10b981;">✓</span> <span>Cancel anytime with zero fees</span>
+                </li>
+              </ul>
+
+              <button id="btnSelectRecurring" style="width: 100%; border: none; font-size: 15px; font-weight: 700; padding: 12px; border-radius: 10px; cursor: pointer; transition: all 0.15s; background: #5670a0; color: #fff; box-shadow: 0 2px 4px rgba(86,112,160,0.15);">
+                Choose Monthly
+              </button>
+            </div>
+
+            <!-- CARD 2 — ONE-TIME -->
+            <div id="cardOneTime" style="flex: 1; display: flex; flex-direction: column; background: #fff; border: 1px solid #cbd5e1; border-radius: 16px; padding: 28px; cursor: pointer; transition: all 0.2s; box-shadow: none; position: relative;">
+              <div style="position: absolute; top: 16px; right: 16px; background: #eef2ff; color: #4f46e5; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px; letter-spacing: 0.5px; text-transform: uppercase; display: none;" id="badgeOneTimeSelected">Selected</div>
+              
+              <div style="font-size: 18px; font-weight: 700; color: #12203c; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                <span>💳</span> One-Time Pass
+              </div>
+
+              <div style="margin-bottom: 20px;">
+                <span style="font-size: 32px; font-weight: 800; color: #12203c;"><%= currencySymbol %><%= premiumOneTimeAmount %></span>
+                <span style="font-size: 15px; color: #64748b; font-weight: 500;">/ one-time</span>
+              </div>
+
+              <ul style="list-style: none; padding: 0; margin: 0 0 28px; font-size: 14px; color: #475569; line-height: 1.8; flex-grow: 1;">
+                <li style="margin-bottom: 10px; display: flex; align-items: flex-start; gap: 8px;">
+                  <span style="color: #10b981;">✓</span> <span><%= premiumAccessDays %> days of Premium access</span>
+                </li>
+                <li style="margin-bottom: 10px; display: flex; align-items: flex-start; gap: 8px;">
+                  <span style="color: #10b981;">✓</span> <span>No automatic renewal</span>
+                </li>
+                <li style="margin-bottom: 10px; display: flex; align-items: flex-start; gap: 8px;">
+                  <span style="color: #10b981;">✓</span> <span>Manually renew when needed</span>
+                </li>
+              </ul>
+
+              <button id="btnSelectOneTime" style="width: 100%; border: 1px solid #cbd5e1; font-size: 15px; font-weight: 600; padding: 12px; border-radius: 10px; cursor: pointer; transition: all 0.15s; background: #fff; color: #475569;">
+                Buy <%= premiumAccessDays %> Days
+              </button>
+            </div>
+
+          </div>
+
+          <!-- PROMOTION SECTION (UNDER CARDS) -->
+          <div style="background: #fafafa; border: 1px solid #e2e8f0; border-radius: 14px; padding: 24px; margin-bottom: 32px;">
+            <div style="display: flex; flex-direction: column; gap: 12px;" id="promoWrapper">
+              <!-- ADVERTISED PROMOTIONS -->
+              <% if (typeof activePromotions !== 'undefined' && activePromotions && activePromotions.length > 0) { %>
+                <div id="advertisedPromosContainer" style="margin-bottom: 8px; display: none; background: #fff; border: 1px solid #cbd5e1; border-radius: 10px; padding: 16px;">
+                  <span style="font-size: 12px; font-weight: 700; color: #5670a0; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px;">✨ Available One-Time Offers</span>
+                  <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <% activePromotions.forEach(promo => { %>
+                      <% 
+                        const discountStr = promo.discount_type === 'percentage' 
+                          ? promo.discount_value + '%' 
+                          : '₹' + (promo.discount_value / 100);
+                      %>
+                      <div class="promo-badge" onclick="selectAdvertisedPromo('<%= promo.code %>')" style="display: flex; align-items: center; justify-content: space-between; border: 1px dashed #5670a0; border-radius: 8px; padding: 10px 14px; background: #f0f4f8; cursor: pointer; transition: all 0.15s; font-size: 13px; color: #1e293b;" onmouseover="this.style.background='#e1e8f0'; this.style.borderColor='#3b527d';" onmouseout="this.style.background='#f0f4f8'; this.style.borderColor='#5670a0';">
+                        <span>Use code <strong style="font-family: monospace; background: #fff; padding: 2px 6px; border-radius: 4px; border: 1px solid #cbd5e1; color: #12203c;"><%= promo.code %></strong> to get <strong><%= discountStr %></strong> off!</span>
+                        <span style="font-weight: 700; color: #5670a0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Click to apply</span>
+                      </div>
+                    <% }) %>
+                  </div>
+                </div>
+              <% } %>
+              <label for="promoCodeInput" style="display: block; font-size: 14px; font-weight: 700; color: #12203c; text-transform: uppercase; letter-spacing: 0.5px;">Have a Promo Code?</label>
+              <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                <input type="text" id="promoCodeInput" placeholder="Enter coupon code" style="flex: 1; min-width: 200px; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 15px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">
+                <button id="applyPromoBtn" style="background: #12203c; color: #fff; border: none; padding: 12px 28px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; transition: all 0.15s; min-height: 44px;">Apply</button>
+              </div>
+              <div id="promoMessage" style="font-size: 14px; min-height: 20px;"></div>
+            </div>
+
+            <!-- PROMOTION DISPLAY CARD (DYNAMICAL) -->
+            <div id="promoDetailsBox" style="display: none; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 20px; margin-top: 16px; font-size: 14px;">
+              <div style="font-weight: 700; color: #166534; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #dcfce7; padding-bottom: 12px; margin-bottom: 12px;">
+                <span>✨ Promo Applied</span>
+                <span id="promoLabelCode" style="background: #dcfce7; padding: 2px 10px; border-radius: 6px; font-size: 13px; font-family: monospace; text-transform: uppercase;"></span>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 8px; color: #14532d;">
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Original price:</span>
+                  <span style="text-decoration: line-through;" id="promoLabelOriginalPrice"></span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Discount:</span>
+                  <span id="promoLabelDiscount"></span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 16px; border-top: 1px dashed #bbf7d0; padding-top: 10px; margin-top: 4px; color: #166534;">
+                  <span>You pay:</span>
+                  <span id="promoLabelFinalPrice"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- FINAL CHECKOUT SUMMARY -->
+          <div style="background: #1e293b; color: #f8fafc; border-radius: 16px; padding: 32px; text-align: center; box-shadow: 0 10px 30px rgba(15,23,42,0.15);">
+            <span style="font-size: 11px; font-weight: 800; color: #94a3b8; letter-spacing: 1.5px; text-transform: uppercase;">Secure Checkout Summary</span>
+            
+            <div id="priceDisplay" style="font-size: 40px; font-weight: 800; color: #fff; margin: 16px 0;">
+              <%= currencySymbol %><%= premiumMonthlyAmount %><span style="font-size: 16px; font-weight: 500; color: #94a3b8;" id="priceDisplayPeriod"> / month</span>
+            </div>
+
+            <p style="font-size: 14px; color: #cbd5e1; margin: 0 auto 28px; max-width: 480px; line-height: 1.6;">
+              By upgrading to Premium, you get instant access to ad-free browsing and support the library platform. Payments are secured and processed using industry-standard SSL encryption.
+            </p>
+
+            <button id="checkoutBtn" style="background: #38bdf8; color: #0f172a; border: none; font-size: 16px; font-weight: 700; padding: 14px 32px; border-radius: 10px; cursor: pointer; transition: all 0.15s; width: 100%; max-width: 400px; box-shadow: 0 4px 14px rgba(56,189,248,0.3); display: inline-block;">
+              Secure Checkout
+            </button>
+          </div>
+
+        <% } else { %>
+          <div style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 12px; padding: 24px; text-align: center; color: #64748b; font-size: 14px;">
+            ℹ️ Premium memberships are currently managed directly by system administrators. Public purchase portal is temporarily offline.
+          </div>
+        <% } %>
+      <% } %>
+    </div>
+  </div>
+</main>
+
+<%- include('partials/footer') %>
+
+<% if (user.app_role !== 'PREMIUM' && enabled) { %>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <script>
+    window.addEventListener('unhandledrejection', function(e){ console.error('Unhandled rejection:', e.reason); });
+    function fetchWithTimeout(url, opts, ms){
+      ms = ms || 10000;
+      var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      var tid = null;
+      if(ctrl){ opts = opts || {}; opts.signal = ctrl.signal; tid = setTimeout(function(){ try{ ctrl.abort(); }catch(e){} }, ms); }
+      var p = fetch(url, opts);
+      if(tid) p = p.finally(function(){ clearTimeout(tid); });
+      return p;
+    }
+    let activeChoice = 'recurring'; // Default selection
+    let appliedPromoCode = '';
+    let discountInfo = null;
+
+    const cardRecurring = document.getElementById('cardRecurring');
+    const cardOneTime = document.getElementById('cardOneTime');
+    const btnSelectRecurring = document.getElementById('btnSelectRecurring');
+    const btnSelectOneTime = document.getElementById('btnSelectOneTime');
+    
+    const badgeRecurringSelected = document.getElementById('badgeRecurringSelected');
+    const badgeOneTimeSelected = document.getElementById('badgeOneTimeSelected');
+
+    const promoCodeInput = document.getElementById('promoCodeInput');
+    const applyPromoBtn = document.getElementById('applyPromoBtn');
+    const promoMessage = document.getElementById('promoMessage');
+    const priceDisplay = document.getElementById('priceDisplay');
+    const priceDisplayPeriod = document.getElementById('priceDisplayPeriod');
+    const checkoutBtn = document.getElementById('checkoutBtn');
+
+    // Promotion Display Elements
+    const promoDetailsBox = document.getElementById('promoDetailsBox');
+    const promoLabelCode = document.getElementById('promoLabelCode');
+    const promoLabelOriginalPrice = document.getElementById('promoLabelOriginalPrice');
+    const promoLabelDiscount = document.getElementById('promoLabelDiscount');
+    const promoLabelFinalPrice = document.getElementById('promoLabelFinalPrice');
+
+    const advertisedPromosContainer = document.getElementById('advertisedPromosContainer');
+
+    const currencySymbol = '<%= currencySymbol %>';
+
+    function selectAdvertisedPromo(code) {
+      if (promoCodeInput) {
+        promoCodeInput.value = code;
+        if (applyPromoBtn) {
+          applyPromoBtn.click();
+        }
+      }
+    }
+    // Make it global so inline onclick can access it
+    window.selectAdvertisedPromo = selectAdvertisedPromo;
+
+    function updatePricingUI() {
+      const baseRecurring = parseInt('<%= premiumMonthlyAmount %>', 10);
+      const baseOneTime = parseInt('<%= premiumOneTimeAmount %>', 10);
+      let base = activeChoice === 'recurring' ? baseRecurring : baseOneTime;
+      let finalVal = base;
+      
+      if (discountInfo && discountInfo.valid) {
+        finalVal = discountInfo.finalAmount;
+        promoDetailsBox.style.display = 'block';
+        promoLabelCode.innerText = appliedPromoCode.toUpperCase();
+        promoLabelOriginalPrice.innerText = `${currencySymbol}${discountInfo.baseAmount}`;
+        
+        const savedAmount = discountInfo.discountAmount;
+        promoLabelDiscount.innerText = `${currencySymbol}${savedAmount}`;
+        promoLabelFinalPrice.innerText = `${currencySymbol}${finalVal}`;
+        promoMessage.innerHTML = `<span style="color:#047857;font-weight:600;">Promo Applied Successfully!</span>`;
+      } else {
+        promoDetailsBox.style.display = 'none';
+      }
+
+      priceDisplay.innerHTML = `${currencySymbol}${finalVal}<span style="font-size: 16px; font-weight: 500; color: #94a3b8;" id="priceDisplayPeriod"> ${activeChoice === 'recurring' ? '/ month' : ' for 30 days'}</span>`;
+    }
+
+    function selectRecurring() {
+      activeChoice = 'recurring';
+
+      // Recurring Card Styling
+      cardRecurring.style.border = '2px solid #5670a0';
+      cardRecurring.style.background = '#fafbfc';
+      cardRecurring.style.boxShadow = '0 4px 20px rgba(86,112,160,0.1)';
+      badgeRecurringSelected.style.display = 'block';
+      btnSelectRecurring.style.background = '#5670a0';
+      btnSelectRecurring.style.color = '#fff';
+      btnSelectRecurring.style.fontWeight = '700';
+      btnSelectRecurring.innerText = '✓ Selected Monthly';
+
+      // One Time Card Styling
+      cardOneTime.style.border = '1px solid #cbd5e1';
+      cardOneTime.style.background = '#fff';
+      cardOneTime.style.boxShadow = 'none';
+      badgeOneTimeSelected.style.display = 'none';
+      btnSelectOneTime.style.background = '#fff';
+      btnSelectOneTime.style.color = '#475569';
+      btnSelectOneTime.style.fontWeight = '600';
+      btnSelectOneTime.innerText = 'Buy <%= premiumAccessDays %> Days';
+
+      // Hide advertised promos
+      if (advertisedPromosContainer) {
+        advertisedPromosContainer.style.display = 'none';
+      }
+
+      // Reset promo
+      discountInfo = null;
+      appliedPromoCode = '';
+      promoCodeInput.value = '';
+      promoMessage.innerHTML = '';
+      updatePricingUI();
+    }
+
+    function selectOneTime() {
+      activeChoice = 'one_time';
+
+      // One Time Card Styling
+      cardOneTime.style.border = '2px solid #5670a0';
+      cardOneTime.style.background = '#fafbfc';
+      cardOneTime.style.boxShadow = '0 4px 20px rgba(86,112,160,0.1)';
+      badgeOneTimeSelected.style.display = 'block';
+      btnSelectOneTime.style.background = '#5670a0';
+      btnSelectOneTime.style.color = '#fff';
+      btnSelectOneTime.style.fontWeight = '700';
+      btnSelectOneTime.innerText = '✓ Selected 30 Days';
+
+      // Recurring Card Styling
+      cardRecurring.style.border = '1px solid #cbd5e1';
+      cardRecurring.style.background = '#fff';
+      cardRecurring.style.boxShadow = 'none';
+      badgeRecurringSelected.style.display = 'none';
+      btnSelectRecurring.style.background = '#fff';
+      btnSelectRecurring.style.color = '#475569';
+      btnSelectRecurring.style.fontWeight = '600';
+      btnSelectRecurring.innerText = 'Choose Monthly';
+
+      // Show advertised promos
+      if (advertisedPromosContainer) {
+        advertisedPromosContainer.style.display = 'block';
+      }
+
+      // Reset promo
+      discountInfo = null;
+      appliedPromoCode = '';
+      promoCodeInput.value = '';
+      promoMessage.innerHTML = '';
+      updatePricingUI();
+    }
+
+    cardRecurring.addEventListener('click', selectRecurring);
+    btnSelectRecurring.addEventListener('click', (e) => {
+      e.stopPropagation();
+      selectRecurring();
+    });
+
+    cardOneTime.addEventListener('click', selectOneTime);
+    btnSelectOneTime.addEventListener('click', (e) => {
+      e.stopPropagation();
+      selectOneTime();
+    });
+
+    applyPromoBtn.addEventListener('click', async () => {
+      const code = promoCodeInput.value.trim();
+      if (!code) {
+        promoMessage.innerHTML = `<span style="color:#b91c1c;font-weight:600;">Please enter a promo code.</span>`;
+        return;
+      }
+      applyPromoBtn.disabled = true;
+      applyPromoBtn.innerText = 'Applying...';
+      try {
+        const res = await fetchWithTimeout('/api/premium/validate-promo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ promoCode: code, membershipType: activeChoice })
+        }, 8000);
+        const data = await res.json();
+        if (data.status === 'success' && data.valid) {
+          discountInfo = data;
+          appliedPromoCode = code;
+          updatePricingUI();
+        } else {
+          discountInfo = null;
+          appliedPromoCode = '';
+          promoMessage.innerHTML = `<span style="color:#b91c1c;font-weight:600;">${data.message || 'Invalid or expired promo code.'}</span>`;
+          updatePricingUI();
+        }
+      } catch (err) {
+        if(err && err.name==='AbortError') promoMessage.innerHTML = `<span style="color:#b91c1c;font-weight:600;">Request timed out. Try again.</span>`;
+        else promoMessage.innerHTML = `<span style="color:#b91c1c;font-weight:600;">Error validating promo code.</span>`;
+      } finally {
+        applyPromoBtn.disabled = false;
+        applyPromoBtn.innerText = 'Apply';
+      }
+    });
+
+    let checkoutProcessing = false;
+    checkoutBtn.addEventListener('click', async () => {
+      if (checkoutProcessing) return;
+      checkoutProcessing = true;
+      checkoutBtn.disabled = true;
+      checkoutBtn.style.opacity = '0.6';
+      checkoutBtn.style.pointerEvents = 'none';
+      checkoutBtn.innerText = 'Initializing Payment...';
+
+      try {
+        if (activeChoice === 'recurring') {
+          const response = await fetchWithTimeout('/api/premium/subscribe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ promoCode: appliedPromoCode })
+          }, 15000);
+          if (!response.ok) {
+            const err = await response.json();
+            if (err.resumeRequired || err.code === 'PENDING_CANCELLATION') {
+              if (confirm((err.message || 'Pending cancellation') + '\n\nResume your existing subscription without a new charge?')) {
+                checkoutBtn.innerText = 'Resuming...';
+                const resumeRes = await fetchWithTimeout('/api/premium/resume', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) }, 10000);
+                const rData = await resumeRes.json();
+                if (!resumeRes.ok || rData.status !== 'success') throw new Error(rData.message || 'Resume failed');
+                window.location.reload(); return;
+              }
+            }
+            throw new Error(err.message || 'Failed to initialize subscription');
+          }
+          const data = await response.json();
+          
+          const options = {
+            key: '<%= razorpayKeyId %>',
+            subscription_id: data.subscriptionId,
+            name: 'Learn with me',
+            description: 'Premium Membership - Recurring Subscription',
+            handler: async function (paymentResponse) {
+              checkoutBtn.innerText = 'Verifying payment...';
+              try {
+                // Notice we use the same verify-subscription endpoint since both use the identical webhook mechanism
+                const verifyRes = await fetchWithTimeout('/api/payments/verify-subscription', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    razorpay_payment_id: paymentResponse.razorpay_payment_id,
+                    razorpay_subscription_id: paymentResponse.razorpay_subscription_id,
+                    razorpay_signature: paymentResponse.razorpay_signature,
+                    promoCode: appliedPromoCode
+                  })
+                }, 12000);
+                if (!verifyRes.ok) {
+                  const err = await verifyRes.json();
+                  throw new Error(err.message || 'Verification failed');
+                }
+                window.location.href = '/premium?success=true';
+              } catch (err) {
+                alert('Payment verification failed: ' + err.message);
+                checkoutBtn.disabled = false;
+                checkoutBtn.style.opacity = '';
+                checkoutBtn.style.pointerEvents = '';
+                checkoutProcessing = false;
+                checkoutBtn.innerText = 'Secure Checkout';
+              }
+            },
+            prefill: {
+              name: '<%= user.name %>',
+              email: '<%= user.email %>'
+            },
+            theme: { color: '#5670a0' },
+            modal: {
+              ondismiss: function() {
+                checkoutBtn.disabled = false;
+                checkoutBtn.style.opacity = '';
+                checkoutBtn.style.pointerEvents = '';
+                checkoutProcessing = false;
+                checkoutBtn.innerText = 'Secure Checkout';
+              }
+            }
+          };
+          const rzp = new Razorpay(options);
+          rzp.open();
+
+        } else {
+          // One-time payment Order flow (bounded)
+          const response = await fetchWithTimeout('/api/premium/create-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ promoCode: appliedPromoCode })
+          }, 15000);
+          if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Failed to initialize order');
+          }
+          const data = await response.json();
+
+          const options = {
+            key: data.keyId,
+            amount: data.amount,
+            currency: data.currency,
+            name: 'Learn with me',
+            description: 'Premium Membership - One-Time 30 Days',
+            order_id: data.orderId,
+            handler: async function (paymentResponse) {
+              checkoutBtn.innerText = 'Verifying Payment...';
+              try {
+                const verifyRes = await fetchWithTimeout('/api/premium/verify-order', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    razorpay_payment_id: paymentResponse.razorpay_payment_id,
+                    razorpay_order_id: paymentResponse.razorpay_order_id,
+                    razorpay_signature: paymentResponse.razorpay_signature,
+                    promoCode: appliedPromoCode
+                  })
+                }, 12000);
+                if (!verifyRes.ok) {
+                  const err = await verifyRes.json();
+                  throw new Error(err.message || 'Verification failed');
+                }
+                window.location.href = '/premium?success=true';
+              } catch (err) {
+                alert('Payment verification failed: ' + err.message);
+                checkoutBtn.disabled = false;
+                checkoutBtn.style.opacity = '';
+                checkoutBtn.style.pointerEvents = '';
+                checkoutProcessing = false;
+                checkoutBtn.innerText = 'Secure Checkout';
+              }
+            },
+            prefill: {
+              name: '<%= user.name %>',
+              email: '<%= user.email %>'
+            },
+            theme: { color: '#5670a0' },
+            modal: {
+              ondismiss: function() {
+                checkoutBtn.disabled = false;
+                checkoutBtn.style.opacity = '';
+                checkoutBtn.style.pointerEvents = '';
+                checkoutProcessing = false;
+                checkoutBtn.innerText = 'Secure Checkout';
+              }
+            }
+          };
+          const rzp = new Razorpay(options);
+          rzp.open();
+        }
+      } catch (err) {
+        if(err && err.name==='AbortError') alert('Request timed out. Please try again.');
+        else alert(err.message || 'An error occurred during payment setup.');
+        checkoutBtn.disabled = false;
+        checkoutBtn.style.opacity = '';
+        checkoutBtn.style.pointerEvents = '';
+        checkoutProcessing = false;
+        checkoutBtn.innerText = 'Secure Checkout';
+      }
+    });
+
+    // Initialize UI on load
+    selectRecurring();
+  </script>
+<% } %>
+<% if (user.app_role === 'PREMIUM' && typeof subscription !== 'undefined' && subscription && subscription.cancel_at_period_end) { %>
+<script>
+async function resumePremium() {
+  const btn = document.getElementById('premiumResumeBtn');
+  if (!btn) return;
+  btn.disabled = true; btn.innerText = 'Resuming...';
+  try {
+    var ctrlP = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    var tidP = ctrlP ? setTimeout(function(){ try{ ctrlP.abort(); }catch(e){} }, 10000) : null;
+    const res = await fetch('/api/premium/resume', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}), signal: ctrlP ? ctrlP.signal : undefined }).finally(function(){ if(tidP) clearTimeout(tidP); });
+    const data = await res.json();
+    if (!res.ok || data.status !== 'success') throw new Error(data.message || 'Resume failed');
+    window.location.reload();
+  } catch (e) { alert(e.message); btn.disabled = false; btn.innerText = '↩ Resume Subscription'; }
+}
+</script>
+<% } %>
+
+<style>
+  @media (max-width: 768px) {
+    .plans-container {
+      flex-direction: column !important;
+      gap: 16px !important;
+    }
+  }
+</style>
+</body>
+</html>

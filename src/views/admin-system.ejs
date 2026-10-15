@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>System / Usage · Admin · Learn with me</title><link rel="stylesheet" href="/styles.css"><%- include('partials/adsense-verification') %></head>
+<body><header class="topbar"><a class="brand" href="/">Learn with me</a><div class="user"><a href="/account" style="text-decoration: underline; font-weight: bold;"><%= user.name || user.email %></a><% if (typeof user !== 'undefined' && user) { %><span class="user-status-text" style="color: #64748b; font-size: 13px; margin-left: 6px;"><%= (typeof getUserHeaderStatus === 'function') ? getUserHeaderStatus(user) : (user.status ? (user.status.charAt(0).toUpperCase() + user.status.slice(1)) : 'Active') %><% if (user.access_expires_at) { %> <span class="user-access-until">(Access Until: <%= new Date(user.access_expires_at).toLocaleDateString() %>)</span><% } %></span><% } %><form method="post" action="/logout"><button type="submit">Sign out</button></form></div></header>
+<main class="container">
+<h1>System / Usage</h1>
+<%- include('partials/admin-nav') %>
+
+<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0 16px;">
+  <a href="#scaling-health" class="button small secondary">Scaling Indicators</a>
+  <a href="#integrity" class="button small secondary" data-testid="nav-jump-integrity">System Health & Integrity<% if (typeof integrity !== 'undefined' && integrity && integrity.summary && integrity.summary.totalIssues > 0) { %> <span class="badge <%= integrity.summary.criticalCount > 0 ? 'badge-critical' : 'badge-warning' %>"><%= integrity.summary.totalIssues %></span><% } else if (typeof integrity !== 'undefined' && integrity) { %> <span class="badge badge-healthy">✓</span><% } %></a>
+  <a href="#runtime-metrics" class="button small secondary">Runtime Metrics</a>
+  <a href="#usage-history" class="button small secondary">Usage History</a>
+</div>
+
+<p class="muted" style="margin-top:-8px;margin-bottom:18px">Metrics are in-memory and represent activity since the current application process started. Restarting the process resets these counters. No personal data is tracked.</p>
+
+<% function fmtIST(date) { if (!date) return '—'; return new Date(date).toLocaleString(undefined, { timeZone: 'Asia/Kolkata' }); } %>
+<% function fmtMs(v) { if (v === null || v === undefined) return '—'; const n = Number(v); if (!Number.isFinite(n)) return '—'; return n.toFixed(2) + ' ms'; } %>
+<% function fmtDuration(sec) { sec = Math.max(0, Math.floor(Number(sec)||0)); const d=Math.floor(sec/86400); const h=Math.floor((sec%86400)/3600); const m=Math.floor((sec%3600)/60); const s=sec%60; const parts=[]; if(d) parts.push(d+'d'); if(h) parts.push(h+'h'); if(m) parts.push(m+'m'); parts.push(s+'s'); return parts.join(' '); } %>
+<% function badgeFor(status) { if (status === 'critical') return '<span class="badge badge-critical">Critical</span>'; if (status === 'warning') return '<span class="badge badge-warning">Warning</span>'; return '<span class="badge badge-healthy">Healthy</span>'; } %>
+<% function badgeNormal(status) { if (status === 'critical') return '<span class="badge badge-critical">Critical</span>'; if (status === 'warning') return '<span class="badge badge-warning">Warning</span>'; return '<span class="badge badge-healthy">Healthy</span>'; } %>
+<% function badgeOverall(status) { if (status === 'critical') return '<span class="badge badge-critical-solid">Critical</span>'; if (status === 'warning') return '<span class="badge badge-warning-solid">Warning</span>'; return '<span class="badge badge-healthy-solid">Healthy</span>'; } %>
+
+<% if (typeof health !== 'undefined' && health) { %>
+<h2 id="scaling-health">System Health & Scaling Indicators</h2>
+<p class="muted" style="margin-top:-8px">Informational thresholds (configurable in <code>src/monitoring/health.js</code>) — advisory only, not hosting-provider capacity limits. Avoid false precision.</p>
+<div class="admin-health-card admin-health-card--<%= health.overall %>">
+  <div>Overall system status: <%- badgeOverall(health.overall) %></div>
+  <div class="muted" style="font-size:14px;flex:1;min-width:220px"><%= health.recommendation %></div>
+</div>
+<p class="muted" style="margin-top:-12px;margin-bottom:14px;font-size:12px"><%= health.note %></p>
+<table class="admin-table">
+  <thead><tr><th>Indicator</th><th>Status</th><th>Value</th><th>Threshold</th><th>Detail</th></tr></thead>
+  <tbody>
+  <% health.indicators.forEach(function(ind) { %>
+    <tr>
+      <td><strong><%= ind.name %></strong></td>
+      <td><%- badgeFor(ind.status) %></td>
+      <td><%= ind.value %></td>
+      <td><small class="muted"><%= ind.threshold %></small></td>
+      <td><small class="muted"><%= ind.detail %></small><br><small style="color:#5b6575"><%= ind.advisory %></small></td>
+    </tr>
+  <% }) %>
+  </tbody>
+</table>
+<% } %>
+
+<% if (typeof integrity !== 'undefined' && integrity) { %>
+<section id="integrity" data-testid="integrity-section" style="margin: 28px 0;">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+    <h2 style="margin:0;">System Health & Integrity Diagnostics</h2>
+    <span class="muted" style="font-size:12px;">Diagnostic run: <%= new Date(integrity.timestamp).toLocaleTimeString() %> · <strong>Read-Only</strong></span>
+  </div>
+  <p class="muted" style="margin-top:4px;margin-bottom:14px;">
+    Automated read-only integrity scanner for RBAC roles, paid products, pricing plans, and user entitlements. No data is modified, granted, or revoked automatically.
+  </p>
+
+  <!-- Summary Card -->
+  <div class="admin-health-card admin-health-card--<%= integrity.overallStatus %>" style="margin-bottom:16px;" data-testid="integrity-summary-card">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span>Integrity Status:</span>
+      <%- badgeOverall(integrity.overallStatus) %>
+    </div>
+    <div class="muted" style="font-size:14px;flex:1;min-width:260px;">
+      <%= integrity.recommendation %>
+    </div>
+    <div style="display:flex;gap:12px;align-items:center;font-size:13px;">
+      <span>Total Checks: <strong><%= integrity.summary.totalChecks %></strong></span>
+      <span>Issues Detected: <strong style="color:<%= integrity.summary.totalIssues > 0 ? (integrity.summary.criticalCount > 0 ? '#991b1b' : '#92400e') : '#166534' %>;"><%= integrity.summary.totalIssues %></strong></span>
+    </div>
+  </div>
+
+  <!-- Diagnostic Checks Table -->
+  <table class="admin-table" data-testid="integrity-checks-table">
+    <thead>
+      <tr>
+        <th style="width:28%;">Diagnostic Check</th>
+        <th style="width:14%;">Category</th>
+        <th style="width:10%;">Status</th>
+        <th style="width:8%;">Count</th>
+        <th style="width:28%;">Description</th>
+        <th style="width:12%;">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% integrity.checks.forEach(function(check) { %>
+        <tr data-testid="integrity-check-<%= check.id %>" data-status="<%= check.status %>">
+          <td>
+            <strong><%= check.title %></strong>
+            <% if (check.items && check.items.length > 0) { %>
+              <details style="margin-top:6px;font-size:12px;">
+                <summary style="cursor:pointer;color:#2563eb;font-weight:600;">View Details (<%= check.count %>)</summary>
+                <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px;margin-top:6px;max-height:180px;overflow-y:auto;">
+                  <ul style="margin:0;padding-left:16px;">
+                    <% check.items.forEach(function(item) { %>
+                      <li style="margin-bottom:4px;">
+                        <% if (item.userEmail) { %><strong><%= item.userEmail %></strong>: <% } %>
+                        <%= item.details %>
+                      </li>
+                    <% }) %>
+                  </ul>
+                  <% if (check.count > check.items.length) { %>
+                    <div class="muted" style="font-size:11px;margin-top:4px;">+ <%= check.count - check.items.length %> more items</div>
+                  <% } %>
+                </div>
+              </details>
+            <% } %>
+          </td>
+          <td><small class="muted"><%= check.category %></small></td>
+          <td><%- badgeFor(check.status) %></td>
+          <td>
+            <strong style="color:<%= check.count > 0 ? (check.status === 'critical' ? '#991b1b' : '#92400e') : '#166534' %>;"><%= check.count %></strong>
+          </td>
+          <td><small class="muted"><%= check.description %></small></td>
+          <td>
+            <% if (check.actionUrl) { %>
+              <a href="<%= check.actionUrl %>" class="button small secondary" style="white-space:nowrap;text-decoration:none;"><%= check.actionLabel || 'Manage' %> &rarr;</a>
+            <% } else { %>
+              <span class="muted">—</span>
+            <% } %>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</section>
+<% } %>
+
+<h2 id="runtime-metrics">Health</h2>
+<div class="stats">
+  <div class="stat <%= metrics.errors.total > 0 ? 'stat--danger' : 'stat--success' %>"><strong><%= metrics.errors.total === 0 ? 'ok' : 'errors detected' %></strong><span>System health status</span></div>
+  <div class="stat stat--neutral"><strong><%= fmtDuration(metrics.uptimeSeconds) %></strong><span>Application uptime</span></div>
+  <div class="stat stat--neutral"><strong><%= fmtIST(metrics.startedAt) %></strong><span>Application start time</span></div>
+  <div class="stat stat--neutral"><strong><%= metrics.startedAt %></strong><span>Started at (ISO)</span></div>
+</div>
+
+<h2>Requests</h2>
+<div class="stats">
+  <div class="stat stat--neutral"><strong><%= metrics.requests.total %></strong><span>Total requests</span></div>
+  <div class="stat stat--success"><strong><%= metrics.requests.byStatus['2xx'] %></strong><span>2xx</span></div>
+  <div class="stat stat--info"><strong><%= metrics.requests.byStatus['3xx'] %></strong><span>3xx</span></div>
+  <div class="stat stat--warning"><strong><%= metrics.requests.byStatus['4xx'] %></strong><span>4xx</span></div>
+  <div class="stat stat--danger"><strong><%= metrics.requests.byStatus['5xx'] %></strong><span>5xx</span></div>
+  <div class="stat <%= metrics.errors.total > 0 ? 'stat--danger' : 'stat--success' %>"><strong><%= metrics.errors.total %></strong><span>Total errors (5xx)</span></div>
+</div>
+
+<h2>Response Time</h2>
+<div class="stats">
+  <div class="stat stat--info"><strong><%= fmtMs(metrics.responseTime.avgMs) %></strong><span>Average response time</span></div>
+  <div class="stat stat--neutral"><strong><%= fmtMs(metrics.responseTime.minMs) %></strong><span>Min response time</span></div>
+  <div class="stat stat--neutral"><strong><%= fmtMs(metrics.responseTime.maxMs) %></strong><span>Max response time</span></div>
+  <div class="stat stat--neutral"><strong><%= metrics.responseTime.count %></strong><span>Samples</span></div>
+</div>
+
+<h2>Content Activity</h2>
+<div class="stats">
+  <div class="stat stat--info"><strong><%= metrics.content.views %></strong><span>Content views</span></div>
+  <div class="stat stat--neutral"><strong><%= metrics.content.pdfPreviews %></strong><span>PDF previews</span></div>
+  <div class="stat stat--neutral"><strong><%= metrics.content.pdfDownloads %></strong><span>PDF downloads</span></div>
+</div>
+
+<h2>Memory</h2>
+<div class="stats">
+  <div class="stat stat--neutral"><strong><%= metrics.heapUsedMb %> MB</strong><span>Heap used</span></div>
+  <div class="stat stat--neutral"><strong><%= (metrics.memory && metrics.memory.rss ? (Math.round(metrics.memory.rss/1024/1024*10)/10) : '—') %> MB</strong><span>RSS</span></div>
+  <div class="stat stat--neutral"><strong><%= (metrics.memory && metrics.memory.heapTotal ? (Math.round(metrics.memory.heapTotal/1024/1024*10)/10) : '—') %> MB</strong><span>Heap total</span></div>
+  <div class="stat stat--neutral"><strong><%= metrics.uptimeSeconds %>s</strong><span>Uptime seconds</span></div>
+</div>
+
+<p class="muted" style="margin-top:18px">Raw memory: <code><%= JSON.stringify(metrics.memory || {}) %></code></p>
+
+<h2 id="usage-history">Usage History <span class="muted" style="font-weight:400;font-size:13px">— persisted daily aggregates (last 30 days)</span></h2>
+<p class="muted" style="margin-top:-8px">Historical metrics below are <strong>persisted daily aggregates</strong> (one row per day, no PII) — distinct from in-memory metrics above which reflect only the current process since <code><%= metrics.startedAt %></code>. History is updated periodically, not per request.</p>
+<% if (typeof history !== 'undefined' && history && history.length > 0) { %>
+<table class="admin-table">
+  <thead><tr><th>Date</th><th>Requests</th><th>Errors</th><th>Content views</th><th>PDF previews</th><th>PDF downloads</th><th>Avg response time</th><th>Peak heap</th></tr></thead>
+  <tbody>
+  <% history.forEach(function(row) { %>
+    <tr>
+      <td><%= row.day %></td>
+      <td><%= row.total_requests %> <small class="muted">(2xx <%= row.count_2xx %> / 3xx <%= row.count_3xx %> / 4xx <%= row.count_4xx %> / 5xx <%= row.count_5xx %>)</small></td>
+      <td><%= row.total_errors %></td>
+      <td><%= row.content_views %></td>
+      <td><%= row.pdf_previews %></td>
+      <td><%= row.pdf_downloads %></td>
+      <td><%= row.avg_response_ms !== null ? row.avg_response_ms.toFixed(2) + ' ms' : '—' %></td>
+      <td><%= row.peak_heap_used_mb ? row.peak_heap_used_mb + ' MB' : '—' %></td>
+    </tr>
+  <% }) %>
+  </tbody>
+</table>
+<% } else { %>
+<p class="muted">No historical data yet. Daily aggregates are persisted periodically — check back after activity.</p>
+<% } %>
+
+<h3>Current in-memory metrics vs persisted history</h3>
+<p class="muted" style="font-size:12px">In-memory (above) resets on restart; Usage History (this section) survives restarts via daily upsert (<code>018_daily_usage_history</code>).</p>
+
+<h3>Raw metrics (JSON)</h3>
+<pre style="background:#fff;border:1px solid #e1e6ee;border-radius:10px;padding:12px;overflow:auto;font-size:12px;white-space:pre-wrap;word-break:break-word"><%= JSON.stringify(metrics, null, 2) %></pre>
+
+</main>
+<%- include('partials/footer') %>
+</body></html>

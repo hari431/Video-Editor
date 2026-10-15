@@ -1,0 +1,36 @@
+OPTIONAL
+========
+
+Optional represents the presence or absence of a value and can make absence explicit in APIs.
+
+PURPOSE
+-------
+Optional is most useful as a return type when absence is a legitimate result. It should not be treated as a universal replacement for null.
+
+EXAMPLE
+-------
+Optional<User> findUser(String id) {
+    return repository.findById(id);
+}
+
+GOOD USAGE
+----------
+Use map, flatMap, filter and orElse/orElseGet appropriately. orElseGet is useful when the fallback computation should happen only when needed.
+
+COMMON MISTAKES
+---------------
+Calling get() without checking, using Optional for every field, serializing it indiscriminately, and ignoring whether absence is actually meaningful.
+
+KEY TAKEAWAYS
+-------------
+Optional can make absence explicit, but good API design matters more than replacing every null with Optional.
+
+ORIGINAL INTERVIEW / CHECKPOINT QUESTIONS
+------------------------------------------
+1. Optional purpose?
+2. orElse vs orElseGet?
+3. Why can Optional as every field be awkward?
+
+EDITORIAL NOTE
+--------------
+This article is original educational content written for the public knowledge library. Reference material may have been used to understand terminology and cross-check concepts; copyrighted or proprietary source text is not reproduced.

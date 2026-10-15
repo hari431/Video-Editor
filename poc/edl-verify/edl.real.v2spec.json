@@ -1,0 +1,40 @@
+{
+  "version": 2,
+  "width": 1280,
+  "height": 720,
+  "files": [
+    {
+      "kind": "video"
+    }
+  ],
+  "videoClips": [
+    {
+      "file": 0,
+      "sourceIn": 0,
+      "sourceOut": 4,
+      "start": 0,
+      "gain": 1,
+      "volumeDb": 0,
+      "fadeIn": 0,
+      "fadeOut": 0
+    },
+    {
+      "file": 0,
+      "sourceIn": 8,
+      "sourceOut": 12,
+      "start": 4,
+      "gain": 1,
+      "volumeDb": 0,
+      "fadeIn": 0,
+      "fadeOut": 0
+    }
+  ],
+  "audioClips": [],
+  "blurs": [],
+  "texts": [],
+  "images": [],
+  "videoOverlays": [],
+  "zooms": [],
+  "watermark": null,
+  "resolution": "original"
+}

@@ -1,0 +1,17 @@
+<% if (typeof newContentCount !== 'undefined' && newContentCount > 0) { %>
+<section class="new-content-banner" data-testid="new-content-banner" role="status" aria-live="polite">
+  <div class="new-content-text">
+    <strong>📢 New content available</strong>
+    <span>You have <%= newContentCount %> new or missed <%= newContentCount === 1 ? 'item' : 'items' %> to explore. Some items may have been added since your last login.</span>
+  </div>
+  <div class="new-content-actions">
+    <a class="button primary" href="/my/new-content" data-testid="view-new-content">View New Content</a>
+    <form method="post" action="/my/new-content/ignore-all" class="new-content-ignore-all-form">
+      <% if (typeof newContent !== 'undefined' && Array.isArray(newContent)) { for (const item of newContent) { %>
+        <input type="hidden" name="paths" value="<%= item.path %>">
+      <% } } %>
+      <button type="submit" class="button secondary" data-testid="ignore-all" aria-label="Ignore all new content">Ignore All</button>
+    </form>
+  </div>
+</section>
+<% } %>

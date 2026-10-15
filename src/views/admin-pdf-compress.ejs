@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Compress PDF · Admin · Learn with me</title><link rel="stylesheet" href="/styles.css"><%- include('partials/adsense-verification') %></head>
+<body><header class="topbar"><a class="brand" href="/">Learn with me</a><div class="user"><a href="/account" style="text-decoration: underline; font-weight: bold;"><%= user.name || user.email %></a><% if (typeof user !== 'undefined' && user) { %><span class="user-status-text" style="color: #64748b; font-size: 13px; margin-left: 6px;"><%= (typeof getUserHeaderStatus === 'function') ? getUserHeaderStatus(user) : (user.status ? (user.status.charAt(0).toUpperCase() + user.status.slice(1)) : 'Active') %><% if (user.access_expires_at) { %> <span class="user-access-until">(Access Until: <%= new Date(user.access_expires_at).toLocaleDateString() %>)</span><% } %></span><% } %><form method="post" action="/logout"><button type="submit">Sign out</button></form></div></header>
+<main class="container" style="max-width:900px;">
+<h1>Compress PDF</h1>
+<%- include('partials/admin-nav') %>
+
+<p class="muted">Admin/Owner only. Upload one PDF to download a <strong>new</strong> smaller copy. Compression here is <strong>lossless only</strong> (stream recompression plus object packing) — images are never downsampled and nothing is re-rendered, so quality cannot change. The original file is never modified. If a file is already optimally packed, the original is returned unchanged and the result says so. This tool is <strong>disabled in production</strong>.</p>
+
+<% const _available = typeof pdfCompressAvailable !== 'undefined' ? !!pdfCompressAvailable : false; %>
+<% const _maxMb = (typeof pdfCompressMaxFileMb !== 'undefined' && Number.isFinite(Number(pdfCompressMaxFileMb)) && Number(pdfCompressMaxFileMb) >= 1) ? Math.floor(Number(pdfCompressMaxFileMb)) : 50; %>
+<% if (!_available) { %>
+  <p class="flash flash-error" data-testid="pdf-compress-disabled">PDF compress is disabled in production. Run the app locally (development) to use it.</p>
+<% } %>
+
+<div data-testid="pdf-compress-root" data-available="<%= _available ? '1' : '0' %>" data-max-file-mb="<%= _maxMb %>">
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0;">
+    <button type="button" class="button small" id="pdfCompressPick" data-testid="pdf-compress-pick" <%= _available ? '' : 'disabled' %>>📂 Select PDF</button>
+    <input type="file" id="pdfCompressFile" data-testid="pdf-compress-file" accept=".pdf,application/pdf" style="display:none;" <%= _available ? '' : 'disabled' %>>
+    <label style="font-size:13px;">Level
+      <select id="pdfCompressLevel" data-testid="pdf-compress-level" <%= _available ? '' : 'disabled' %>>
+        <option value="balanced" selected>Balanced (recommended)</option>
+        <option value="fast">Fast</option>
+        <option value="maximum">Maximum</option>
+      </select>
+    </label>
+    <button type="button" class="button small primary" id="pdfCompressBtn" data-testid="pdf-compress-submit" <%= _available ? '' : 'disabled' %>>🗜 Compress &amp; download</button>
+    <button type="button" class="button small secondary" id="pdfCompressClear" data-testid="pdf-compress-clear" <%= _available ? '' : 'disabled' %>>Clear</button>
+    <span class="muted" style="font-size:12px;">One file · max <%= _maxMb %> MB · lossless</span>
+  </div>
+  <p class="muted" id="pdfCompressFileInfo" data-testid="pdf-compress-fileinfo" style="font-size:13px;">No PDF selected yet.</p>
+  <div id="pdfCompressProgress" data-testid="pdf-compress-progress" style="display:none;margin-top:8px;font-size:13px;font-weight:600;" role="status" aria-live="polite">Compressing… <span id="pdfCompressProgressPct">0%</span></div>
+  <p class="muted" data-testid="pdf-compress-status" id="pdfCompressStatus" style="font-size:13px;font-weight:600;"></p>
+  <p class="muted" data-testid="pdf-compress-result" id="pdfCompressResult" style="font-size:13px;"></p>
+</div>
+
+</main>
+<%- include('partials/footer') %>
+<script type="module" src="/admin-pdf-compress.js?v=<%= Date.now() %>"></script>
+</body></html>

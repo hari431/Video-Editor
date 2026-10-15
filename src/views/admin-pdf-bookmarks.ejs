@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Bookmarks · Admin · Learn with me</title><link rel="stylesheet" href="/styles.css"><%- include('partials/adsense-verification') %></head>
+<body><header class="topbar"><a class="brand" href="/">Learn with me</a><div class="user"><a href="/account" style="text-decoration: underline; font-weight: bold;"><%= user.name || user.email %></a><% if (typeof user !== 'undefined' && user) { %><span class="user-status-text" style="color: #64748b; font-size: 13px; margin-left: 6px;"><%= (typeof getUserHeaderStatus === 'function') ? getUserHeaderStatus(user) : (user.status ? (user.status.charAt(0).toUpperCase() + user.status.slice(1)) : 'Active') %><% if (user.access_expires_at) { %> <span class="user-access-until">(Access Until: <%= new Date(user.access_expires_at).toLocaleDateString() %>)</span><% } %></span><% } %><form method="post" action="/logout"><button type="submit">Sign out</button></form></div></header>
+<main class="container" style="max-width:900px;">
+<h1>Bookmarks</h1>
+<%- include('partials/admin-nav') %>
+
+<p class="muted">Admin/Owner only. Add navigable bookmarks to a local PDF and download a <strong>new</strong> file. One bookmark per line as <code>Title | page</code> (page numbers start at 1). Appending keeps existing bookmarks; replacing rebuilds the outline. Page content is never altered. The original file is never modified. This tool is <strong>disabled in production</strong>.</p>
+
+<% const _available = typeof pdfBookmarksAvailable !== 'undefined' ? !!pdfBookmarksAvailable : false; %>
+<% const _maxMb = (typeof pdfBookmarksMaxFileMb !== 'undefined' && Number.isFinite(Number(pdfBookmarksMaxFileMb)) && Number(pdfBookmarksMaxFileMb) >= 1) ? Math.floor(Number(pdfBookmarksMaxFileMb)) : 50; %>
+<% if (!_available) { %>
+  <p class="flash flash-error" data-testid="pdf-bookmarks-disabled">PDF bookmarks are disabled in production. Run the app locally (development) to use it.</p>
+<% } %>
+
+<div data-testid="pdf-bookmarks-root" data-available="<%= _available ? '1' : '0' %>" data-max-file-mb="<%= _maxMb %>">
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0;">
+    <button type="button" class="button small" id="pdfBookmarksPick" data-testid="pdf-bookmarks-pick" <%= _available ? '' : 'disabled' %>>📂 Select PDF</button>
+    <input type="file" id="pdfBookmarksFile" data-testid="pdf-bookmarks-file" accept=".pdf,application/pdf" style="display:none;" <%= _available ? '' : 'disabled' %>>
+    <label style="font-size:13px;">Mode
+      <select id="pdfBookmarksMode" data-testid="pdf-bookmarks-mode" <%= _available ? '' : 'disabled' %>>
+        <option value="append" selected>Append (keep existing)</option>
+        <option value="replace">Replace outline</option>
+      </select>
+    </label>
+    <span class="muted" style="font-size:12px;">One file · max <%= _maxMb %> MB</span>
+  </div>
+  <p class="muted" id="pdfBookmarksFileInfo" data-testid="pdf-bookmarks-fileinfo" style="font-size:13px;">No PDF selected yet.</p>
+  <p class="muted" id="pdfBookmarksExisting" data-testid="pdf-bookmarks-existing" style="font-size:12px;"></p>
+  <label style="display:block;font-size:13px;margin:6px 0;">Bookmarks (one per line: <code>Title | page</code>)
+    <textarea id="pdfBookmarksEntries" data-testid="pdf-bookmarks-entries" rows="6" placeholder="Cover | 1&#10;Chapter 1 | 3" style="width:100%;max-width:480px;font-family:inherit;" <%= _available ? '' : 'disabled' %>></textarea>
+  </label>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0;">
+    <button type="button" class="button small primary" id="pdfBookmarksBtn" data-testid="pdf-bookmarks-submit" <%= _available ? '' : 'disabled' %>>🔖 Apply &amp; download</button>
+    <button type="button" class="button small secondary" id="pdfBookmarksClear" data-testid="pdf-bookmarks-clear" <%= _available ? '' : 'disabled' %>>Clear</button>
+  </div>
+  <div id="pdfBookmarksProgress" data-testid="pdf-bookmarks-progress" style="display:none;margin-top:8px;font-size:13px;font-weight:600;" role="status" aria-live="polite">Working… <span id="pdfBookmarksProgressPct">0%</span></div>
+  <p class="muted" data-testid="pdf-bookmarks-status" id="pdfBookmarksStatus" style="font-size:13px;font-weight:600;"></p>
+  <p class="muted" data-testid="pdf-bookmarks-result" id="pdfBookmarksResult" style="font-size:13px;"></p>
+</div>
+
+</main>
+<%- include('partials/footer') %>
+<script type="module" src="/admin-pdf-bookmarks.js?v=<%= Date.now() %>"></script>
+</body></html>

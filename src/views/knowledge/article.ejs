@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title><%= article.title %> · Learn with me</title>
+  <meta name="description" content="<%= article.description %>">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="<%= canonicalUrl || ('/knowledge/' + article.category + '/' + article.slug) %>">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="<%= article.title %>">
+  <meta property="og:description" content="<%= article.description %>">
+  <meta property="og:url" content="<%= canonicalUrl || ('/knowledge/' + article.category + '/' + article.slug) %>">
+  <meta property="article:published_time" content="<%= article.lastUpdated %>">
+  <meta property="article:section" content="<%= article.categoryName %>">
+
+  <link rel="stylesheet" href="/styles.css">
+  <%- include('../partials/adsense-verification') %>
+
+  <!-- JSON-LD TechArticle Structured Data for SEO -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "<%= article.title.replace(/"/g, '\\"') %>",
+    "description": "<%= article.description.replace(/"/g, '\\"') %>",
+    "datePublished": "<%= article.lastUpdated %>",
+    "dateModified": "<%= article.lastUpdated %>",
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": "<%= canonicalUrl || ('/knowledge/' + article.category + '/' + article.slug) %>"
+    },
+    "author": {
+      "@type": "Organization",
+      "name": "Learn with me Engineering Team"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "Learn with me",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "/favicon.ico"
+      }
+    }
+  }
+  </script>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/">Learn with me</a>
+  <a class="nav-link" href="/knowledge" style="font-weight: 700; color: #1e40af;">📖 Knowledge Base</a>
+  <% if (typeof user !== 'undefined' && user) { %>
+    <a class="nav-link" href="/">Browse Queries</a>
+    <div class="user">
+      <a href="/account" style="text-decoration: underline; font-weight: bold;"><%= user.name || user.email %></a>
+      <% if (typeof user !== 'undefined' && user) { %>
+        <span class="user-status-text" style="color: #64748b; font-size: 13px; margin-left: 6px;"><%= (typeof getUserHeaderStatus === 'function') ? getUserHeaderStatus(user) : (user.status ? (user.status.charAt(0).toUpperCase() + user.status.slice(1)) : 'Active') %><% if (user.access_expires_at) { %> <span class="user-access-until">(Access Until: <%= new Date(user.access_expires_at).toLocaleDateString() %>)</span><% } %></span>
+      <% } %>
+      <form method="post" action="/logout"><button type="submit">Sign out</button></form>
+    </div>
+  <% } else { %>
+    <a class="nav-link" href="/about">About</a>
+    <a class="nav-link" href="/login">Sign in</a>
+  <% } %>
+</header>
+
+<main class="container">
+  <nav class="breadcrumbs" aria-label="Breadcrumb">
+    <a href="/">Home</a>
+    <span>/</span>
+    <a href="/knowledge">Knowledge Base</a>
+    <span>/</span>
+    <a href="/knowledge/<%= article.category %>"><%= article.categoryName %></a>
+    <span>/</span>
+    <span style="color: #172033; font-weight: 600;"><%= article.title %></span>
+  </nav>
+
+  <div class="knowledge-article-layout">
+    <!-- Sticky Table of Contents -->
+    <aside class="knowledge-toc" aria-label="Table of contents">
+      <div class="knowledge-toc-title">In This Guide</div>
+      <ul>
+        <% article.tableOfContents.forEach(item => { %>
+          <li><a href="#<%= item.id %>"><%= item.title %></a></li>
+        <% }) %>
+        <% if (relatedArticles && relatedArticles.length) { %>
+          <li><a href="#related-guides">Related Guides</a></li>
+        <% } %>
+      </ul>
+      <div style="margin-top: 20px; padding-top: 14px; border-top: 1px solid #e2e8f0;">
+        <a href="/knowledge/<%= article.category %>" style="font-size: 12.5px; color: #3b82f6; text-decoration: none; font-weight: 600;">
+          &larr; More in <%= article.categoryName %>
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="knowledge-content-wrapper">
+      <article class="knowledge-article">
+        <header class="knowledge-article-header">
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <a href="/knowledge/<%= article.category %>" class="knowledge-tag" style="background: #e0f2fe; border-color: #bae6fd; color: #0369a1; text-decoration: none;">
+              <%= article.categoryName %>
+            </a>
+            <span style="font-size: 13px; color: #64748b;">⏱️ <%= article.readTime %></span>
+            <span style="font-size: 13px; color: #64748b;">🗓️ Last updated <%= article.lastUpdated %></span>
+          </div>
+
+          <h1><%= article.title %></h1>
+          
+          <div class="knowledge-article-summary">
+            <strong>Key Takeaway:</strong> <%= article.summary %>
+          </div>
+        </header>
+
+        <div class="knowledge-body">
+          <% article.sections.forEach(section => { %>
+            <section id="<%= section.id %>">
+              <h2><%= section.heading %></h2>
+              <%- section.content %>
+            </section>
+          <% }) %>
+        </div>
+
+        <div style="margin-top: 32px; padding-top: 20px; border-top: 1px solid #edf0f4; display: flex; gap: 8px; flex-wrap: wrap;">
+          <span style="font-size: 13px; font-weight: 600; color: #64748b; margin-right: 6px; align-self: center;">Tags:</span>
+          <% article.tags.forEach(tag => { %>
+            <span class="knowledge-tag"><%= tag %></span>
+          <% }) %>
+        </div>
+
+        <% if (relatedArticles && relatedArticles.length) { %>
+          <section id="related-guides" style="margin-top: 40px; padding-top: 24px; border-top: 1px solid #e2e8f0;">
+            <h3 style="margin: 0 0 12px; font-size: 18px; color: #16234a;">Related <%= article.categoryName %> Guides</h3>
+            <div class="knowledge-related-grid">
+              <% relatedArticles.forEach(rel => { %>
+                <a href="/knowledge/<%= rel.category %>/<%= rel.slug %>" class="knowledge-related-card">
+                  <h4><%= rel.title %></h4>
+                  <span><%= rel.readTime %> &bull; <%= rel.lastUpdated %></span>
+                </a>
+              <% }) %>
+            </div>
+          </section>
+        <% } %>
+      </article>
+
+      <aside class="knowledge-disclaimer-box" aria-label="Educational resource notice">
+        <div class="knowledge-disclaimer-icon">📖</div>
+        <div class="knowledge-disclaimer-text">
+          <strong>Public Technical Reference</strong><br>
+          This guide is published for public educational purposes and does not require signing in. To browse practical Gosu query scripts or participate in discussions, visit the <a href="/login" style="color: #2563eb; font-weight: 600; text-decoration: underline;">Guidewire Query Library</a>.
+        </div>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<%- include('../partials/footer', { showFooter: true }) %>
+</body>
+</html>

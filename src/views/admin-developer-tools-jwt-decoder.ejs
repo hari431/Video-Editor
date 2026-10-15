@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>JWT Claims Decoder · Admin · Learn with me</title>
+  <link rel="stylesheet" href="/styles.css">
+  <%- include('partials/adsense-verification') %>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/">Learn with me</a>
+    <div class="user">
+      <a href="/account" style="text-decoration: underline; font-weight: bold;"><%= user.name || user.email %></a>
+      <% if (typeof user !== 'undefined' && user) { %>
+        <span class="user-status-text" style="color: #64748b; font-size: 13px; margin-left: 6px;">
+          <%= (typeof getUserHeaderStatus === 'function') ? getUserHeaderStatus(user) : (user.status ? (user.status.charAt(0).toUpperCase() + user.status.slice(1)) : 'Active') %>
+          <% if (user.access_expires_at) { %>
+            <span class="user-access-until">(Access Until: <%= new Date(user.access_expires_at).toLocaleDateString() %>)</span>
+          <% } %>
+        </span>
+      <% } %>
+      <form method="post" action="/logout">
+        <button type="submit">Sign out</button>
+      </form>
+    </div>
+  </header>
+
+  <main class="container" style="max-width:1100px;">
+    <h1>JWT Claims Decoder</h1>
+    <%- include('partials/admin-nav') %>
+
+    <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+      <div class="flex items-start gap-3">
+        <svg class="w-5 h-5 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <div class="text-xs text-amber-900 font-medium">
+          <strong>Decode only — signature is not verified.</strong> This tool parses JWT header and payload claims purely in-memory locally. It does not authenticate nor cryptographically confirm token validity. Do not rely on it for structural trust decisions.
+        </div>
+      </div>
+    </div>
+
+    <p class="muted">
+      Admin/Owner only. Paste any JSON Web Token (JWT) to instantly dissect and inspect its key headers, core payload JSON values, and standard claim timestamps (such as expiration, issued times, and start bounds) in readable dates. **Processing runs fully locally.**
+    </p>
+
+    <!-- Paste Panel -->
+    <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:20px; margin-top:20px;">
+      <h2 style="font-size:16px; margin-top:0; margin-bottom:12px;">Paste JWT Token String</h2>
+      
+      <div class="mb-4">
+        <textarea id="jwtInput" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJHdWlkZXdpcmUtSURQIn0..." style="width:100%; height:130px; font-family:monospace; font-size:12px; padding:12px; border:1px solid #cbd5e1; border-radius:8px; resize:vertical; background:#f8fafc;"></textarea>
+      </div>
+
+      <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:24px;">
+        <button type="button" class="button small primary" id="btnDecodeJwt">⚡ Decode Claims</button>
+        <button type="button" class="button small secondary" id="btnLoadSample">Load Sample JWT</button>
+        <button type="button" class="button small secondary" id="btnClearAll" data-testid="clear-btn">Clear</button>
+      </div>
+
+      <!-- Error banner -->
+      <div id="errorContainer" class="hidden bg-red-50 border border-red-200 text-red-900 rounded-xl p-4 mb-6"></div>
+
+      <!-- Decoding Results Panel -->
+      <div id="resultsPanel" class="hidden">
+        <hr style="border:0; border-top:1px solid #e2e8f0; margin:24px 0;">
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+          
+          <!-- Code Previews -->
+          <div class="md:col-span-2 space-y-5">
+            <div>
+              <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">JOSE Header</h3>
+              <pre id="headerPre" class="bg-slate-50 border border-slate-200 p-4 rounded-xl font-mono text-xs text-slate-800 overflow-auto max-h-[150px] leading-relaxed"></pre>
+            </div>
+            <div>
+              <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Claim Payload</h3>
+              <pre id="payloadPre" class="bg-slate-50 border border-slate-200 p-4 rounded-xl font-mono text-xs text-indigo-950 overflow-auto max-h-[300px] leading-relaxed"></pre>
+            </div>
+            <div>
+              <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Raw Signature String</h3>
+              <code id="signatureText" class="block bg-slate-50 border border-slate-200 p-3 rounded-xl font-mono text-xs text-red-700 break-all select-all leading-relaxed"></code>
+            </div>
+          </div>
+
+          <!-- Claims Audit Sidebar -->
+          <div class="space-y-4 bg-slate-50 border border-slate-200 rounded-xl p-5 shadow-sm">
+            <h3 class="text-xs font-bold text-slate-600 uppercase tracking-wider border-b border-slate-200 pb-2">Dissected Claims Registry</h3>
+            
+            <div id="expiryAlertBlock" class="space-y-2">
+              <!-- Active/Expired Warning -->
+            </div>
+
+            <div class="space-y-3 mt-4">
+              <div>
+                <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Issuer (iss)</span>
+                <span id="claimIssuer" class="font-mono text-xs text-slate-800 break-all select-all font-semibold"></span>
+              </div>
+              <div>
+                <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Subject (sub)</span>
+                <span id="claimSubject" class="font-mono text-xs text-slate-800 break-all select-all font-semibold"></span>
+              </div>
+              <div>
+                <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Audience (aud)</span>
+                <span id="claimAudience" class="font-mono text-xs text-slate-800 break-all select-all font-semibold"></span>
+              </div>
+              <div>
+                <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Expiration Time (exp)</span>
+                <span id="claimExpiry" class="font-mono text-[10px] text-slate-800 block"></span>
+              </div>
+              <div>
+                <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Not Before (nbf)</span>
+                <span id="claimNotBefore" class="font-mono text-[10px] text-slate-800 block"></span>
+              </div>
+              <div>
+                <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Issued At (iat)</span>
+                <span id="claimIssuedAt" class="font-mono text-[10px] text-slate-800 block"></span>
+              </div>
+              <div>
+                <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Token ID (jti)</span>
+                <span id="claimTokenId" class="font-mono text-xs text-slate-800 break-all select-all font-semibold"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <%- include('partials/footer') %>
+  <script type="module" src="/admin-developer-tools-jwt-decoder.js?v=<%= Date.now() %>"></script>
+</body>
+</html>

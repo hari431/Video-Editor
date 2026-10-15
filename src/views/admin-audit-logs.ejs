@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Audit Logs · Admin · Learn with me</title><link rel="stylesheet" href="/styles.css"><%- include('partials/adsense-verification') %></head>
+<body><header class="topbar"><a class="brand" href="/">Learn with me</a><div class="user"><a href="/account" style="text-decoration: underline; font-weight: bold;"><%= user.name || user.email %></a><% if (typeof user !== 'undefined' && user) { %><span class="user-status-text" style="color: #64748b; font-size: 13px; margin-left: 6px;"><%= (typeof getUserHeaderStatus === 'function') ? getUserHeaderStatus(user) : (user.status ? (user.status.charAt(0).toUpperCase() + user.status.slice(1)) : 'Active') %><% if (user.access_expires_at) { %> <span class="user-access-until">(Access Until: <%= new Date(user.access_expires_at).toLocaleDateString() %>)</span><% } %></span><% } %><form method="post" action="/logout"><button type="submit">Sign out</button></form></div></header>
+<main class="container">
+<h1>Audit Logs</h1>
+<%- include('partials/admin-nav') %>
+
+<% function fmtIST(date) { if (!date) return '—'; return new Date(date).toLocaleString(undefined, { timeZone: 'Asia/Kolkata' }); } %>
+<% function fmtISTDate(date) { if (!date) return '—'; return new Date(date).toLocaleDateString(undefined, { timeZone: 'Asia/Kolkata' }); } %>
+<% function statusBadge(s){ if(!s || s==='—') return '—'; const m={pending:'badge-pending',active:'badge-active',revoked:'badge-revoked',expired:'badge-expired'}; const l={pending:'Pending',active:'Active',revoked:'Revoked',expired:'Expired'}; const cls=m[s]||'badge-neutral'; const label=l[s]||s; return '<span class="badge '+cls+'">'+label+'</span>'; } %>
+<% function roleBadge(r){ if(!r || r==='—') return '—'; const m={OWNER:'badge-owner',ADMIN:'badge-admin',USER:'badge-neutral',PREMIUM:'badge-premium'}; const cls=m[r]||'badge-neutral'; return '<span class="badge '+cls+'">'+r+'</span>'; } %>
+
+<% const _filter = typeof filter !== 'undefined' ? filter : 'all'; %>
+
+<div data-testid="audit-tabs" style="margin:14px 0 18px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+  <span class="muted" style="font-weight:600;margin-right:4px">Filter:</span>
+  <% const tabDefs=[['all','All Logs'],['access','Access'],['role','Role'],['content','Content Permission']]; %>
+  <% tabDefs.forEach(([val,label])=>{ const active=_filter===val; %>
+    <a href="/admin/audit-logs?filter=<%= val %>" data-testid="tab-<%= val %>" class="badge <%= active ? 'badge-active' : 'badge-neutral' %>" style="text-decoration:none;padding:6px 12px;border-radius:999px"><%= label %></a>
+  <% }) %>
+</div>
+
+<% if (_filter === 'all' || _filter === 'access') { %>
+<h2>Access audit log</h2>
+<table class="admin-table" data-testid="access-audit-table">
+  <thead><tr><th>When</th><th>User</th><th>Action</th><th>Status change</th><th>Expiry change</th><th>Admin</th><th>Details</th></tr></thead>
+  <tbody>
+  <% (auditLog || []).forEach(a => { %>
+    <tr>
+      <td><%= new Date(a.created_at).toLocaleString() %></td>
+      <td><%= a.user_email || 'deleted user' %></td>
+      <td><%= a.action %></td>
+      <td><% if (a.previous_status || a.new_status) { %><%- statusBadge(a.previous_status) %> → <%- statusBadge(a.new_status) %><% } else { %>—<% } %></td>
+      <td><%= a.previous_expires_at ? new Date(a.previous_expires_at).toLocaleDateString() : '—' %> → <%= a.new_expires_at ? new Date(a.new_expires_at).toLocaleDateString() : '—' %></td>
+      <td><%= a.admin_email || '—' %></td>
+      <td><%= a.details || '—' %></td>
+    </tr>
+  <% }) %>
+  <% if (!auditLog || auditLog.length === 0) { %>
+    <tr><td colspan="7">No access changes recorded yet.</td></tr>
+  <% } %>
+  </tbody>
+</table>
+<% } %>
+
+<% if (_filter === 'all' || _filter === 'role') { %>
+<h2>Role audit log</h2>
+<table class="admin-table" data-testid="role-audit-table">
+  <thead><tr><th>When</th><th>Target</th><th>Action</th><th>From</th><th>To</th><th>Actor</th></tr></thead>
+  <tbody>
+  <% (typeof roleAuditLog !== 'undefined' && roleAuditLog ? roleAuditLog : []).forEach(r => { %>
+    <tr>
+      <td><%= new Date(r.created_at).toLocaleString() %></td>
+      <td><%= r.target_email || r.target_name || 'deleted user' %></td>
+      <td><%= r.action %></td>
+      <td><%- roleBadge(r.previous_role) %></td>
+      <td><%- roleBadge(r.new_role) %></td>
+      <td><%= r.actor_email || r.actor_name || '—' %></td>
+    </tr>
+  <% }) %>
+  <% if (!roleAuditLog || roleAuditLog.length === 0) { %>
+    <tr><td colspan="6">No role changes recorded yet.</td></tr>
+  <% } %>
+  </tbody>
+</table>
+<% } %>
+
+<% if (_filter === 'all' || _filter === 'content') { %>
+<h3>Content permission audit log</h3>
+<table class="admin-table" data-testid="content-audit-table">
+  <thead><tr><th>When</th><th>Target</th><th>Permission</th><th>Action</th><th>Actor</th></tr></thead>
+  <tbody>
+  <% (typeof contentPermissionAuditLog !== 'undefined' && contentPermissionAuditLog ? contentPermissionAuditLog : []).forEach(r => { %>
+    <tr>
+      <td><%= new Date(r.created_at).toLocaleString() %></td>
+      <td><%= r.target_email || r.target_name || 'deleted user' %></td>
+      <td><span class="badge badge-info"><%= r.permission %></span></td>
+      <td><% const act=r.action||''; const cls=act.toLowerCase().includes('grant')?'badge-success':act.toLowerCase().includes('revoke')?'badge-revoked':'badge-neutral'; %><span class="badge <%= cls %>"><%= r.action %></span></td>
+      <td><%= r.actor_email || r.actor_name || '—' %></td>
+    </tr>
+  <% }) %>
+  <% if (typeof contentPermissionAuditLog === 'undefined' || !contentPermissionAuditLog || contentPermissionAuditLog.length === 0) { %>
+    <tr><td colspan="5">No content permission changes yet.</td></tr>
+  <% } %>
+  </tbody>
+</table>
+<% } %>
+
+</main>
+<%- include('partials/footer') %>
+</body></html>

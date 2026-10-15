@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title><%= category.name %> · Public Knowledge Base · Learn with me</title>
+  <meta name="description" content="<%= category.description %>">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="<%= canonicalUrl || ('/knowledge/' + category.slug) %>">
+  
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="<%= category.name %> · Knowledge Base">
+  <meta property="og:description" content="<%= category.description %>">
+  <meta property="og:url" content="<%= canonicalUrl || ('/knowledge/' + category.slug) %>">
+  
+  <link rel="stylesheet" href="/styles.css">
+  <%- include('../partials/adsense-verification') %>
+
+  <!-- JSON-LD BreadcrumbList -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Knowledge Base",
+        "item": "/knowledge"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "<%= category.name %>",
+        "item": "/knowledge/<%= category.slug %>"
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/">Learn with me</a>
+  <a class="nav-link" href="/knowledge" style="font-weight: 700; color: #1e40af;">📖 Knowledge Base</a>
+  <% if (typeof user !== 'undefined' && user) { %>
+    <a class="nav-link" href="/">Browse Queries</a>
+    <div class="user">
+      <a href="/account" style="text-decoration: underline; font-weight: bold;"><%= user.name || user.email %></a>
+      <% if (typeof user !== 'undefined' && user) { %>
+        <span class="user-status-text" style="color: #64748b; font-size: 13px; margin-left: 6px;"><%= (typeof getUserHeaderStatus === 'function') ? getUserHeaderStatus(user) : (user.status ? (user.status.charAt(0).toUpperCase() + user.status.slice(1)) : 'Active') %><% if (user.access_expires_at) { %> <span class="user-access-until">(Access Until: <%= new Date(user.access_expires_at).toLocaleDateString() %>)</span><% } %></span>
+      <% } %>
+      <form method="post" action="/logout"><button type="submit">Sign out</button></form>
+    </div>
+  <% } else { %>
+    <a class="nav-link" href="/about">About</a>
+    <a class="nav-link" href="/login">Sign in</a>
+  <% } %>
+</header>
+
+<main class="container" id="knowledgeContainer">
+  <nav class="breadcrumbs" aria-label="Breadcrumb">
+    <a href="/">Home</a>
+    <span>/</span>
+    <a href="/knowledge">Knowledge Base</a>
+    <span>/</span>
+    <span style="color: #172033; font-weight: 600;"><%= category.name %></span>
+  </nav>
+
+  <section class="knowledge-hero" style="padding: 32px 28px;">
+    <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 8px;">
+      <span style="font-size: 36px;"><%= category.icon %></span>
+      <div>
+        <h1 style="margin: 0; font-size: 28px;"><%= category.name %></h1>
+        <span style="font-size: 14px; font-weight: 600; color: #4f6efd;"><%= category.tagline %></span>
+      </div>
+    </div>
+    <p style="margin-top: 12px; max-width: 800px;">
+      <%= category.description %>
+    </p>
+  </section>
+
+  <% 
+    const curatedArticles = articles.filter(a => !a.isConcept);
+    const conceptArticles = articles.filter(a => a.isConcept);
+  %>
+
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+    <div>
+      <h2 style="margin: 0; font-size: 20px; color: #16234a;">Guides &amp; Articles (<%= articles.length %>)</h2>
+      <span style="font-size: 13px; color: #64748b;">
+        <%= curatedArticles.length %> Comprehensive Guide<%= curatedArticles.length === 1 ? '' : 's' %> &bull; <%= conceptArticles.length %> Quick Concept<%= conceptArticles.length === 1 ? '' : 's' %>
+      </span>
+    </div>
+    <a href="/knowledge" class="button small">&larr; All Topics</a>
+  </div>
+
+  <% if (articles.length === 0) { %>
+    <div class="empty-folder">No articles published in this category yet. Check back soon!</div>
+  <% } %>
+
+  <% if (curatedArticles.length > 0 || conceptArticles.length > 0) { %>
+  <div class="browse-controls" data-controls-for="knowledge">
+    <div class="control-group">
+      <label for="knowledgeSortSelect">Sort by</label>
+      <select id="knowledgeSortSelect" class="control-select" data-testid="knowledge-sort-select">
+        <option value="nameAsc">Name A → Z</option>
+        <option value="nameDesc">Name Z → A</option>
+        <option value="newest">Recently updated</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label for="knowledgeViewSelect">View by</label>
+      <select id="knowledgeViewSelect" class="control-select" data-testid="knowledge-view-select">
+        <option value="cards">Cards</option>
+        <option value="list">List</option>
+      </select>
+    </div>
+  </div>
+  <% } %>
+
+  <% if (curatedArticles.length > 0) { %>
+    <section class="knowledge-article-list" id="knowledgeGrid" data-testid="knowledge-list" style="margin-bottom: 30px;">
+      <% curatedArticles.forEach(article => { %>
+        <% const _kDateMs = article.lastUpdated ? new Date(article.lastUpdated).getTime() : 0; const _kDateIso = article.lastUpdated || ''; %>
+        <a href="/knowledge/<%= category.slug %>/<%= article.slug %>" class="knowledge-article-card" data-name="<%= article.title.toLowerCase() %>" data-date="<%= _kDateIso %>" data-date-ms="<%= _kDateMs %>">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+            <span class="knowledge-tag" style="background: #e0f2fe; border-color: #bae6fd; color: #0369a1;"><%= article.categoryName %></span>
+            <span style="font-size: 12px; color: #64748b;">⏱️ <%= article.readTime %></span>
+          </div>
+          <h3 class="knowledge-article-title"><%= article.title %></h3>
+          <p class="knowledge-article-desc"><%= article.description %></p>
+          <div class="knowledge-article-meta">
+            <% article.tags.forEach(tag => { %>
+              <span class="knowledge-tag"><%= tag %></span>
+            <% }) %>
+            <span style="margin-left: auto; font-size: 12px; color: #94a3b8;">Updated <%= article.lastUpdated %></span>
+          </div>
+        </a>
+      <% }) %>
+    </section>
+  <% } %>
+
+  <% if (conceptArticles.length > 0) { %>
+    <section class="concept-library-section">
+      <div class="concept-section-title-bar">
+        <div>
+          <h3 class="concept-section-heading">Concept Library &amp; Q&amp;A (<%= conceptArticles.length %>)</h3>
+          <p style="margin: 4px 0 0; font-size: 13.5px; color: #64748b;">
+            Structured theory with server-rendered expandable answers, interview questions, and architectural takeaways.
+          </p>
+        </div>
+      </div>
+
+      <div class="concept-accordion-container">
+        <% conceptArticles.forEach(concept => { %>
+          <details class="concept-accordion-item knowledge-article-card" id="<%= concept.slug %>">
+            <summary class="concept-summary-header">
+              <div class="concept-summary-top">
+                <div class="concept-title-group">
+                  <span class="concept-badge">Concept</span>
+                  <h4 class="concept-title-text"><%= concept.title %></h4>
+                </div>
+                <div class="concept-indicator">
+                  <span class="concept-indicator-arrow">&#9656;</span>
+                </div>
+              </div>
+              <p class="concept-intro-preview"><%= concept.description %></p>
+              <% if (concept.questions && concept.questions.length > 0) { %>
+                <div class="concept-question-preview">
+                  <strong>Key Question:</strong> <%= concept.questions[0] %>
+                </div>
+              <% } %>
+              <div class="concept-meta-bar">
+                <span class="concept-expand-label"></span>
+                <span style="font-size: 12px; color: #64748b;">⏱️ <%= concept.readTime %></span>
+              </div>
+            </summary>
+
+            <div class="concept-expanded-payload">
+              <% concept.sections.forEach(sec => { %>
+                <div class="concept-expanded-section">
+                  <h4><%= sec.heading %></h4>
+                  <%- sec.content %>
+                </div>
+              <% }) %>
+
+              <div class="concept-actions-bar">
+                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                  <% concept.tags.forEach(tag => { %>
+                    <span class="knowledge-tag"><%= tag %></span>
+                  <% }) %>
+                </div>
+                <a href="/knowledge/<%= category.slug %>/<%= concept.slug %>" class="concept-permalink">
+                  View Dedicated Concept Page &rarr;
+                </a>
+              </div>
+            </div>
+          </details>
+        <% }) %>
+      </div>
+    </section>
+  <% } %>
+
+  <aside class="knowledge-disclaimer-box" aria-label="About this knowledge base">
+    <div class="knowledge-disclaimer-icon">💡</div>
+    <div class="knowledge-disclaimer-text">
+      <strong>Public &amp; Read-Only Educational Resource</strong><br>
+      This guide is public educational material and does not require an active subscription or account. For interactive discussions or access to practical Gosu query scripts, please <a href="/login" style="color: #2563eb; font-weight: 600; text-decoration: underline;">sign in</a>.
+    </div>
+  </aside>
+</main>
+
+<%- include('../partials/footer', { showFooter: true }) %>
+<script src="/browse-controls.js"></script>
+<script>
+BrowseControls.setup({
+  containerId: 'knowledgeContainer',
+  gridId: 'knowledgeGrid',
+  sortSelectId: 'knowledgeSortSelect',
+  viewSelectId: 'knowledgeViewSelect',
+  lsSortKey: 'knowledge_category_sort',
+  lsViewKey: 'knowledge_category_view',
+  defaultSort: 'nameAsc',
+  defaultView: 'cards',
+  sortFns: {
+    nameAsc: function(a,b){ return (a.getAttribute('data-name')||'').localeCompare(b.getAttribute('data-name')||''); },
+    nameDesc: function(a,b){ return (b.getAttribute('data-name')||'').localeCompare(a.getAttribute('data-name')||''); },
+    newest: function(a,b){ return (parseInt(b.getAttribute('data-date-ms'))||0) - (parseInt(a.getAttribute('data-date-ms'))||0); }
+  }
+});
+</script>
+</body>
+</html>

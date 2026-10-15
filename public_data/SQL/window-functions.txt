@@ -1,0 +1,39 @@
+WINDOW FUNCTIONS
+================
+
+Window functions calculate values across related rows without collapsing the result into one row per group.
+
+KEY IDEA
+--------
+GROUP BY reduces rows. A window function keeps the individual rows while calculating context such as rank, running totals, or previous values.
+
+EXAMPLE
+-------
+SELECT policy_id, effective_date, premium,
+       ROW_NUMBER() OVER (
+           PARTITION BY policy_id
+           ORDER BY effective_date DESC
+       ) AS rn
+FROM policy_versions;
+
+COMMON FUNCTIONS
+----------------
+ROW_NUMBER, RANK, DENSE_RANK, LAG, LEAD and running SUM are common tools.
+
+COMMON MISTAKES
+---------------
+Using an incorrect partition, forgetting an ORDER BY where sequence matters, and confusing rank functions with aggregation.
+
+KEY TAKEAWAYS
+-------------
+Window functions are ideal when you need both row-level detail and group-level context.
+
+ORIGINAL INTERVIEW / CHECKPOINT QUESTIONS
+------------------------------------------
+1. GROUP BY vs window function?
+2. ROW_NUMBER vs RANK?
+3. What does PARTITION BY mean?
+
+EDITORIAL NOTE
+--------------
+This article is original educational content written for the public knowledge library. Reference material may have been used to understand terminology and cross-check concepts; copyrighted or proprietary source text is not reproduced.

@@ -1,0 +1,118 @@
+<% 
+  const qList = (typeof questions !== 'undefined' && Array.isArray(questions)) ? questions : [];
+  const uNotes = (typeof userNotes !== 'undefined' && userNotes) ? userNotes : {};
+  const catSlug = (typeof categorySlug !== 'undefined' && categorySlug) ? categorySlug : ((typeof category !== 'undefined' && category && category.slug) ? category.slug : '');
+  const artSlug = (typeof articleSlug !== 'undefined' && articleSlug) ? articleSlug : ((typeof article !== 'undefined' && article && article.slug) ? article.slug : ((typeof concept !== 'undefined' && concept && concept.slug) ? concept.slug : ''));
+  const pageUrl = (typeof canonicalUrl !== 'undefined' && canonicalUrl) 
+    ? canonicalUrl 
+    : (catSlug && artSlug ? `/knowledge/${encodeURIComponent(catSlug)}/${encodeURIComponent(artSlug)}` : ((typeof req !== 'undefined' && req && (req.originalUrl || req.url)) ? (req.originalUrl || req.url) : ''));
+  const canNotes = typeof hasNotes !== 'undefined' ? Boolean(hasNotes) : (typeof user !== 'undefined' && Boolean(user));
+%>
+<% if (qList.length > 0) { %>
+  <div class="concept-qa-box" data-testid="interview-questions-section">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+      <h5 style="margin: 0; font-size: 15px; font-weight: 700; color: #0369a1; display: flex; align-items: center; gap: 6px;">
+        <span>🎯</span> Checkpoint &amp; Interview Questions
+      </h5>
+      <% if (canNotes) { %>
+        <span style="font-size: 12px; color: #0369a1; background: #e0f2fe; padding: 2px 10px; border-radius: 999px; border: 1px solid #bae6fd; font-weight: 500;">
+          🔒 Private learner notes
+        </span>
+      <% } %>
+    </div>
+
+    <ol class="interview-questions-list" style="margin: 0; padding-left: 20px;">
+      <% qList.forEach((q, idx) => { 
+        const qKey = (typeof getQuestionKey === 'function') 
+          ? getQuestionKey(catSlug, artSlug, idx) 
+          : `${catSlug}/${artSlug}/q${idx}`;
+        const note = uNotes[qKey] || null;
+        const domId = 'iqn-' + qKey.replace(/[^a-zA-Z0-9_-]/g, '_');
+        const returnToUrl = pageUrl ? `${pageUrl.split('#')[0]}#${domId}` : '';
+      %>
+        <li class="interview-question-item" id="<%= domId %>" data-question-key="<%= qKey %>" style="margin-bottom: 18px;">
+          <div class="interview-question-text" style="font-weight: 600; color: #1e293b; margin-bottom: 8px; line-height: 1.5;">
+            <%= q %>
+          </div>
+
+          <% if (canNotes) { %>
+            <div class="learner-note-widget" id="<%= domId %>-box" style="margin-top: 6px;">
+              <% if (note && note.note_text) { %>
+                <!-- View Mode -->
+                <div class="learner-note-view" id="<%= domId %>-view" style="background: #f8fafc; border: 1px solid #cbd5e1; border-left: 3px solid #0284c7; border-radius: 8px; padding: 10px 14px; margin-top: 4px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 12px;">
+                    <span style="font-weight: 700; color: #0369a1; display: inline-flex; align-items: center; gap: 4px;">
+                      🔒 My Note
+                    </span>
+                    <span style="color: #64748b; font-size: 11.5px;">
+                      Updated <%= new Date(note.updated_at).toLocaleDateString() %>
+                    </span>
+                  </div>
+                  <div class="learner-note-text" style="font-size: 13.5px; color: #334155; line-height: 1.55; white-space: pre-wrap;"><%= note.note_text %></div>
+                  <div style="display: flex; gap: 8px; align-items: center; margin-top: 10px;">
+                    <button type="button" class="button small secondary" onclick="document.getElementById('<%= domId %>-view').style.display='none';document.getElementById('<%= domId %>-form').style.display='block';">
+                      Edit Note
+                    </button>
+                    <form method="post" action="/knowledge/notes/delete" style="display: inline; margin: 0;" onsubmit="return confirm('Delete this private note?');">
+                      <input type="hidden" name="questionKey" value="<%= qKey %>">
+                      <input type="hidden" name="returnTo" value="<%= returnToUrl %>">
+                      <button type="submit" class="button small danger">Delete</button>
+                    </form>
+                  </div>
+                </div>
+
+                <!-- Hidden Edit Mode -->
+                <div class="learner-note-form-wrap" id="<%= domId %>-form" style="display: none; margin-top: 6px;">
+                  <form method="post" action="/knowledge/notes" class="learner-note-form" style="background: #ffffff; border: 1px solid #93c5fd; border-radius: 8px; padding: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+                    <input type="hidden" name="questionKey" value="<%= qKey %>">
+                    <input type="hidden" name="categorySlug" value="<%= catSlug %>">
+                    <input type="hidden" name="articleSlug" value="<%= artSlug %>">
+                    <input type="hidden" name="questionIndex" value="<%= idx %>">
+                    <input type="hidden" name="questionText" value="<%= q %>">
+                    <input type="hidden" name="returnTo" value="<%= returnToUrl %>">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                      <label style="font-size: 12.5px; font-weight: 700; color: #0369a1;">🔒 Edit Private Note</label>
+                      <span style="font-size: 11px; color: #64748b;">Visible only to you</span>
+                    </div>
+                    <textarea name="noteText" class="learner-note-input" rows="3" required maxlength="10000" style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 10px; font-family: inherit; font-size: 13px; line-height: 1.5; resize: vertical; box-sizing: border-box;"><%= note.note_text %></textarea>
+                    <div style="display: flex; gap: 8px; align-items: center; margin-top: 8px;">
+                      <button type="submit" class="button small primary">Save Note</button>
+                      <button type="button" class="button small secondary" onclick="document.getElementById('<%= domId %>-form').style.display='none';document.getElementById('<%= domId %>-view').style.display='block';">Cancel</button>
+                    </div>
+                  </form>
+                </div>
+              <% } else { %>
+                <!-- Add Note Mode -->
+                <div class="learner-note-form-wrap" id="<%= domId %>-form">
+                  <details class="learner-note-toggle" style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 8px 12px;">
+                    <summary style="cursor: pointer; font-size: 12.5px; font-weight: 600; color: #0284c7; user-select: none;">
+                      ➕ Add Private Note / Answer
+                    </summary>
+                    <form method="post" action="/knowledge/notes" class="learner-note-form" style="margin-top: 10px;">
+                      <input type="hidden" name="questionKey" value="<%= qKey %>">
+                      <input type="hidden" name="categorySlug" value="<%= catSlug %>">
+                      <input type="hidden" name="articleSlug" value="<%= artSlug %>">
+                      <input type="hidden" name="questionIndex" value="<%= idx %>">
+                      <input type="hidden" name="questionText" value="<%= q %>">
+                      <input type="hidden" name="returnTo" value="<%= returnToUrl %>">
+                      <textarea name="noteText" class="learner-note-input" rows="3" required maxlength="10000" placeholder="Type your personal preparation notes, answers, or key concepts here (private to you)..." style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 10px; font-family: inherit; font-size: 13px; line-height: 1.5; resize: vertical; box-sizing: border-box;"></textarea>
+                      <div style="display: flex; gap: 8px; align-items: center; margin-top: 8px;">
+                        <button type="submit" class="button small primary">Save Private Note</button>
+                      </div>
+                    </form>
+                  </details>
+                </div>
+              <% } %>
+            </div>
+          <% } else if (typeof user !== 'undefined' && user) { %>
+            <!-- User is logged in but lacks Notes capability -->
+          <% } else { %>
+            <div style="margin-top: 4px; font-size: 12px; color: #64748b;">
+              🔒 <a href="/login" style="color: #0284c7; text-decoration: underline; font-weight: 500;">Sign in</a> to save private preparation notes on this question.
+            </div>
+          <% } %>
+        </li>
+      <% }) %>
+    </ol>
+  </div>
+<% } %>

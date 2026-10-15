@@ -1,0 +1,82 @@
+TAP version 13
+# Subtest: Admin dashboard contains Needs Attention section
+ok 1 - Admin dashboard contains Needs Attention section
+  ---
+  duration_ms: 92.171915
+  type: 'test'
+  ...
+# Subtest: Shows pending with amber warning and Review link to /admin
+ok 2 - Shows pending with amber warning and Review link to /admin
+  ---
+  duration_ms: 16.236261
+  type: 'test'
+  ...
+# Subtest: Shows expiring within 7 days with amber and View link to /admin/expiring-users
+ok 3 - Shows expiring within 7 days with amber and View link to /admin/expiring-users
+  ---
+  duration_ms: 10.173904
+  type: 'test'
+  ...
+# Subtest: Shows hidden items with critical red and Review link to /admin/discussions?filter=hidden
+ok 4 - Shows hidden items with critical red and Review link to /admin/discussions?filter=hidden
+  ---
+  duration_ms: 15.387195
+  type: 'test'
+  ...
+# Subtest: Shows unanswered with warning and View link to unanswered
+ok 5 - Shows unanswered with warning and View link to unanswered
+  ---
+  duration_ms: 14.771236
+  type: 'test'
+  ...
+# Subtest: Shows revoked with critical red
+ok 6 - Shows revoked with critical red
+  ---
+  duration_ms: 14.072173
+  type: 'test'
+  ...
+# Subtest: When nothing needs attention shows green healthy message
+ok 7 - When nothing needs attention shows green healthy message
+  ---
+  duration_ms: 11.236403
+  type: 'test'
+  ...
+# Subtest: Normal user cannot see admin Needs Attention (403)
+ok 8 - Normal user cannot see admin Needs Attention (403)
+  ---
+  duration_ms: 5.783745
+  type: 'test'
+  ...
+# Subtest: Unauthenticated redirected to /login (existing behavior preserved)
+ok 9 - Unauthenticated redirected to /login (existing behavior preserved)
+  ---
+  duration_ms: 10.131567
+  type: 'test'
+  ...
+# Subtest: Needs Attention reuses existing routes only
+ok 10 - Needs Attention reuses existing routes only
+  ---
+  duration_ms: 2.08727
+  type: 'test'
+  ...
+# Subtest: Counts are accurate and derived from Admin-visible data only
+ok 11 - Counts are accurate and derived from Admin-visible data only
+  ---
+  duration_ms: 11.791252
+  type: 'test'
+  ...
+# Subtest: Admin dashboard stat cards are clickable and have correct URLs
+ok 12 - Admin dashboard stat cards are clickable and have correct URLs
+  ---
+  duration_ms: 43.003613
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 723.928021

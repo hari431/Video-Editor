@@ -1,0 +1,34 @@
+POLICYCENTER POLICY JOBS
+========================
+
+In PolicyCenter, a job represents a policy transaction such as a submission, renewal, policy change, cancellation, reinstatement or rewrite.
+
+TRANSACTION MODEL
+-----------------
+Current Cloud API documentation describes policy transactions as Job resources. The job carries the transaction's lifecycle and policy-specific work.
+
+WHY JOBS MATTER
+---------------
+A policy cannot simply be overwritten because insurers need effective dates, history, rating, underwriting decisions, documents and auditability.
+
+TYPICAL LIFECYCLE
+-----------------
+A transaction may move through draft, quote, bind/issue, withdrawal or other outcomes depending on job type and configuration.
+
+COMMON MISTAKES
+---------------
+Thinking a job is the same thing as a policy, or assuming every job type has exactly the same lifecycle.
+
+KEY TAKEAWAYS
+-------------
+A job represents work on a policy. The exact states and actions depend on the transaction type and configuration.
+
+ORIGINAL INTERVIEW / CHECKPOINT QUESTIONS
+------------------------------------------
+1. What is a PolicyCenter job?
+2. Why not directly overwrite a policy?
+3. Do all job types share the same lifecycle?
+
+EDITORIAL NOTE
+--------------
+This article is original educational content written for the public knowledge library. Reference material may have been used to understand terminology and cross-check concepts; copyrighted or proprietary source text is not reproduced.

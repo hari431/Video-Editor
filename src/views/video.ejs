@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title><%= prettyTitle(file.path.split('/').at(-1)) %> · Learn with me</title><link rel="stylesheet" href="/styles.css"><%- include('partials/adsense-verification') %></head>
+<body>
+<header class="topbar"><a class="brand" href="/">Learn with me</a><% if (typeof paidPlansEnabled !== 'undefined' && paidPlansEnabled) { %><a class="nav-link" href="/plans">💎 Available Plans</a><% } %><% const _canLikesNav = (typeof hasNotes !== 'undefined' ? hasNotes : (typeof hasNotesPermission !== 'undefined' ? hasNotesPermission : false)); if (_canLikesNav) { %><a class="nav-link" href="/my/likes">❤️ My Liked Items</a><% } %><% if (typeof hasActiveAccess !== 'undefined' ? hasActiveAccess : (typeof user !== 'undefined' && user && ((typeof hasUserActiveAccess === 'function') ? hasUserActiveAccess(user) : (user.status === 'active' && (!user.access_expires_at || new Date(user.access_expires_at) > new Date()))))) { %><a class="nav-link" href="/my/notes" id="notesLink">📝 My Notes</a><% } %><% if (typeof user !== 'undefined' && user && (user.app_role === 'ADMIN' || user.app_role === 'OWNER')) { %><a class="nav-link" href="/admin" data-testid="admin-nav-link" style="font-weight: bold; color: #dc2626;">🛠️ Admin</a><% } %><div class="user"><a href="/account" style="text-decoration: underline; font-weight: bold;"><%= user.name || user.email %></a><% if (typeof user !== 'undefined' && user) { %><span class="user-status-text" style="color: #64748b; font-size: 13px; margin-left: 6px;"><%= (typeof getUserHeaderStatus === 'function') ? getUserHeaderStatus(user) : (user.status ? (user.status.charAt(0).toUpperCase() + user.status.slice(1)) : 'Active') %><% if (user.access_expires_at) { %> <span class="user-access-until">(Access Until: <%= new Date(user.access_expires_at).toLocaleDateString() %>)</span><% } %></span><% } %><form method="post" action="/logout"><button type="submit">Sign out</button></form></div></header>
+<%- include('partials/access-expiry') %>
+<main class="container">
+  <div class="breadcrumbs"><a href="/">Home</a><% const parts = path.split('/'); parts.pop(); parts.forEach((part, i, arr) => { const p = arr.slice(0, i+1).join('/'); %><span>/</span><a href="/browse/<%= p.split('/').map(encodeURIComponent).join('/') %>"><%= part %></a><% }) %></div>
+  <section class="video-head">
+    <div><h1><%= prettyTitle(file.path.split('/').at(-1)) %></h1><div class="meta"><span>Category: <strong><%= categoryForPath(file.path) %></strong></span><span>Location: <code><%= path %></code></span></div></div>
+  </section>
+  <% if (typeof showAd !== 'undefined' && showAd) { %><%- include('partials/ad-slot', { showAd, slotId: typeof slotId !== 'undefined' ? slotId : 'watch-top' }) %><% } %>
+  <% const _vp = (typeof videoProtection !== 'undefined' && videoProtection) ? videoProtection : null; %>
+  <div class="video-shell">
+    <video controls preload="metadata" playsinline controlsList="nodownload">
+      <source src="/video/<%= path.split('/').map(encodeURIComponent).join('/') %>" type="<%= videoMimeType(file.path) %>">
+      <p class="muted">Your browser does not support HTML5 video.</p>
+    </video>
+    <% if (!_vp) { %>
+    <!-- Legacy watermark fallback (no protection context supplied) -->
+    <div class="video-watermark">
+      <span class="wm-learn">Learn with me</span>
+      <span class="wm-email"><%= user.email || '' %></span>
+    </div>
+    <% } else if (_vp.enabled) { %>
+    <!-- Recording-protection watermark: viewer identity + session id.
+         Moved periodically by /video-protection.js; pointer-events:none so
+         it never interferes with playback, and it renders inside fullscreen.
+         The "Learn with me" brand line above is unchanged. -->
+    <div class="video-watermark is-protected" aria-hidden="true">
+      <span class="wm-learn">Learn with me</span>
+      <span class="wm-viewer">For <%= _vp.viewerName || 'member' %> · Downloading or Recording is prohibited</span>
+      <span class="wm-email"><%= _vp.maskedEmail %> · <%= _vp.sessionShort %></span>
+    </div>
+    <% const _brand = (typeof videoBranding !== 'undefined' && videoBranding) ? videoBranding : { enabled: true, style: 3, opacity: 8, color: '#1E3A5F' }; %>
+    <% const _brandColor = /^#[0-9A-F]{6}$/i.test(String(_brand.color || '')) ? String(_brand.color).toUpperCase() : '#1E3A5F'; %>
+    <% const _brandOpacity = Math.min(100, Math.max(1, Number(_brand.opacity) || 8)) / 100; %>
+    <% if (_brand.enabled !== false) { %>
+    <% if (_brand.style === 2) { %>
+    <div class="wm-brand wm-brand-opt2" aria-hidden="true" style="opacity:<%= _brandOpacity %>;color:<%= _brandColor %>;"><div class="wm-tile-layer" aria-hidden="true"><% for (let _i = 0; _i < 30; _i++) { %><span>Learn with me</span><% } %></div></div>
+    <% } else { %>
+    <div class="wm-brand wm-brand-opt3" aria-hidden="true" style="opacity:<%= _brandOpacity %>;color:<%= _brandColor %>;">Learn with me</div>
+    <% } %>
+    <% } %>
+    <% } %>
+  </div>
+  <% if (typeof canConfigureBranding !== 'undefined' && canConfigureBranding) { %>
+  <% const _brandCfg = (typeof videoBranding !== 'undefined' && videoBranding) ? videoBranding : { enabled: true, style: 3, opacity: 8, color: '#1E3A5F' }; %>
+  <% const _brandCfgColor = /^#[0-9A-F]{6}$/i.test(String(_brandCfg.color || '')) ? String(_brandCfg.color).toUpperCase() : '#1E3A5F'; %>
+  <section class="video-branding-config" data-testid="video-branding-config" style="margin:12px 0;padding:12px 16px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;">
+    <h3 style="margin:0 0 8px;font-size:14px;font-weight:700;color:#172033;">🎨 Video Branding</h3>
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;font-size:13px;color:#334155;">
+      <label>Show overlay:
+        <input type="checkbox" data-testid="video-branding-enabled"<%= _brandCfg.enabled !== false ? ' checked' : '' %> title="Uncheck to hide the site brand overlay (e.g. the video already has a burned-in watermark)">
+      </label>
+      <label>Style:
+        <select data-testid="video-branding-style" style="border:1px solid #cbd5e1;border-radius:8px;padding:6px 10px;font-size:13px;">
+          <option value="2"<%= _brandCfg.style === 2 ? ' selected' : '' %>>Option 2: Diagonal + Logo</option>
+          <option value="3"<%= _brandCfg.style !== 2 ? ' selected' : '' %>>Option 3: Centered Large</option>
+        </select>
+      </label>
+      <label>Opacity (%):
+        <input type="number" data-testid="video-branding-opacity" min="1" max="100" step="1" value="<%= Math.min(100, Math.max(1, Number(_brandCfg.opacity) || 8)) %>" style="width:70px;border:1px solid #cbd5e1;border-radius:8px;padding:6px 10px;font-size:13px;">
+      </label>
+      <label>Color:
+        <input type="color" data-testid="video-branding-color" value="<%= _brandCfgColor %>" style="width:44px;height:32px;border:1px solid #cbd5e1;border-radius:8px;padding:2px;background:#fff;">
+      </label>
+      <span style="display:inline-flex;flex-wrap:wrap;gap:6px;" data-testid="video-branding-presets">
+        <% ['#FFFFFF','#000000','#1E3A5F','#2563EB','#6B7280'].forEach(function (preset) { %>
+        <button type="button" data-brand-preset="<%= preset %>" title="<%= preset %>" style="width:26px;height:26px;border-radius:6px;border:1px solid #94a3b8;background:<%= preset %>;cursor:pointer;padding:0;"></button>
+        <% }); %>
+      </span>
+      <button type="button" class="button small" data-testid="video-branding-save">Save</button>
+      <span data-testid="video-branding-status" style="font-size:12px;font-weight:600;"></span>
+    </div>
+    <div style="margin-top:10px;font-size:13px;color:#334155;">
+      <div style="font-weight:700;margin-bottom:4px;">Preview:</div>
+      <div data-testid="video-branding-preview" style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;padding:14px;text-align:center;overflow:hidden;">
+        <span data-testid="video-branding-preview-text" style="font-weight:800;font-size:22px;letter-spacing:2px;">Learn with me</span>
+      </div>
+    </div>
+  </section>
+  <script>
+  (function () {
+    var root = document.querySelector('[data-testid="video-branding-config"]');
+    if (!root) return;
+    var styleEl = root.querySelector('[data-testid="video-branding-style"]');
+    var opacityEl = root.querySelector('[data-testid="video-branding-opacity"]');
+    var colorEl = root.querySelector('[data-testid="video-branding-color"]');
+    var enabledEl = root.querySelector('[data-testid="video-branding-enabled"]');
+    var saveBtn = root.querySelector('[data-testid="video-branding-save"]');
+    var statusEl = root.querySelector('[data-testid="video-branding-status"]');
+    var previewText = root.querySelector('[data-testid="video-branding-preview-text"]');
+    if (!styleEl || !opacityEl || !colorEl || !saveBtn) return;
+    function updatePreview() {
+      if (!previewText) return;
+      var isDiagonal = (styleEl.value === '2');
+      previewText.style.color = colorEl.value;
+      var opacity = Math.min(100, Math.max(1, Number(opacityEl.value) || 8)) / 100;
+      previewText.style.opacity = String(opacity);
+      previewText.style.fontSize = isDiagonal ? '13px' : '22px';
+      previewText.style.transform = isDiagonal ? 'rotate(-32deg)' : 'none';
+      previewText.style.display = 'inline-block';
+    }
+    styleEl.addEventListener('change', updatePreview);
+    opacityEl.addEventListener('input', updatePreview);
+    colorEl.addEventListener('input', updatePreview);
+    var presets = root.querySelectorAll('[data-brand-preset]');
+    Array.prototype.forEach.call(presets, function (btn) {
+      btn.addEventListener('click', function () {
+        colorEl.value = btn.getAttribute('data-brand-preset');
+        updatePreview();
+      });
+    });
+    updatePreview();
+    function setStatus(text, ok) {
+      if (!statusEl) return;
+      statusEl.textContent = text;
+      statusEl.style.color = ok ? '#15803d' : '#b91c1c';
+    }
+    saveBtn.addEventListener('click', function () {
+      setStatus('', true);
+      fetch('/api/admin/video-branding', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ itemPath: <%- JSON.stringify(path).replace(/</g, '\\u003c') %>, style: Number(styleEl.value), opacity: Number(opacityEl.value), color: colorEl.value, enabled: !!(enabledEl && enabledEl.checked) })
+      }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, body: d }; }); })
+      .then(function (res) {
+        if (res.ok && res.body && res.body.ok) setStatus('Saved', true);
+        else setStatus((res.body && res.body.error) || 'Save failed', false);
+      }).catch(function () { setStatus('Save failed', false); });
+    });
+  })();
+  </script>
+  <% } %>
+  <% if (typeof canConfigureBranding !== 'undefined' && canConfigureBranding && typeof path !== 'undefined' && path) { %>
+  <div class="video-admin-actions" style="margin:12px 0;">
+    <a class="button small" data-testid="edit-video-link" href="/admin/video-editor?path=<%= encodeURIComponent(path) %>" style="text-decoration:none;">✏️ Edit Video</a>
+  </div>
+  <% } %>
+<div class="video-meta">
+  <span class="views">▶ <%= (viewsCount !== undefined ? viewsCount : 0) %> Views</span>
+  <% const _canLikeVideo = (typeof hasNotes !== 'undefined' ? hasNotes : (typeof hasNotesPermission !== 'undefined' ? hasNotesPermission : false)); if (_canLikeVideo) { %>
+  <span class="likes like-control">
+    <span class="like-label">♥ <span class="like-count"><%= (likeCount !== undefined ? likeCount : 0) %></span> Likes</span>
+    <button class="like-btn" data-path="<%= path %>"><%= userLiked ? 'Unlike' : 'Like' %></button>
+  </span>
+  <% } %>
+</div>
+<div class="share-row" style="margin:12px 0;">
+  <%- include('partials/share-button', { sharePath: typeof path !== 'undefined' ? path : null }) %>
+</div>
+
+<%- include('partials/pinned-references', { pinnedRefs: typeof pinnedRefs !== 'undefined' ? pinnedRefs : [] }) %>
+
+<%- include('partials/notes-widget', { 
+  hasNotes: (typeof hasNotes !== 'undefined' ? hasNotes : false), 
+  userNote: (typeof userNote !== 'undefined' ? userNote : null), 
+  itemPath: path, 
+  title: prettyTitle(file.path.split('/').at(-1)) 
+}) %>
+
+<% if (typeof discussions === 'undefined') { discussions = []; } %>
+<section class="detail-discussions">
+  <div class="have-question-header">
+    <h2>Have a question?</h2>
+  </div>
+  <p class="detail-discussions-note">Your identity is masked as <strong>Anonymous</strong> to other users. Only Admin can see who posted.</p>
+  <% const _canDiscussDetail = typeof hasNotes !== 'undefined' ? hasNotes : (typeof hasNotesPermission !== 'undefined' ? hasNotesPermission : false); %>
+  <% if (_canDiscussDetail) { %>
+  <form method="post" action="/discussions" class="discussion-new-form">
+    <input type="hidden" name="item_path" value="<%= path %>">
+    <input type="text" name="title" placeholder="Question title" required maxlength="200" class="discussion-input-title">
+    <textarea name="body" placeholder="Details (optional)" rows="3" maxlength="50000" class="discussion-input-body"></textarea>
+    <div class="detail-discussions-form-actions">
+      <button type="submit" class="button primary">Post your question</button>
+      <a href="/discussions?path=<%= encodeURIComponent(path) %>" class="detail-discussions-view-all">View all discussions (<%= discussions.length %>)</a>
+    </div>
+  </form>
+  <% } else { %>
+  <div class="flash flash-ok" data-testid="discussions-readonly-msg" style="margin: 8px 0; background: #f8fafc; border: 1px solid #e2e8f0; color: #475569;">Discussions are available in read-only mode. Posting, replying and liking requires active access.</div>
+  <div style="margin: 8px 0;"><a href="/discussions?path=<%= encodeURIComponent(path) %>" class="detail-discussions-view-all">View all discussions (<%= discussions.length %>)</a></div>
+  <% } %>
+  <% if (discussions.length > 0) { %>
+    <div class="detail-discussions-list">
+      <% discussions.slice(0, 5).forEach(d => { %>
+        <a href="/discussions/<%= d.id %>" class="detail-discussion-item">
+          <span class="detail-discussion-title"><%- (typeof linkifyBody === 'function' ? linkifyBody(d.title) : String(d.title||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))) %></span>
+          <span class="detail-discussion-meta"><%= d.reply_count %> <%= d.reply_count === 1 ? 'reply' : 'replies' %></span>
+        </a>
+      <% }) %>
+      <% if (discussions.length > 5) { %>
+        <a href="/discussions?path=<%= encodeURIComponent(path) %>" class="detail-discussions-more">View all <%= discussions.length %> discussions →</a>
+      <% } %>
+    </div>
+  <% } %>
+</section>
+
+<%- include('partials/related', { relatedItems: typeof relatedItems !== 'undefined' ? relatedItems : [] }) %>
+
+<% if (_vp && _vp.enabled) { %>
+<script src="/video-protection.js"></script>
+<script>
+(function () {
+  try {
+    var cfg = <%- JSON.stringify({ enabled: true, maskedEmail: _vp.maskedEmail, sessionShort: _vp.sessionShort, viewerName: _vp.viewerName, itemPath: _vp.itemPath, itemType: _vp.itemType, youtube: false }).replace(/</g, '\\u003c') %>;
+    if (window.VideoProtection) window.VideoProtection.init(cfg);
+  } catch (e) {}
+})();
+</script>
+<% } %>
+<script src="/like.js" defer></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // 2. Video Progress Tracking
+    const video = document.querySelector('video');
+    const videoPath = "<%= path %>";
+    
+    if (video) {
+      let isSeekingInitial = true;
+      let lastSavedTime = 0;
+      
+      // Fetch initial progress (bounded timeout, non-blocking)
+      (function(){
+        var ac = typeof AbortController !== 'undefined' ? new AbortController() : null;
+        var tid = ac ? setTimeout(function(){ try{ ac.abort(); }catch(e){} }, 5000) : null;
+        fetch('/api/video-progress?path=' + encodeURIComponent(videoPath), { signal: ac ? ac.signal : undefined })
+        .then(function(r){ if(tid) clearTimeout(tid); if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+        .then(function(data) {
+          if (data && data.progress > 0) {
+            var setTime = function() {
+              if (data.progress < video.duration - 2) {
+                video.currentTime = data.progress;
+              }
+            };
+            if (video.readyState >= 1) {
+              setTime();
+            } else {
+              video.addEventListener('loadedmetadata', setTime, { once: true });
+            }
+          }
+        })
+        .catch(function(e){ if(tid) clearTimeout(tid); if(e && e.name!=='AbortError') console.error(e); });
+      })();
+
+      // Save progress function (debounced/throttled) — bounded timeout
+      var saveProgress = function() {
+        if (!video.currentTime || isSeekingInitial) return;
+        var current = Math.floor(video.currentTime);
+        if (Math.abs(current - lastSavedTime) >= 5 || video.ended) {
+          lastSavedTime = current;
+          var ac2 = typeof AbortController !== 'undefined' ? new AbortController() : null;
+          var tid2 = ac2 ? setTimeout(function(){ try{ ac2.abort(); }catch(e){} }, 3000) : null;
+          fetch('/api/video-progress', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ path: videoPath, progress: current }),
+            keepalive: true,
+            signal: ac2 ? ac2.signal : undefined
+          }).catch(function(e){ if(tid2) clearTimeout(tid2); if(e && e.name!=='AbortError') console.error(e); }).finally(function(){ if(tid2) clearTimeout(tid2); });
+        }
+      };
+
+      video.addEventListener('timeupdate', () => {
+        if (video.currentTime > 0) isSeekingInitial = false;
+        // Throttle timeupdate saves via the 5-second check in saveProgress
+        if (video.currentTime - lastSavedTime >= 5) {
+          saveProgress();
+        }
+      });
+      
+      video.addEventListener('pause', saveProgress);
+      video.addEventListener('seeked', saveProgress);
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+          saveProgress();
+        }
+      });
+      window.addEventListener('beforeunload', saveProgress);
+    }
+  });
+</script>
+<script src="/discussion-form.js" defer></script>
+<%- include('partials/admin-likes', { itemPath: path }) %>
+</main>
+<%- include('partials/footer') %>
+
+<style>
+  /* Anchor absolute overlays to the player (stylesheet has no positioning) */
+  .video-shell {
+    position: relative;
+  }
+
+  /* Watermark overlay — semi-transparent, readable, unobtrusive */
+  .video-watermark {
+    position: absolute;
+    pointer-events: none;
+    color: rgba(255,255,255,0.85);
+    font-size: 12px;
+    font-family: inherit;
+    line-height: 1.4;
+    z-index: 5;
+    /* Initially top-left, will be animated */
+    top: 20px;
+    left: 20px;
+    /* Subtle fade transition for position changes */
+    transition: top 1s ease-out, left 1s ease-out;
+    /* Avoid affecting video hit areas */
+    user-select: none;
+    /* Lay out the two lines */
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  /* Recording-protection watermark: above player chrome, moved by JS
+     (no CSS animation — inline positions set by the mover must win). */
+  .video-watermark.is-protected {
+    z-index: 6;
+    animation: none;
+    transition: top 0.6s ease, left 0.6s ease, right 0.6s ease, bottom 0.6s ease;
+    background: rgba(0,0,0,0.55);
+    padding: 6px 10px;
+    border-radius: 8px;
+  }
+
+  /* Transient protection notice, toggled by /video-protection.js */
+  .prot-warn {
+    position: absolute;
+    left: 50%;
+    bottom: 18px;
+    transform: translateX(-50%);
+    z-index: 7;
+    pointer-events: none;
+    background: rgba(127,29,29,0.92);
+    color: #fff;
+    font-size: 12px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    max-width: 90%;
+    text-align: center;
+  }
+
+  .wm-learn {
+    font-weight: 600;
+    color: rgba(255,255,255,0.9);
+  }
+
+  .wm-viewer {
+    font-size: 11px;
+    color: rgba(255,255,255,0.8);
+  }
+
+  .wm-email {
+    font-size: 11px;
+    color: rgba(255,255,255,0.75);
+  }
+
+  /* Branding overlay (separate from the moving viewer pill): large,
+     low-opacity "Learn with me" brand mark. pointer-events:none so it
+     never interferes with playback; renders inside fullscreen. */
+  .wm-brand {
+    position: absolute;
+    pointer-events: none;
+    user-select: none;
+    z-index: 3;
+    /* Color comes from the per-video branding config (inline style). */
+    font-weight: 800;
+    white-space: nowrap;
+  }
+  /* Option 2: Diagonal tiled watermark — many small brand marks spread
+     evenly across the full video area at ~32°. The oversized inner layer
+     keeps the rotated corners covered (edge tiles clip, as usual for
+     tiled watermarks). Color/opacity come from the inline style. */
+  .wm-brand-opt2 {
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+    font-size: clamp(10px, 1.5vw, 16px);
+    letter-spacing: 1px;
+  }
+  .wm-brand-opt2 .wm-tile-layer {
+    position: absolute;
+    inset: -45% -10%;
+    display: flex;
+    flex-wrap: wrap;
+    align-content: space-evenly;
+    justify-content: space-evenly;
+    transform: rotate(-32deg);
+  }
+  /* Option 3: Centered Large (default). */
+  .wm-brand-opt3 {
+    top: 50%;
+    left: 50%;
+    font-size: clamp(32px, 7vw, 72px);
+    letter-spacing: 3px;
+    transform: translate(-50%, -50%);
+  }
+
+  /* Animate position every 18s through safe corners/centers */
+  @keyframes watermark-shift {
+    0%   { top: 20px;  left: 20px;    } /* top-left */
+    20%  { top: 20px;  right: 20px;   } /* top-right */
+    40%  { bottom: 20px; left: 20px;  } /* bottom-left */
+    60%  { bottom: 20px; right: 20px; } /* bottom-right */
+    80%  { top: 40px;  left: 50%;     } /* center-left(ish) */
+    100% { top: 20px;  left: 20px;    } /* back to top-left */
+  }
+
+  .video-watermark {
+    animation: watermark-shift 18s ease-in-out infinite;
+  }
+
+  /* Ensure watermark is inside fullscreen video player */
+  .video-shell video::-webkit-full-screen {
+    /* Fullscreen doesn't change the DOM; the watermark stays layered */
+    z-index: 5;
+  }
+</style>

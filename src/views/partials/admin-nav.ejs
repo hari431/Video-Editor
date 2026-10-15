@@ -1,0 +1,148 @@
+<nav class="admin-nav-bar">
+  <div class="admin-nav-inner">
+    <% if (typeof currentUrl !== 'undefined' && currentUrl !== '/admin') { %>
+      <a href="/admin" class="nav-link">Admin Home</a>
+      <span class="nav-sep">·</span>
+    <% } %>
+    <% if (typeof expenseTrackerVisible !== 'undefined' && expenseTrackerVisible) { %>
+      <a href="/admin/expense-tracker" class="nav-link <%= (typeof currentUrl !== 'undefined' && currentUrl.startsWith('/admin/expense-tracker')) ? 'active' : '' %>">Expense Tracker</a>
+      <span class="nav-sep">·</span>
+    <% } %>
+    <a href="/admin/analytics" class="nav-link <%= (typeof currentUrl !== 'undefined' && currentUrl.startsWith('/admin/analytics')) ? 'active' : '' %>">Analytics</a>
+    <span class="nav-sep">·</span>
+    <a href="/admin/system" class="nav-link <%= (typeof currentUrl !== 'undefined' && currentUrl.startsWith('/admin/system')) ? 'active' : '' %>">System / Usage</a>
+    <span class="nav-sep">·</span>
+    <a href="/admin/folders" class="nav-link <%= (typeof currentUrl !== 'undefined' && currentUrl.startsWith('/admin/folders')) ? 'active' : '' %>">Folder permissions</a>
+    <span class="nav-sep">·</span>
+    <a href="/admin/discussions" class="nav-link <%= (typeof currentUrl !== 'undefined' && currentUrl.startsWith('/admin/discussions')) ? 'active' : '' %>">Discussions</a>
+    <span class="nav-sep">·</span>
+    <a href="/admin/learner-notes" class="nav-link <%= (typeof currentUrl !== 'undefined' && currentUrl.startsWith('/admin/learner-notes')) ? 'active' : '' %>">Learner Notes</a>
+    <span class="nav-sep">·</span>
+    <a href="/admin/expiring-users" class="nav-link <%= (typeof currentUrl !== 'undefined' && currentUrl.startsWith('/admin/expiring-users')) ? 'active' : '' %>">
+      Expiring Users<% if (typeof expiringCount !== 'undefined' && expiringCount !== null && expiringCount > 0) { %> 
+        <span class="badge badge-warning"><%= expiringCount %></span>
+      <% } else if (typeof expiringCount !== 'undefined' && expiringCount !== null) { %> 
+        (<%= expiringCount %>)
+      <% } %>
+    </a>
+    <span class="nav-sep">·</span>
+    <a href="/admin/paid-products" class="nav-link <%= (typeof currentUrl !== 'undefined' && currentUrl.startsWith('/admin/paid-products')) ? 'active' : '' %>">⚙️ Paid Products</a>
+    <span class="nav-sep">·</span>
+    <a href="/admin/premium" class="nav-link <%= (typeof currentUrl !== 'undefined' && currentUrl.startsWith('/admin/premium')) ? 'active' : '' %>">👑 Premium</a>
+    <span class="nav-sep">·</span>
+    <a href="/admin/user-activity" class="nav-link <%= (typeof currentUrl !== 'undefined' && currentUrl.startsWith('/admin/user-activity')) ? 'active' : '' %>">User Activity & Learning</a>
+    <span class="nav-sep">·</span>
+    <a href="/admin/recent-activity" class="nav-link <%= (typeof currentUrl !== 'undefined' && currentUrl.startsWith('/admin/recent-activity')) ? 'active' : '' %>">Recent Activity</a>
+    <span class="nav-sep">·</span>
+    <a href="/admin/audit-logs" class="nav-link <%= (typeof currentUrl !== 'undefined' && currentUrl.startsWith('/admin/audit-logs')) ? 'active' : '' %>">Audit Logs</a>
+    <span class="nav-sep">·</span>
+    <a href="/admin/video-protection" class="nav-link <%= (typeof currentUrl !== 'undefined' && currentUrl.startsWith('/admin/video-protection')) ? 'active' : '' %>">Video Protection</a>
+    <span class="nav-sep">·</span>
+    <a href="/admin/security-lab" class="nav-link <%= (typeof currentUrl !== 'undefined' && currentUrl.startsWith('/admin/security-lab')) ? 'active' : '' %>">Security Lab</a>
+    <span class="nav-sep">·</span>
+    <% const _editorsVideoItems = [
+      { href: '/admin/video-editor', label: 'Local Video Editor' },
+      { href: '/avatar-face-replacement', label: '3D Avatar Face Replacement' }
+    ]; %>
+    <% const _editorsImageItems = [{ href: '/admin/image-editor', label: 'Local Image Editor' }]; %>
+    <% const _editorsPdfItems = [
+      { href: '/admin/pdf-editor', label: 'Local PDF Editor' },
+      { href: '/admin/pdf-tools/merge', label: 'Merge PDFs' },
+      { href: '/admin/pdf-tools/unlock', label: 'Unlock PDF' },
+      { href: '/admin/pdf-tools/protect', label: 'Protect PDF' },
+      { href: '/admin/pdf-tools/compress', label: 'Compress PDF' },
+      { href: '/admin/pdf-tools/split', label: 'Split PDF' },
+      { href: '/admin/pdf-tools/images-to-pdf', label: 'Images to PDF' },
+      { href: '/admin/pdf-tools/pdf-to-images', label: 'PDF to Images' },
+      { href: '/admin/pdf-tools/extract-images', label: 'Extract Images' },
+      { href: '/admin/pdf-tools/rotate', label: 'Rotate PDF' },
+      { href: '/admin/pdf-tools/crop', label: 'Crop PDF' },
+      { href: '/admin/pdf-tools/page-numbers', label: 'Page Numbers' },
+      { href: '/admin/pdf-tools/watermark', label: 'Watermark PDF' },
+      { href: '/admin/pdf-tools/flatten', label: 'Flatten PDF' },
+      { href: '/admin/pdf-tools/metadata', label: 'PDF Metadata' },
+      { href: '/admin/pdf-tools/header-footer', label: 'Header/Footer' },
+      { href: '/admin/pdf-tools/bookmarks', label: 'Bookmarks' },
+      { href: '/admin/pdf-tools/pdf-to-text', label: 'PDF to Text' },
+      { href: '/admin/pdf-tools/sign', label: 'Sign PDF' }
+    ]; %>
+    <% const _cu = (typeof currentUrl !== 'undefined' && currentUrl) ? String(currentUrl) : ''; %>
+    <% const _isEditorsActive = _cu.startsWith('/admin/video-editor') || _cu.startsWith('/avatar-face-replacement') || _cu.startsWith('/admin/image-editor') || _cu.startsWith('/admin/pdf-editor') || _cu.startsWith('/admin/pdf-tools/'); %>
+    <% const _isNavItemActive = href => _cu.startsWith(href); %>
+    <details class="nav-dropdown" data-testid="admin-nav-editors">
+      <summary class="nav-link <%= _isEditorsActive ? 'active' : '' %>" data-testid="admin-nav-editors-toggle" aria-label="Editors menu">Editors</summary>
+      <div class="nav-menu" data-testid="admin-nav-editors-menu">
+        <div class="nav-group-label" data-testid="admin-nav-editors-video-label">Video</div>
+        <% _editorsVideoItems.forEach(item => { %>
+          <a href="<%= item.href %>" class="nav-link <%= _isNavItemActive(item.href) ? 'active' : '' %>" data-testid="admin-nav-editors-item"><%= item.label %></a>
+        <% }); %>
+        <div class="nav-group-label" data-testid="admin-nav-editors-image-label">Image</div>
+        <% _editorsImageItems.forEach(item => { %>
+          <a href="<%= item.href %>" class="nav-link <%= _isNavItemActive(item.href) ? 'active' : '' %>" data-testid="admin-nav-editors-item"><%= item.label %></a>
+        <% }); %>
+        <div class="nav-group-label" data-testid="admin-nav-editors-pdf-label">PDF</div>
+        <% _editorsPdfItems.forEach(item => { %>
+          <a href="<%= item.href %>" class="nav-link <%= _isNavItemActive(item.href) ? 'active' : '' %>" data-testid="admin-nav-editors-item"><%= item.label %></a>
+        <% }); %>
+      </div>
+    </details>
+    <span class="nav-sep">·</span>
+    <% const _isDevToolsActive = _cu.startsWith('/admin/developer-tools/'); %>
+    <details class="nav-dropdown" data-testid="admin-nav-devtools">
+      <summary class="nav-link <%= _isDevToolsActive ? 'active' : '' %>" data-testid="admin-nav-devtools-toggle" aria-label="Developer Tools menu">Dev Tools</summary>
+      <div class="nav-menu" data-testid="admin-nav-devtools-menu">
+        <div class="nav-group-label" data-testid="admin-nav-devtools-label">Utilities</div>
+        <a href="/admin/developer-tools/sql-stitcher" class="nav-link <%= _cu.startsWith('/admin/developer-tools/sql-stitcher') ? 'active' : '' %>" data-testid="admin-nav-devtools-item">SQL Log Stitcher</a>
+        <a href="/admin/developer-tools/payload-decoder" class="nav-link <%= _cu.startsWith('/admin/developer-tools/payload-decoder') ? 'active' : '' %>" data-testid="admin-nav-devtools-item">Payload Decoder</a>
+        <a href="/admin/developer-tools/stack-analyzer" class="nav-link <%= _cu.startsWith('/admin/developer-tools/stack-analyzer') ? 'active' : '' %>" data-testid="admin-nav-devtools-item">Stack Trace Analyzer</a>
+        <a href="/admin/developer-tools/pdf-inspector" class="nav-link <%= _cu.startsWith('/admin/developer-tools/pdf-inspector') ? 'active' : '' %>" data-testid="admin-nav-devtools-item">PDF Field Inspector</a>
+        <a href="/admin/developer-tools/diff" class="nav-link <%= _cu.startsWith('/admin/developer-tools/diff') ? 'active' : '' %>" data-testid="admin-nav-devtools-item">JSON/XML/Text Diff</a>
+        <a href="/admin/developer-tools/pcf-explorer" class="nav-link <%= _cu.startsWith('/admin/developer-tools/pcf-explorer') ? 'active' : '' %>" data-testid="admin-nav-devtools-item">PCF/XML Path Explorer</a>
+        <a href="/admin/developer-tools/typelist-generator" class="nav-link <%= _cu.startsWith('/admin/developer-tools/typelist-generator') ? 'active' : '' %>" data-testid="admin-nav-devtools-item">Typelist Generator</a>
+        <a href="/admin/developer-tools/docx-inspector" class="nav-link <%= _cu.startsWith('/admin/developer-tools/docx-inspector') ? 'active' : '' %>" data-testid="admin-nav-devtools-item">DOCX Inspector</a>
+        <a href="/admin/developer-tools/csv-analyzer" class="nav-link <%= _cu.startsWith('/admin/developer-tools/csv-analyzer') ? 'active' : '' %>" data-testid="admin-nav-devtools-item">CSV/TSV Analyzer</a>
+        <a href="/admin/developer-tools/hash-inspector" class="nav-link <%= _cu.startsWith('/admin/developer-tools/hash-inspector') ? 'active' : '' %>" data-testid="admin-nav-devtools-item">File Hash Inspector</a>
+        <a href="/admin/developer-tools/regex-tester" class="nav-link <%= _cu.startsWith('/admin/developer-tools/regex-tester') ? 'active' : '' %>" data-testid="admin-nav-devtools-item">Regex Tester</a>
+        <a href="/admin/developer-tools/encoding-converter" class="nav-link <%= _cu.startsWith('/admin/developer-tools/encoding-converter') ? 'active' : '' %>" data-testid="admin-nav-devtools-item">Encoding Converter</a>
+        <a href="/admin/developer-tools/jwt-decoder" class="nav-link <%= _cu.startsWith('/admin/developer-tools/jwt-decoder') ? 'active' : '' %>" data-testid="admin-nav-devtools-item">JWT Decoder</a>
+        <a href="/admin/developer-tools/timestamp-converter" class="nav-link <%= _cu.startsWith('/admin/developer-tools/timestamp-converter') ? 'active' : '' %>" data-testid="admin-nav-devtools-item">Timestamp Converter</a>
+      </div>
+    </details>
+    <span class="nav-sep">·</span>
+    <a href="/admin/inactive-users" class="nav-link <%= (typeof currentUrl !== 'undefined' && currentUrl.startsWith('/admin/inactive-users')) ? 'active' : '' %>">Inactive Users</a>
+    <% if (typeof paidPlansEnabled !== 'undefined' && paidPlansEnabled) { %>
+      <span class="nav-sep">·</span>
+      <a href="/admin/promotions" class="nav-link <%= (typeof currentUrl !== 'undefined' && currentUrl.startsWith('/admin/promotions')) ? 'active' : '' %>">Promotions</a>
+    <% } %>
+  </div>
+</nav>
+<style>
+  /* Editors dropdown: native <details> toggle (click/touch/keyboard/Esc, no JS),
+     styled in the existing admin-nav language (.nav-link / .active). */
+  .admin-nav-bar .nav-dropdown { position: relative; display: inline-flex; align-items: center; }
+  .admin-nav-bar .nav-dropdown > summary { list-style: none; cursor: pointer; }
+  .admin-nav-bar .nav-dropdown > summary::-webkit-details-marker { display: none; }
+  .admin-nav-bar .nav-dropdown > summary::marker { content: ''; }
+  .admin-nav-bar .nav-dropdown > summary::after { content: ' ▾'; font-size: 11px; color: #94a3b8; }
+  .admin-nav-bar .nav-dropdown[open] > summary::after { content: ' ▴'; }
+  .admin-nav-bar .nav-menu {
+    position: absolute; top: calc(100% + 6px); left: 0; min-width: 230px;
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
+    box-shadow: 0 12px 28px -8px rgba(0, 0, 0, 0.18);
+    padding: 6px 6px 8px; z-index: 200;
+  }
+  .admin-nav-bar .nav-group-label {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.04em; color: #64748b; padding: 6px 10px 2px;
+  }
+  .admin-nav-bar .nav-menu .nav-link { display: block; padding: 6px 10px; border-radius: 6px; }
+  .admin-nav-bar .nav-menu .nav-link:hover { background: #f1f5f9; text-decoration: none; }
+  .admin-nav-bar .nav-menu .nav-link.active { background: #eef2ff; }
+  /* Narrow screens: the bar wraps, so let the open menu flow in place instead
+     of overlaying (avoids viewport overflow on mobile). */
+  @media (max-width: 640px) {
+    .admin-nav-bar .nav-dropdown { display: inline-flex; }
+    .admin-nav-bar .nav-dropdown[open] { flex-basis: 100%; }
+    .admin-nav-bar .nav-menu { position: static; width: 100%; box-shadow: none; margin-top: 6px; }
+  }
+</style>

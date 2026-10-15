@@ -1,0 +1,787 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title><%= prettyTitle(friendlyName) %> · Learn with me</title><link rel="stylesheet" href="/styles.css"><%- include('partials/adsense-verification') %></head>
+<body>
+<header class="topbar"><a class="brand" href="/">Learn with me</a><% if (typeof paidPlansEnabled !== 'undefined' && paidPlansEnabled) { %><a class="nav-link" href="/plans">💎 Available Plans</a><% } %><% const _canLikesNav = (typeof hasNotes !== 'undefined' ? hasNotes : (typeof hasNotesPermission !== 'undefined' ? hasNotesPermission : false)); if (_canLikesNav) { %><a class="nav-link" href="/my/likes">❤️ My Liked Items</a><% } %><% if (typeof hasActiveAccess !== 'undefined' ? hasActiveAccess : (typeof user !== 'undefined' && user && ((typeof hasUserActiveAccess === 'function') ? hasUserActiveAccess(user) : (user.status === 'active' && (!user.access_expires_at || new Date(user.access_expires_at) > new Date()))))) { %><a class="nav-link" href="/my/notes" id="notesLink">📝 My Notes</a><% } %><% if (typeof user !== 'undefined' && user && (user.app_role === 'ADMIN' || user.app_role === 'OWNER')) { %><a class="nav-link" href="/admin" data-testid="admin-nav-link" style="font-weight: bold; color: #dc2626;">🛠️ Admin</a><% } %><div class="user"><a href="/account" style="text-decoration: underline; font-weight: bold;"><%= user.name || user.email %></a><% if (typeof user !== 'undefined' && user) { %><span class="user-status-text" style="color: #64748b; font-size: 13px; margin-left: 6px;"><%= (typeof getUserHeaderStatus === 'function') ? getUserHeaderStatus(user) : (user.status ? (user.status.charAt(0).toUpperCase() + user.status.slice(1)) : 'Active') %><% if (user.access_expires_at) { %> <span class="user-access-until">(Access Until: <%= new Date(user.access_expires_at).toLocaleDateString() %>)</span><% } %></span><% } %><form method="post" action="/logout"><button type="submit">Sign out</button></form></div></header>
+<%- include('partials/access-expiry') %>
+<main class="container">
+  <div class="breadcrumbs"><a href="/">Home</a><% const parts = itemPath.split('/'); parts.pop(); parts.forEach((part, i, arr) => { const p = arr.slice(0, i+1).join('/'); %><span>/</span><a href="/browse/<%= p.split('/').map(encodeURIComponent).join('/') %>"><%= part %></a><% }) %></div>
+  <section class="query-head">
+    <div><h1><%= friendlyName %></h1><div class="meta"><span>External Resource</span><span>Location: <code><%= itemPath %></code></span></div></div>
+  </section>
+  <% if (typeof showAd !== 'undefined' && showAd) { %><%- include('partials/ad-slot', { showAd, slotId: typeof slotId !== 'undefined' ? slotId : 'item-top' }) %><% } %>
+
+  <% const _canLikeExternal = (typeof hasNotes !== 'undefined' ? hasNotes : (typeof hasNotesPermission !== 'undefined' ? hasNotesPermission : false)); if (_canLikeExternal) { %>
+  <section class="like-control item-like-row">
+    <span class="like-label">♥ <span class="like-count"><%= likeCount %></span> Likes</span>
+    <button class="like-btn" data-path="<%= itemPath %>"><%= liked ? 'Unlike' : 'Like' %></button>
+  </section>
+  <% } %>
+  <section class="share-row" style="margin:12px 0;">
+    <%- include('partials/share-button', { sharePath: typeof itemPath !== 'undefined' ? itemPath : null }) %>
+  </section>
+
+  <section class="file-preview" style="margin: 18px 0;">
+    <% var _vpx = (typeof videoProtection !== 'undefined' && videoProtection) ? videoProtection : null; %>
+    <% var _showWm = (typeof showWatermark !== 'undefined' && showWatermark !== null) ? !!showWatermark : (_vpx && _vpx.enabled); %>
+    <% if (isYouTube && externalVideoToken) { %>
+      <% if (_vpx && _vpx.enabled) { %>
+      <!-- Non-admin custom video toolbar (top): prominent, outside the player
+           container so the right-click shield never covers it. Top and bottom
+           toolbars share one state via the YouTube IFrame Player API below.
+           Only API-reliable functions are exposed (Volume/Mute, CC captions
+           module, playback speed, captions size); playback quality is
+           deliberately excluded because setPlaybackQuality is deprecated and
+           the player ignores it. -->
+      <div class="youtube-playpause-row" style="display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:10px;margin:12px 0;">
+        <button id="ytPlayPauseTop" data-testid="youtube-play-pause-top" type="button" class="button primary" style="font-weight:700;font-size:16px;padding:10px 28px;border-radius:10px;border:1px solid #1d4ed8;background:#2563eb;color:#fff;cursor:pointer;">▶ Play</button>
+        <input id="ytSeekTop" data-testid="youtube-seek-top" type="range" min="0" max="1000" step="1" value="0" aria-label="Seek" title="Seek" style="flex:1;min-width:120px;accent-color:#2563eb;cursor:pointer;">
+        <span id="ytTimeTop" data-testid="youtube-time-top" style="font-variant-numeric:tabular-nums;font-size:13px;color:#334155;white-space:nowrap;">0:00 / 0:00</span>
+        <button id="ytMuteTop" data-testid="youtube-mute-top" type="button" title="Mute/Unmute" class="button primary" style="font-weight:700;font-size:16px;padding:10px 20px;border-radius:10px;border:1px solid #1d4ed8;background:#2563eb;color:#fff;cursor:pointer;">🔊 Mute</button>
+        <input id="ytVolumeTop" data-testid="youtube-volume-top" type="range" min="0" max="100" step="1" value="100" aria-label="Volume" title="Volume" style="width:120px;accent-color:#2563eb;cursor:pointer;">
+        <button id="ytCcTop" data-testid="youtube-cc-top" type="button" title="Subtitles" class="button primary" style="font-weight:700;font-size:16px;padding:10px 20px;border-radius:10px;border:1px solid #1d4ed8;background:#2563eb;color:#fff;cursor:pointer;">CC Off</button>
+        <button id="ytSettingsTop" data-testid="youtube-settings-top" type="button" title="Settings" class="button primary" style="font-weight:700;font-size:16px;padding:10px 20px;border-radius:10px;border:1px solid #1d4ed8;background:#2563eb;color:#fff;cursor:pointer;">⚙ Settings</button>
+      </div>
+      <div id="ytSettingsPanelTop" data-testid="youtube-settings-panel-top" style="display:none;justify-content:center;margin:0 0 12px;">
+        <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:center;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 14px;font-size:13px;color:#334155;">
+          <label style="font-weight:600;">Speed:
+            <select id="ytSpeedTop" data-testid="youtube-speed-top" style="font-weight:600;font-size:14px;padding:6px 10px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#172033;">
+              <option value="0.25">0.25x</option><option value="0.5">0.5x</option><option value="0.75">0.75x</option><option value="1" selected>1x</option><option value="1.25">1.25x</option><option value="1.5">1.5x</option><option value="1.75">1.75x</option><option value="2">2x</option>
+            </select>
+          </label>
+          <label style="font-weight:600;">Captions size:
+            <select id="ytCcSizeTop" data-testid="youtube-cc-size-top" style="font-weight:600;font-size:14px;padding:6px 10px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#172033;">
+              <option value="-1">Tiny</option><option value="0" selected>Default</option><option value="1">Large</option><option value="2">Extra large</option><option value="3">Largest</option>
+            </select>
+          </label>
+        </div>
+      </div>
+      <% } %>
+      <div id="youtubeContainer" style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:10px;border:1px solid #e2e8f0;background:#000;">
+        <iframe id="externalYoutubeFrame" data-token="<%= externalVideoToken %>" src="about:blank" title="<%= friendlyName.replace(/"/g,'&quot;') %>" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" style="position:absolute;top:0;left:0;width:100%;height:100%;"></iframe>
+        <!-- Top overlay: only left side (title/channel) blocked, right side (volume/CC/settings) remains clickable -->
+        <div style="position:absolute;top:0;left:0;width:68%;height:56px;background:transparent;z-index:2;pointer-events:auto;" title=""></div>
+        <!-- Bottom overlay to hide YouTube "Watch on YouTube" watermark as requested -->
+        <div style="position:absolute;left:0;right:0;bottom:0;height:68px;background:#000;z-index:2;pointer-events:auto;" title=""></div>
+        <% if (_vpx && _vpx.enabled) { %>
+        <!-- Non-admin right-click shield: the YouTube embed is a cross-origin
+             iframe (youtube-nocookie.com), so the page-level contextmenu block
+             in devtools-restrict.js cannot intercept right-clicks inside the
+             video — they dispatch inside YouTube's document and show Chrome's
+             menu. This transparent layer sits above the iframe (below Expand)
+             and swallows right-clicks; left/middle input briefly drops through
+             via /video-protection.js so playback/controls keep working. Admins
+             never render this (gated by _vpx.enabled). -->
+        <div id="youtubeRightClickShield" data-testid="youtube-rightclick-shield" oncontextmenu="return false" title="" style="position:absolute;top:0;left:0;width:100%;height:100%;background:transparent;z-index:2;pointer-events:auto;"></div>
+        <!-- Recording-protection watermark: our own overlay above the YouTube
+             iframe (never touches YouTube's internal DOM). Viewer identity +
+             session id; moved periodically by /video-protection.js. The
+             "Learn with me" brand line above is unchanged. Shown unless the
+             file opts out with Watermark:false (protection around it stays). -->
+        <% if (_showWm) { %>
+        <div class="video-watermark is-protected" aria-hidden="true">
+          <span class="wm-learn">Learn with me</span>
+          <span class="wm-viewer">For <%= _vpx.viewerName || 'member' %> · Downloading or Recording is prohibited</span>
+          <span class="wm-email"><%= _vpx.maskedEmail %> · <%= _vpx.sessionShort %></span>
+        </div>
+        <% } %>
+        <% const _brandX = (typeof videoBranding !== 'undefined' && videoBranding) ? videoBranding : { enabled: true, style: 3, opacity: 8, color: '#1E3A5F' }; %>
+        <% const _brandColorX = /^#[0-9A-F]{6}$/i.test(String(_brandX.color || '')) ? String(_brandX.color).toUpperCase() : '#1E3A5F'; %>
+        <% const _brandOpacityX = Math.min(100, Math.max(1, Number(_brandX.opacity) || 8)) / 100; %>
+        <% var _showBrand = (typeof showBranding !== 'undefined' && showBranding !== null) ? !!showBranding : (_brandX.enabled !== false); %>
+        <% if (_showBrand) { %>
+        <% if (_brandX.style === 2) { %>
+        <div class="wm-brand wm-brand-opt2" aria-hidden="true" style="opacity:<%= _brandOpacityX %>;color:<%= _brandColorX %>;"><div class="wm-tile-layer" aria-hidden="true"><% for (let _i = 0; _i < 30; _i++) { %><span>Learn with me</span><% } %></div></div>
+        <% } else { %>
+        <div class="wm-brand wm-brand-opt3" aria-hidden="true" style="opacity:<%= _brandOpacityX %>;color:<%= _brandColorX %>;">Learn with me</div>
+        <% } %>
+        <% } %>
+        <% } %>
+        <button id="customExpandBtn" type="button" title="Enlarge" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);z-index:3;background:rgba(0,0,0,0.65);color:#fff;border:1px solid #555;border-radius:6px;padding:8px 12px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px;backdrop-filter:blur(2px);">⛶ Expand</button>
+      </div>
+      <script>
+      (function(){
+        var btn=document.getElementById('customExpandBtn');
+        var container=document.getElementById('youtubeContainer');
+        var iframe=document.getElementById('externalYoutubeFrame');
+        if(!btn||!container) return;
+        btn.addEventListener('click', function(){
+          try{
+            if(document.fullscreenElement===container || document.webkitFullscreenElement===container){
+              (document.exitFullscreen||document.webkitExitFullscreen).call(document);
+            } else {
+              (container.requestFullscreen||container.webkitRequestFullscreen).call(container);
+            }
+          }catch(e){}
+        });
+        function updateLabel(){
+          btn.textContent = (document.fullscreenElement===container || document.webkitFullscreenElement===container) ? '⛶ Exit' : '⛶ Expand';
+        }
+        document.addEventListener('fullscreenchange', updateLabel);
+        document.addEventListener('webkitfullscreenchange', updateLabel);
+        // Resolve opaque token to real embed URL (obfuscation: initial HTML contains only token)
+        if(iframe && iframe.dataset.token){
+          fetch('/api/external-video/' + encodeURIComponent(iframe.dataset.token), { credentials: 'include', headers: { 'Accept': 'application/json' } })
+            .then(function(r){ if(!r.ok) throw new Error('resolve failed'); return r.json(); })
+            .then(function(data){
+              if(data && data.embedUrl) iframe.src = data.embedUrl;
+            })
+            .catch(function(err){
+              console.error('Failed to load external video', err);
+              var errEl=document.createElement('div');
+              errEl.className='flash flash-error';
+              errEl.textContent='Unable to load video.';
+              if(container && container.parentNode) container.parentNode.insertBefore(errEl, container.nextSibling);
+            });
+        }
+      })();
+      </script>
+      <% if (_vpx && _vpx.enabled) { %>
+      <!-- Non-admin custom video toolbar (bottom): mirrors the top toolbar. -->
+      <div class="youtube-playpause-row" style="display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:10px;margin:12px 0;">
+        <button id="ytPlayPauseBottom" data-testid="youtube-play-pause-bottom" type="button" class="button primary" style="font-weight:700;font-size:16px;padding:10px 28px;border-radius:10px;border:1px solid #1d4ed8;background:#2563eb;color:#fff;cursor:pointer;">▶ Play</button>
+        <input id="ytSeekBottom" data-testid="youtube-seek-bottom" type="range" min="0" max="1000" step="1" value="0" aria-label="Seek" title="Seek" style="flex:1;min-width:120px;accent-color:#2563eb;cursor:pointer;">
+        <span id="ytTimeBottom" data-testid="youtube-time-bottom" style="font-variant-numeric:tabular-nums;font-size:13px;color:#334155;white-space:nowrap;">0:00 / 0:00</span>
+        <button id="ytMuteBottom" data-testid="youtube-mute-bottom" type="button" title="Mute/Unmute" class="button primary" style="font-weight:700;font-size:16px;padding:10px 20px;border-radius:10px;border:1px solid #1d4ed8;background:#2563eb;color:#fff;cursor:pointer;">🔊 Mute</button>
+        <input id="ytVolumeBottom" data-testid="youtube-volume-bottom" type="range" min="0" max="100" step="1" value="100" aria-label="Volume" title="Volume" style="width:120px;accent-color:#2563eb;cursor:pointer;">
+        <button id="ytCcBottom" data-testid="youtube-cc-bottom" type="button" title="Subtitles" class="button primary" style="font-weight:700;font-size:16px;padding:10px 20px;border-radius:10px;border:1px solid #1d4ed8;background:#2563eb;color:#fff;cursor:pointer;">CC Off</button>
+        <button id="ytSettingsBottom" data-testid="youtube-settings-bottom" type="button" title="Settings" class="button primary" style="font-weight:700;font-size:16px;padding:10px 20px;border-radius:10px;border:1px solid #1d4ed8;background:#2563eb;color:#fff;cursor:pointer;">⚙ Settings</button>
+      </div>
+      <div id="ytSettingsPanelBottom" data-testid="youtube-settings-panel-bottom" style="display:none;justify-content:center;margin:0 0 12px;">
+        <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:center;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 14px;font-size:13px;color:#334155;">
+          <label style="font-weight:600;">Speed:
+            <select id="ytSpeedBottom" data-testid="youtube-speed-bottom" style="font-weight:600;font-size:14px;padding:6px 10px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#172033;">
+              <option value="0.25">0.25x</option><option value="0.5">0.5x</option><option value="0.75">0.75x</option><option value="1" selected>1x</option><option value="1.25">1.25x</option><option value="1.5">1.5x</option><option value="1.75">1.75x</option><option value="2">2x</option>
+            </select>
+          </label>
+          <label style="font-weight:600;">Captions size:
+            <select id="ytCcSizeBottom" data-testid="youtube-cc-size-bottom" style="font-weight:600;font-size:14px;padding:6px 10px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#172033;">
+              <option value="-1">Tiny</option><option value="0" selected>Default</option><option value="1">Large</option><option value="2">Extra large</option><option value="3">Largest</option>
+            </select>
+          </label>
+        </div>
+      </div>
+      <script>
+      // Non-admin YouTube toolbar wiring via the YouTube IFrame Player API
+      // (never by clicking YouTube's internal controls). Top and bottom rows
+      // share one state: Play/Pause ("▶ Play" initial), Mute ("🔊 Mute"
+      // initial), volume slider, CC ("CC Off" initial), and the Settings
+      // panel (playback speed + captions size — the only Settings-adjacent
+      // options the API reliably supports; playback quality is excluded
+      // because setPlaybackQuality is deprecated and ignored by the player).
+      // Rendered only for non-admins; outside #youtubeContainer so the
+      // right-click shield cannot cover these controls.
+      (function(){
+        var iframe=document.getElementById('externalYoutubeFrame');
+        var topBtn=document.getElementById('ytPlayPauseTop');
+        var bottomBtn=document.getElementById('ytPlayPauseBottom');
+        if(!iframe||!topBtn||!bottomBtn) return;
+        var player=null, playing=false, muted=false, volume=100, ccOn=false, rate=1, ccSize=0;
+        var pending={volume:null,muted:null,cc:null,rate:null,ccSize:null,seek:null};
+        var muteBtns=[document.getElementById('ytMuteTop'),document.getElementById('ytMuteBottom')];
+        var volSliders=[document.getElementById('ytVolumeTop'),document.getElementById('ytVolumeBottom')];
+        var ccBtns=[document.getElementById('ytCcTop'),document.getElementById('ytCcBottom')];
+        var settingsBtns=[document.getElementById('ytSettingsTop'),document.getElementById('ytSettingsBottom')];
+        var settingsPanels=[document.getElementById('ytSettingsPanelTop'),document.getElementById('ytSettingsPanelBottom')];
+        var speedSels=[document.getElementById('ytSpeedTop'),document.getElementById('ytSpeedBottom')];
+        var ccSizeSels=[document.getElementById('ytCcSizeTop'),document.getElementById('ytCcSizeBottom')];
+        var seekSliders=[document.getElementById('ytSeekTop'),document.getElementById('ytSeekBottom')];
+        var timeLabels=[document.getElementById('ytTimeTop'),document.getElementById('ytTimeBottom')];
+        var duration=0, seeking=false, seekTimer=null;
+        function apiHas(name){ try{ return !!player&&typeof player[name]==='function'; }catch(e){ return false; } }
+        function postCmd(func,args){
+          try{
+            if(iframe.contentWindow){
+              iframe.contentWindow.postMessage(JSON.stringify({event:'command',func:func,args:args}),'https://www.youtube-nocookie.com');
+            }
+          }catch(e){}
+        }
+        function setMutedUI(m){
+          muted=m;
+          var label=m?'🔇 Unmute':'🔊 Mute';
+          muteBtns.forEach(function(b){ if(b) b.textContent=label; });
+        }
+        function setVolumeUI(v){
+          volume=v;
+          volSliders.forEach(function(s){ if(s) s.value=String(v); });
+        }
+        function setCcUI(on){
+          ccOn=on;
+          var label=on?'CC On':'CC Off';
+          ccBtns.forEach(function(b){ if(b) b.textContent=label; });
+        }
+        function setSpeedUI(r){
+          rate=r;
+          speedSels.forEach(function(sel){
+            if(!sel) return;
+            var found=false;
+            for(var i=0;i<sel.options.length;i++){ if(parseFloat(sel.options[i].value)===r){ found=true; break; } }
+            if(found) sel.value=String(r);
+          });
+        }
+        function setCcSizeUI(z){
+          ccSize=z;
+          ccSizeSels.forEach(function(sel){ if(sel) sel.value=String(z); });
+        }
+        function fmtTime(s){
+          s=Math.floor(Number(s));
+          if(!isFinite(s)||s<0) s=0;
+          var h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;
+          var mm=h>0?String(m).padStart(2,'0'):String(m);
+          return (h>0?h+':':'')+mm+':'+String(sec).padStart(2,'0');
+        }
+        function setTimeUI(cur,dur){
+          duration=(isFinite(dur)&&dur>0)?dur:0;
+          var c=Math.max(0,Math.min(duration,Number(cur)||0));
+          var label=fmtTime(c)+' / '+fmtTime(duration);
+          timeLabels.forEach(function(el){ if(el) el.textContent=label; });
+          if(seeking) return;
+          var frac=duration>0?Math.max(0,Math.min(1,c/duration)):0;
+          seekSliders.forEach(function(sl){ if(sl) sl.value=String(Math.round(frac*1000)); });
+        }
+        function refreshTime(){
+          var c=0,d=0;
+          try{ if(apiHas('getCurrentTime')) c=player.getCurrentTime(); }catch(e){}
+          try{ if(apiHas('getDuration')) d=player.getDuration(); }catch(e){}
+          setTimeUI(c,d);
+        }
+        function startTimePoll(){
+          if(seekTimer) return;
+          refreshTime();
+          seekTimer=setInterval(function(){ try{ refreshTime(); }catch(e){} },500);
+        }
+        function seekToFrac(frac){
+          frac=Math.max(0,Math.min(1,Number(frac)));
+          if(!isFinite(frac)||!(duration>0)) return;
+          var target=frac*duration;
+          if(apiHas('seekTo')){ try{ player.seekTo(target,true); }catch(e){} }
+          else { postCmd('seekTo',[target,true]); pending.seek=target; }
+          setTimeUI(target,duration);
+        }
+        function toggleMute(){
+          var want=!muted;
+          if(apiHas(want?'mute':'unMute')){ try{ player[want?'mute':'unMute'](); }catch(e){} }
+          else { postCmd(want?'mute':'unMute',''); pending.muted=want; }
+          setMutedUI(want);
+        }
+        function onVolumeInput(v){
+          v=Math.max(0,Math.min(100,Math.round(Number(v)||0)));
+          if(apiHas('setVolume')){ try{ player.setVolume(v); }catch(e){} }
+          else { postCmd('setVolume',[v]); pending.volume=v; }
+          setVolumeUI(v);
+          if(v>0&&muted){
+            if(apiHas('unMute')){ try{ player.unMute(); }catch(e){} }
+            else { postCmd('unMute',''); pending.muted=false; }
+            setMutedUI(false);
+          }
+        }
+        function ccApiHas(){
+          try{ return !!player&&typeof player.loadModule==='function'&&typeof player.unloadModule==='function'; }
+          catch(e){ return false; }
+        }
+        function applyCc(on){
+          if(!ccApiHas()) return;
+          try{ if(on) player.loadModule('captions'); else player.unloadModule('captions'); }catch(e){}
+        }
+        function toggleCc(){
+          var want=!ccOn;
+          if(player) applyCc(want);
+          else pending.cc=want;
+          setCcUI(want);
+        }
+        function onSpeedChange(r){
+          r=parseFloat(r);
+          if(!isFinite(r)||r<=0) return;
+          if(apiHas('setPlaybackRate')){ try{ player.setPlaybackRate(r); }catch(e){} }
+          else pending.rate=r;
+          setSpeedUI(r);
+        }
+        function writeCcSize(z){
+          try{ if(player&&typeof player.setOption==='function') player.setOption('captions','fontSize',z); }catch(e){}
+        }
+        function onCcSizeChange(z){
+          z=parseInt(z,10);
+          if(isNaN(z)) return;
+          z=Math.max(-1,Math.min(3,z));
+          if(player) writeCcSize(z);
+          else pending.ccSize=z;
+          setCcSizeUI(z);
+        }
+        muteBtns.forEach(function(b){ if(b) b.addEventListener('click',toggleMute); });
+        volSliders.forEach(function(s){ if(s) s.addEventListener('input',function(){ onVolumeInput(s.value); }); });
+        ccBtns.forEach(function(b){ if(b) b.addEventListener('click',toggleCc); });
+        settingsBtns.forEach(function(b,i){
+          if(!b) return;
+          b.addEventListener('click',function(){
+            var p=settingsPanels[i];
+            if(!p) return;
+            p.style.display=(p.style.display==='none'||p.style.display==='')?'flex':'none';
+          });
+        });
+        speedSels.forEach(function(sel){ if(sel) sel.addEventListener('change',function(){ onSpeedChange(sel.value); }); });
+        ccSizeSels.forEach(function(sel){ if(sel) sel.addEventListener('change',function(){ onCcSizeChange(sel.value); }); });
+        seekSliders.forEach(function(sl){
+          if(!sl) return;
+          sl.addEventListener('input',function(){
+            seeking=true;
+            var frac=Number(sl.value)/1000;
+            if(duration>0){
+              var t=frac*duration;
+              timeLabels.forEach(function(el){ if(el) el.textContent=fmtTime(t)+' / '+fmtTime(duration); });
+            }
+          });
+          sl.addEventListener('change',function(){
+            seeking=false;
+            seekToFrac(Number(sl.value)/1000);
+          });
+        });
+        function populateSpeed(rates,current){
+          var list=(rates&&rates.length?rates:[0.25,0.5,0.75,1,1.25,1.5,1.75,2]);
+          speedSels.forEach(function(sel){
+            if(!sel) return;
+            sel.innerHTML='';
+            list.forEach(function(r){
+              var o=document.createElement('option');
+              o.value=String(r);
+              o.textContent=String(r)+'x';
+              sel.appendChild(o);
+            });
+          });
+          setSpeedUI(current);
+        }
+        function setPlaying(v){
+          playing=v;
+          var label=v?'⏸ Pause':'▶ Play';
+          topBtn.textContent=label;
+          bottomBtn.textContent=label;
+        }
+        function sendCommand(wantPlay){
+          var func=wantPlay?'playVideo':'pauseVideo';
+          try{
+            if(player&&typeof player[func]==='function'){ player[func](); }
+            else if(iframe.contentWindow){
+              iframe.contentWindow.postMessage(JSON.stringify({event:'command',func:func,args:''}),'https://www.youtube-nocookie.com');
+            }
+          }catch(e){}
+        }
+        function toggle(){
+          var wantPlay=!playing;
+          sendCommand(wantPlay);
+          setPlaying(wantPlay);
+        }
+        topBtn.addEventListener('click',toggle);
+        bottomBtn.addEventListener('click',toggle);
+        function onPlayerReady(){
+          try{
+            var m=pending.muted!==null?pending.muted:(apiHas('isMuted')?!!player.isMuted():false);
+            if(pending.muted!==null&&apiHas(pending.muted?'mute':'unMute')){ try{ player[pending.muted?'mute':'unMute'](); }catch(e){} }
+            setMutedUI(m);
+            var v=pending.volume!==null?pending.volume:(apiHas('getVolume')?Math.max(0,Math.min(100,Math.round(player.getVolume()))):100);
+            if(pending.volume!==null&&apiHas('setVolume')){ try{ player.setVolume(v); }catch(e){} }
+            setVolumeUI(v);
+            var avail=null;
+            try{ avail=apiHas('getAvailablePlaybackRates')?player.getAvailablePlaybackRates():null; }catch(e){ avail=null; }
+            var r=pending.rate!==null?pending.rate:(apiHas('getPlaybackRate')?player.getPlaybackRate():1);
+            if(!isFinite(r)||r<=0) r=1;
+            if(pending.rate!==null&&apiHas('setPlaybackRate')){ try{ player.setPlaybackRate(r); }catch(e){} }
+            populateSpeed(avail,r);
+            if(pending.cc!==null) applyCc(pending.cc);
+            var size=0;
+            if(pending.ccSize!==null){ size=pending.ccSize; writeCcSize(size); }
+            else if(player&&typeof player.getOption==='function'){
+              try{
+                var g=player.getOption('captions','fontSize');
+                if(typeof g==='number'&&isFinite(g)) size=Math.max(-1,Math.min(3,Math.round(g)));
+              }catch(e){}
+            }
+            setCcSizeUI(size);
+            if(pending.seek!==null&&apiHas('seekTo')){ try{ player.seekTo(pending.seek,true); }catch(e){} }
+            startTimePoll();
+            pending={volume:null,muted:null,cc:null,rate:null,ccSize:null,seek:null};
+          }catch(e){}
+        }
+        function createPlayer(){
+          if(player) return;
+          try{
+            if(!(window.YT&&window.YT.Player)) return;
+            player=new window.YT.Player(iframe,{
+              events:{
+                onReady:onPlayerReady,
+                onStateChange:function(ev){
+                  try{
+                    var S=window.YT.PlayerState;
+                    if(ev.data===S.PLAYING) setPlaying(true);
+                    else if(ev.data===S.PAUSED||ev.data===S.ENDED||ev.data===S.CUED) setPlaying(false);
+                    refreshTime();
+                  }catch(e){}
+                },
+                onPlaybackRateChange:function(ev){
+                  try{
+                    if(ev&&typeof ev.data==='number'&&isFinite(ev.data)) setSpeedUI(ev.data);
+                  }catch(e){}
+                }
+              }
+            });
+          }catch(e){ player=null; }
+        }
+        function ensureApi(){
+          if(window.YT&&window.YT.Player){ createPlayer(); return; }
+          var prev=window.onYouTubeIframeAPIReady;
+          window.onYouTubeIframeAPIReady=function(){
+            try{ if(typeof prev==='function') prev(); }catch(e){}
+            createPlayer();
+          };
+          if(!document.querySelector('script[src="https://www.youtube.com/iframe_api"]')){
+            var s=document.createElement('script');
+            s.src='https://www.youtube.com/iframe_api';
+            s.async=true;
+            document.head.appendChild(s);
+          }
+        }
+        function srcReady(){
+          try{ return !!iframe.src&&iframe.src.indexOf('/embed/')!==-1; }
+          catch(e){ return false; }
+        }
+        if(srcReady()){ ensureApi(); }
+        else if(window.MutationObserver){
+          var obs=new window.MutationObserver(function(){
+            if(srcReady()){ try{obs.disconnect();}catch(e){} ensureApi(); }
+          });
+          try{ obs.observe(iframe,{attributes:true,attributeFilter:['src']}); }catch(e){}
+          setTimeout(function(){
+            try{obs.disconnect();}catch(e){}
+            if(!player&&srcReady()) ensureApi();
+          },15000);
+        } else {
+          var tries=0;
+          var iv=setInterval(function(){
+            tries++;
+            if(srcReady()||tries>50){ try{clearInterval(iv);}catch(e){} ensureApi(); }
+          },300);
+        }
+      })();
+      </script>
+      <% } %>
+    <% } else if (typeof isBlogger !== 'undefined' && isBlogger) { %>
+      <div id="bloggerContainer" style="position:relative;height:800px;overflow:hidden;border-radius:10px;border:1px solid #e2e8f0;background:#fff;">
+        <iframe src="<%= externalUrl %>" sandbox="allow-scripts allow-same-origin allow-popups" referrerpolicy="no-referrer-when-downgrade" loading="lazy" title="<%= friendlyName.replace(/"/g,'&quot;') %>" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;"></iframe>
+        <!-- Blogger header overlay: makes "Learn with me - Guidewire" non-clickable and blocks top search/share -->
+        <div style="position:absolute;top:0;left:0;right:0;height:84px;background:transparent;z-index:2;pointer-events:auto;" title=""></div>
+        <!-- Share buttons hidden (top and bottom): right strip hides share, bottom/top rows make share read-only -->
+        <div style="position:absolute;top:0;right:0;width:84px;height:100%;background:#fff;z-index:2;pointer-events:auto;" title=""></div>
+        <div style="position:absolute;left:0;right:0;bottom:0;height:50%;background:transparent;z-index:2;pointer-events:auto;" title=""></div>
+        <!-- Top and bottom post share rows - same read-only fix applied to both -->
+        <div style="position:absolute;top:86px;left:0;right:0;height:62px;background:transparent;z-index:2;pointer-events:auto;" title=""></div>
+        <div style="position:absolute;left:0;right:0;bottom:80px;height:80px;background:transparent;z-index:2;pointer-events:auto;" title=""></div>
+        <button id="bloggerExpandBtn" type="button" title="Enlarge" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);z-index:3;background:rgba(0,0,0,0.65);color:#fff;border:1px solid #555;border-radius:6px;padding:8px 12px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px;backdrop-filter:blur(2px);">⛶ Expand</button>
+      </div>
+      <script>
+      (function(){
+        var btn=document.getElementById('bloggerExpandBtn');
+        var container=document.getElementById('bloggerContainer');
+        if(!btn||!container) return;
+        btn.addEventListener('click', function(){
+          try{
+            if(document.fullscreenElement===container || document.webkitFullscreenElement===container){
+              (document.exitFullscreen||document.webkitExitFullscreen).call(document);
+            } else {
+              (container.requestFullscreen||container.webkitRequestFullscreen).call(container);
+            }
+          }catch(e){}
+        });
+        function updateLabel(){
+          btn.textContent = (document.fullscreenElement===container || document.webkitFullscreenElement===container) ? '⛶ Exit' : '⛶ Expand';
+        }
+        document.addEventListener('fullscreenchange', updateLabel);
+        document.addEventListener('webkitfullscreenchange', updateLabel);
+      })();
+      </script>
+    <% } else if (typeof isDrive !== 'undefined' && isDrive && drivePreviewUrl) { %>
+      <div id="driveContainer" style="position:relative;height:800px;overflow:hidden;border-radius:10px;border:1px solid #e2e8f0;background:#fff;">
+        <iframe src="<%= drivePreviewUrl %>" sandbox="allow-scripts allow-same-origin allow-popups" referrerpolicy="no-referrer-when-downgrade" loading="lazy" title="<%= friendlyName.replace(/"/g,'&quot;') %>" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;"></iframe>
+        <!-- Right-side Share/Open control - same hide/read-only fix as Blogger (no DOM access, parent overlay) -->
+        <div style="position:absolute;top:0;right:0;width:84px;height:100%;background:#fff;z-index:2;pointer-events:auto;" title=""></div>
+        <div style="position:absolute;top:0;right:0;width:84px;height:64px;background:transparent;z-index:2;pointer-events:auto;" title=""></div>
+        <button id="driveExpandBtn" type="button" title="Enlarge" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);z-index:3;background:rgba(0,0,0,0.65);color:#fff;border:1px solid #555;border-radius:6px;padding:8px 12px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px;backdrop-filter:blur(2px);">⛶ Expand</button>
+      </div>
+      <script>
+      (function(){
+        var btn=document.getElementById('driveExpandBtn');
+        var container=document.getElementById('driveContainer');
+        if(!btn||!container) return;
+        btn.addEventListener('click', function(){
+          try{
+            if(document.fullscreenElement===container || document.webkitFullscreenElement===container){
+              (document.exitFullscreen||document.webkitExitFullscreen).call(document);
+            } else {
+              (container.requestFullscreen||container.webkitRequestFullscreen).call(container);
+            }
+          }catch(e){}
+        });
+        function updateLabel(){
+          btn.textContent = (document.fullscreenElement===container || document.webkitFullscreenElement===container) ? '⛶ Exit' : '⛶ Expand';
+        }
+        document.addEventListener('fullscreenchange', updateLabel);
+        document.addEventListener('webkitfullscreenchange', updateLabel);
+      })();
+      </script>
+    <% } else if (isValidUrl) { %>
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:20px;text-align:center;">
+        <p style="margin:0 0 12px;color:#334155;">This external resource cannot be embedded.</p>
+        <a href="<%= externalUrl %>" target="_blank" rel="noopener noreferrer" class="button primary">Open External Link →</a>
+        <p class="muted" style="margin:10px 0 0;font-size:12px;word-break:break-all;"><%= externalUrl %></p>
+      </div>
+    <% } else { %>
+      <p class="flash flash-error">External URL is invalid.</p>
+    <% } %>
+  </section>
+  <% if (typeof canConfigureBranding !== 'undefined' && canConfigureBranding && typeof isYouTube !== 'undefined' && isYouTube) { %>
+  <% const _brandCfgX = (typeof videoBranding !== 'undefined' && videoBranding) ? videoBranding : { enabled: true, style: 3, opacity: 8, color: '#1E3A5F' }; %>
+  <% const _brandCfgColorX = /^#[0-9A-F]{6}$/i.test(String(_brandCfgX.color || '')) ? String(_brandCfgX.color).toUpperCase() : '#1E3A5F'; %>
+  <section class="video-branding-config" data-testid="video-branding-config" style="margin:12px 0;padding:12px 16px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;">
+    <h3 style="margin:0 0 8px;font-size:14px;font-weight:700;color:#172033;">🎨 Video Branding</h3>
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;font-size:13px;color:#334155;">
+      <label>Show overlay:
+        <input type="checkbox" data-testid="video-branding-enabled"<%= _brandCfgX.enabled !== false ? ' checked' : '' %> title="Uncheck to hide the site brand overlay (e.g. the video already has a burned-in watermark)">
+      </label>
+      <label>Style:
+        <select data-testid="video-branding-style" style="border:1px solid #cbd5e1;border-radius:8px;padding:6px 10px;font-size:13px;">
+          <option value="2"<%= _brandCfgX.style === 2 ? ' selected' : '' %>>Option 2: Diagonal + Logo</option>
+          <option value="3"<%= _brandCfgX.style !== 2 ? ' selected' : '' %>>Option 3: Centered Large</option>
+        </select>
+      </label>
+      <label>Opacity (%):
+        <input type="number" data-testid="video-branding-opacity" min="1" max="100" step="1" value="<%= Math.min(100, Math.max(1, Number(_brandCfgX.opacity) || 8)) %>" style="width:70px;border:1px solid #cbd5e1;border-radius:8px;padding:6px 10px;font-size:13px;">
+      </label>
+      <label>Color:
+        <input type="color" data-testid="video-branding-color" value="<%= _brandCfgColorX %>" style="width:44px;height:32px;border:1px solid #cbd5e1;border-radius:8px;padding:2px;background:#fff;">
+      </label>
+      <span style="display:inline-flex;flex-wrap:wrap;gap:6px;" data-testid="video-branding-presets">
+        <% ['#FFFFFF','#000000','#1E3A5F','#2563EB','#6B7280'].forEach(function (preset) { %>
+        <button type="button" data-brand-preset="<%= preset %>" title="<%= preset %>" style="width:26px;height:26px;border-radius:6px;border:1px solid #94a3b8;background:<%= preset %>;cursor:pointer;padding:0;"></button>
+        <% }); %>
+      </span>
+      <button type="button" class="button small" data-testid="video-branding-save">Save</button>
+      <span data-testid="video-branding-status" style="font-size:12px;font-weight:600;"></span>
+    </div>
+    <div style="margin-top:10px;font-size:13px;color:#334155;">
+      <div style="font-weight:700;margin-bottom:4px;">Preview:</div>
+      <div data-testid="video-branding-preview" style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;padding:14px;text-align:center;overflow:hidden;">
+        <span data-testid="video-branding-preview-text" style="font-weight:800;font-size:22px;letter-spacing:2px;">Learn with me</span>
+      </div>
+    </div>
+  </section>
+  <script>
+  (function () {
+    var root = document.querySelector('[data-testid="video-branding-config"]');
+    if (!root) return;
+    var styleEl = root.querySelector('[data-testid="video-branding-style"]');
+    var opacityEl = root.querySelector('[data-testid="video-branding-opacity"]');
+    var colorEl = root.querySelector('[data-testid="video-branding-color"]');
+    var enabledEl = root.querySelector('[data-testid="video-branding-enabled"]');
+    var saveBtn = root.querySelector('[data-testid="video-branding-save"]');
+    var statusEl = root.querySelector('[data-testid="video-branding-status"]');
+    var previewText = root.querySelector('[data-testid="video-branding-preview-text"]');
+    if (!styleEl || !opacityEl || !colorEl || !saveBtn) return;
+    function updatePreview() {
+      if (!previewText) return;
+      var isDiagonal = (styleEl.value === '2');
+      previewText.style.color = colorEl.value;
+      var opacity = Math.min(100, Math.max(1, Number(opacityEl.value) || 8)) / 100;
+      previewText.style.opacity = String(opacity);
+      previewText.style.fontSize = isDiagonal ? '13px' : '22px';
+      previewText.style.transform = isDiagonal ? 'rotate(-32deg)' : 'none';
+      previewText.style.display = 'inline-block';
+    }
+    styleEl.addEventListener('change', updatePreview);
+    opacityEl.addEventListener('input', updatePreview);
+    colorEl.addEventListener('input', updatePreview);
+    var presets = root.querySelectorAll('[data-brand-preset]');
+    Array.prototype.forEach.call(presets, function (btn) {
+      btn.addEventListener('click', function () {
+        colorEl.value = btn.getAttribute('data-brand-preset');
+        updatePreview();
+      });
+    });
+    updatePreview();
+    function setStatus(text, ok) {
+      if (!statusEl) return;
+      statusEl.textContent = text;
+      statusEl.style.color = ok ? '#15803d' : '#b91c1c';
+    }
+    saveBtn.addEventListener('click', function () {
+      setStatus('', true);
+      fetch('/api/admin/video-branding', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ itemPath: <%- JSON.stringify(itemPath).replace(/</g, '\\u003c') %>, style: Number(styleEl.value), opacity: Number(opacityEl.value), color: colorEl.value, enabled: !!(enabledEl && enabledEl.checked) })
+      }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, body: d }; }); })
+      .then(function (res) {
+        if (res.ok && res.body && res.body.ok) setStatus('Saved', true);
+        else setStatus((res.body && res.body.error) || 'Save failed', false);
+      }).catch(function () { setStatus('Save failed', false); });
+    });
+  })();
+  </script>
+  <% } %>
+
+  <%- include('partials/pinned-references', { pinnedRefs: typeof pinnedRefs !== 'undefined' ? pinnedRefs : [] }) %>
+
+  <%- include('partials/pin-generator', { pinGen: typeof pinGen !== 'undefined' ? pinGen : null }) %>
+
+  <%- include('partials/notes-widget', { 
+    hasNotes: (typeof hasNotes !== 'undefined' ? hasNotes : false), 
+    userNote: (typeof userNote !== 'undefined' ? userNote : null), 
+    itemPath: itemPath, 
+    title: friendlyName 
+  }) %>
+
+  <section class="detail-discussions">
+    <div class="have-question-header">
+      <h2>Have a question?</h2>
+    </div>
+    <p class="detail-discussions-note">Your identity is masked as <strong>Anonymous</strong> to other users. Only Admin can see who posted.</p>
+    <% const _canDiscussDetailI = typeof hasNotes !== 'undefined' ? hasNotes : (typeof hasNotesPermission !== 'undefined' ? hasNotesPermission : false); %>
+    <% if (_canDiscussDetailI) { %>
+    <form method="post" action="/discussions" class="discussion-new-form">
+      <input type="hidden" name="item_path" value="<%= itemPath %>">
+      <input type="text" name="title" placeholder="Question title" required maxlength="200" class="discussion-input-title">
+      <textarea name="body" placeholder="Details (optional)" rows="3" maxlength="50000" class="discussion-input-body"></textarea>
+      <div class="detail-discussions-form-actions">
+        <button type="submit" class="button primary">Post your question</button>
+        <a href="/discussions?path=<%= encodeURIComponent(itemPath) %>" class="detail-discussions-view-all">View all discussions (<%= discussions.length %>)</a>
+      </div>
+    </form>
+    <% } else { %>
+    <div class="flash flash-ok" data-testid="discussions-readonly-msg" style="margin: 8px 0; background: #f8fafc; border: 1px solid #e2e8f0; color: #475569;">Discussions are available in read-only mode. Posting, replying and liking requires active access.</div>
+    <div style="margin: 8px 0;"><a href="/discussions?path=<%= encodeURIComponent(itemPath) %>" class="detail-discussions-view-all">View all discussions (<%= discussions.length %>)</a></div>
+    <% } %>
+    <% if (discussions.length > 0) { %>
+      <div class="detail-discussions-list">
+        <% discussions.slice(0, 5).forEach(d => { %>
+          <a href="/discussions/<%= d.id %>" class="detail-discussion-item">
+            <span class="detail-discussion-title"><%- (typeof linkifyBody === 'function' ? linkifyBody(d.title) : String(d.title||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))) %></span>
+            <span class="detail-discussion-meta"><%= d.reply_count %> <%= d.reply_count === 1 ? 'reply' : 'replies' %></span>
+          </a>
+        <% }) %>
+        <% if (discussions.length > 5) { %>
+          <a href="/discussions?path=<%= encodeURIComponent(itemPath) %>" class="detail-discussions-more">View all <%= discussions.length %> discussions →</a>
+        <% } %>
+      </div>
+    <% } %>
+  </section>
+  <%- include('partials/related', { relatedItems: typeof relatedItems !== 'undefined' ? relatedItems : [] }) %>
+  <% if (_vpx && _vpx.enabled && isYouTube && externalVideoToken) { %>
+  <style>
+    /* Recording-protection watermark above the YouTube iframe (z-index 4
+       sits above the existing click-block overlays but is pointer-events
+       none, so the Expand control stays clickable). Moved by JS. */
+    #youtubeContainer .video-watermark.is-protected {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      z-index: 4;
+      pointer-events: none;
+      user-select: none;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      color: rgba(255,255,255,0.9);
+      font-size: 12px;
+      line-height: 1.4;
+      background: rgba(0,0,0,0.55);
+      padding: 6px 10px;
+      border-radius: 8px;
+      transition: top 0.6s ease, left 0.6s ease, right 0.6s ease, bottom 0.6s ease;
+    }
+    #youtubeContainer .video-watermark.is-protected .wm-learn { font-weight: 600; }
+    #youtubeContainer .video-watermark.is-protected .wm-viewer { font-size: 11px; color: rgba(255,255,255,0.85); }
+    #youtubeContainer .video-watermark.is-protected .wm-email { font-size: 11px; color: rgba(255,255,255,0.8); }
+    /* Branding overlay (separate from the moving viewer pill): large,
+       low-opacity "Learn with me" brand mark over the YouTube player. */
+    #youtubeContainer .wm-brand {
+      position: absolute;
+      pointer-events: none;
+      user-select: none;
+      z-index: 3;
+      /* Color comes from the per-video branding config (inline style). */
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    /* Option 2: Diagonal tiled watermark — many small brand marks spread
+       evenly across the full video area at ~32°. The oversized inner layer
+       keeps the rotated corners covered (edge tiles clip, as usual for
+       tiled watermarks). Color/opacity come from the inline style. */
+    #youtubeContainer .wm-brand-opt2 {
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      overflow: hidden;
+      font-size: clamp(10px, 1.5vw, 16px);
+      letter-spacing: 1px;
+    }
+    #youtubeContainer .wm-brand-opt2 .wm-tile-layer {
+      position: absolute;
+      inset: -45% -10%;
+      display: flex;
+      flex-wrap: wrap;
+      align-content: space-evenly;
+      justify-content: space-evenly;
+      transform: rotate(-32deg);
+    }
+    /* Option 3: Centered Large (default). */
+    #youtubeContainer .wm-brand-opt3 {
+      top: 50%;
+      left: 50%;
+      font-size: clamp(32px, 7vw, 72px);
+      letter-spacing: 3px;
+      transform: translate(-50%, -50%);
+    }
+    #youtubeContainer .prot-warn {
+      position: absolute;
+      left: 50%;
+      bottom: 78px;
+      transform: translateX(-50%);
+      z-index: 5;
+      pointer-events: none;
+      background: rgba(127,29,29,0.92);
+      color: #fff;
+      font-size: 12px;
+      padding: 8px 14px;
+      border-radius: 8px;
+      max-width: 90%;
+      text-align: center;
+    }
+  </style>
+  <% } %>
+</main>
+<%- include('partials/footer') %>
+<script src="/like.js" defer></script>
+<% if (_vpx && _vpx.enabled && isYouTube && externalVideoToken) { %>
+<script src="/video-protection.js"></script>
+<script>
+// Page-level right-click prevention (outside the video): inline and
+// non-deferred so it applies immediately for the whole external page without
+// waiting for /devtools-restrict.js. Server-gated on _vpx.enabled, so admins
+// never render this and keep native right-click. The YouTube shield above
+// covers right-clicks inside the cross-origin iframe.
+(function () {
+  try {
+    document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  } catch (err) {}
+})();
+</script>
+<script>
+(function () {
+  try {
+    var cfg = <%- JSON.stringify({ enabled: true, maskedEmail: _vpx.maskedEmail, sessionShort: _vpx.sessionShort, viewerName: _vpx.viewerName, itemPath: _vpx.itemPath, itemType: _vpx.itemType, youtube: true }).replace(/</g, '\\u003c') %>;
+    if (window.VideoProtection) window.VideoProtection.init(cfg);
+  } catch (e) {}
+})();
+</script>
+<% } %>
+<%- include('partials/admin-likes', { itemPath: itemPath }) %>
+<script src="/discussion-form.js" defer></script>
+</body></html>

@@ -1,0 +1,97 @@
+<% if ((typeof showFooter !== 'undefined' && showFooter) || (typeof showConnectWithUs !== 'undefined' && showConnectWithUs)) { %>
+<footer class="site-footer">
+  <div class="footer-contact" aria-label="Contact us">
+    <h2 class="footer-contact-heading">Connect With Us</h2>
+    <ul class="footer-contact-list">
+      <li>
+        <a href="mailto:learnwithmegw@gmail.com">
+          <svg class="footer-contact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="m2 6 10 7 10-7"></path></svg>
+          <span>learnwithmegw@gmail.com</span>
+        </a>
+      </li>
+      <li>
+        <a href="https://www.youtube.com/@Learnwithme-m7l" target="_blank" rel="noopener noreferrer">
+          <svg class="footer-contact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12c0 3-1 5-3 6-2 1-5 1-7 1s-5 0-7-1c-2-1-3-3-3-6s1-5 3-6c2-1 5-1 7-1s5 0 7 1c2 1 3 3 3 6z"></path><path d="m10 9 5 3-5 3z" fill="currentColor" stroke="none"></path></svg>
+          <span>YouTube</span>
+        </a>
+      </li>
+    </ul>
+  </div>
+  <div class="footer-legal">
+    <% if (typeof knowledgeEnabled === 'undefined' || knowledgeEnabled) { %>
+      <a href="/knowledge">Knowledge Base</a>
+    <% } %>
+    <a href="/about">About</a>
+    <a href="/exchange-rates">Exchange Rates</a>
+    <a href="/contact">Contact</a>
+    <a href="/pricing">Pricing</a>
+    <a href="/content-policy">Content &amp; Copyright</a>
+    <a href="/privacy">Privacy Policy</a>
+    <a href="/terms">Terms of Service</a>
+    <a href="/refund-policy">Cancellation &amp; Refund Policy</a>
+    <span>Learn with me</span>
+  </div>
+</footer>
+<% } %>
+
+<% if (typeof lunaEnabled !== 'undefined' && lunaEnabled && typeof user !== 'undefined' && user && (user.status === 'active' || user.app_role === 'ADMIN' || user.app_role === 'OWNER')) { %>
+  <button id="lunaWidgetToggle" class="luna-widget-toggle" type="button" aria-expanded="false" aria-controls="lunaWidgetPanel" aria-label="Open Ask Luna">
+    <span aria-hidden="true">✨</span>
+    <span>Ask Luna</span>
+  </button>
+  <section id="lunaWidgetPanel" class="luna-widget-panel" hidden aria-label="Ask Luna">
+    <div class="luna-widget-header">
+      <div>
+        <strong>✨ Ask Luna</strong>
+        <span>Guidewire knowledge assistant</span>
+      </div>
+      <div class="luna-widget-header-actions">
+        <button id="lunaWidgetMaximize" type="button" aria-label="Maximize Ask Luna" title="Maximize">⛶</button>
+        <button id="lunaWidgetClose" type="button" aria-label="Close Ask Luna" title="Close">×</button>
+      </div>
+    </div>
+    <div id="lunaWidgetSetup" class="luna-widget-setup" aria-label="Luna AI Beta setup">
+      <div class="luna-widget-setup-title">Luna AI — Beta</div>
+      <label class="luna-widget-field">AI Provider
+        <select id="lunaWidgetProvider"></select>
+      </label>
+      <label class="luna-widget-field">Model
+        <select id="lunaWidgetModel"></select>
+      </label>
+      <label class="luna-widget-field" id="lunaWidgetCustomWrap" hidden>Custom model
+        <input id="lunaWidgetCustomModel" type="text" autocomplete="off" spellcheck="false" placeholder="e.g. anthropic/claude-3.5-sonnet">
+      </label>
+      <label class="luna-widget-field">API Key
+        <input id="lunaWidgetApiKey" type="password" autocomplete="off" spellcheck="false" placeholder="Paste key for this session only">
+      </label>
+      <a id="lunaWidgetKeyLink" class="luna-widget-keylink" href="#" target="_blank" rel="noopener">Get API Key</a>
+      <div class="luna-widget-setup-row">
+        <button id="lunaWidgetTest" type="button">Test Connection</button>
+      </div>
+      <div id="lunaWidgetSetupStatus" class="luna-widget-setup-status" role="status">○ Not connected</div>
+      <button id="lunaWidgetStart" class="luna-widget-start" type="button" disabled>Start Luna</button>
+      <button id="lunaWidgetLocal" class="luna-widget-linklike" type="button">Continue without AI (local only)</button>
+    </div>
+    <div id="lunaWidgetChatWrap" hidden>
+      <div class="luna-widget-badge-row">
+        <span id="lunaWidgetBadge" class="luna-widget-badge">Local only</span>
+        <button id="lunaWidgetSetupToggle" class="luna-widget-linklike" type="button">AI Setup</button>
+        <button id="lunaWidgetEnd" class="luna-widget-linklike" type="button" hidden>End AI Session</button>
+      </div>
+    <div id="lunaWidgetMessages" class="luna-widget-messages" aria-live="polite">
+      <div class="luna-widget-message luna-widget-message-assistant">Hi, I'm Luna. Ask me about the knowledge available on this website.</div>
+    </div>
+    <form id="lunaWidgetForm" class="luna-widget-form">
+      <textarea id="lunaWidgetInput" rows="2" maxlength="4000" placeholder="Ask a Guidewire, Gosu, Java or SQL question..." aria-label="Ask Luna a question"></textarea>
+      <div class="luna-widget-actions">
+        <% const _lunaContextPath = typeof itemPath !== 'undefined' ? itemPath : (typeof path !== 'undefined' ? path : ''); %>
+      <a id="lunaWidgetFullLink" href="/luna" data-luna-context-path="<%= _lunaContextPath %>">Open full Luna</a>
+        <button id="lunaWidgetSend" type="submit">Send</button>
+      </div>
+    </form>
+    </div>
+  </section>
+  <link rel="stylesheet" href="/luna-widget.css?v=20261001-1">
+  <script src="/luna-session.js?v=20261001-1" defer></script>
+  <script src="/luna-widget.js?v=20261001-1" defer></script>
+<% } %>

@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Learn with me · Enterprise Technology & Programming Library</title>
+  <link rel="canonical" href="https://gosu-query-library.onrender.com/">
+  <meta name="description" content="Searchable Guidewire Gosu library with PolicyCenter, ClaimCenter and BillingCenter query examples plus free in-depth guides on Java, SQL and InsuranceSuite architecture for developers and consultants.">
+  <link rel="stylesheet" href="/styles.css">
+  <%- include('partials/adsense-verification') %>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/">Learn with me</a>
+  <% if (typeof knowledgeEnabled === 'undefined' || knowledgeEnabled) { %>
+    <a class="nav-link" href="/knowledge" style="font-weight: 600; color: #1e40af;">📖 Knowledge Base</a>
+  <% } %>
+  <a class="nav-link" href="/exchange-rates">💱 Exchange Rates</a>
+  <a class="nav-link" href="/login">Sign in</a>
+</header>
+
+<main class="container">
+  <section class="hero-section" style="padding: 60px 20px; text-align: center; max-width: 800px; margin: 0 auto;">
+    <div class="logo-container" style="margin-bottom: 24px;">
+      <span class="code-logo" style="font-size: 48px; font-weight: bold; font-family: monospace; color: #3b82f6;">&lt;/&gt;</span>
+    </div>
+    <h1 style="font-size: 2.5rem; font-weight: 800; margin-bottom: 16px; color: #1e293b; line-height: 1.2;">Learn with me</h1>
+    <p style="font-size: 1.25rem; color: #475569; margin-bottom: 32px; line-height: 1.5;">
+      Your curated, searchable learning library for enterprise technology, programming, and practical development.
+    </p>
+    
+    <div class="cta-container" style="margin-bottom: 48px; display: flex; flex-direction: column; align-items: center; gap: 16px;">
+      <a class="button primary google" href="/auth/google" style="display: inline-flex; align-items: center; justify-content: center; text-decoration: none; padding: 12px 24px; font-weight: 600; border-radius: 8px;">
+        <svg viewBox="0 0 48 48" aria-hidden="true" style="width: 20px; height: 20px; margin-right: 12px;"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+        <span>Continue with Google</span>
+      </a>
+      <a href="/login" style="color: #3b82f6; font-weight: 600; text-decoration: none; font-size: 16px;">Already have an account? Sign in</a>
+    </div>
+  </section>
+
+  <% if (typeof knowledgeEnabled === 'undefined' || knowledgeEnabled) { %>
+    <section class="home-knowledge-section" aria-label="Public Knowledge Base">
+      <div class="home-knowledge-card">
+        <div class="home-knowledge-content">
+          <h2 class="home-knowledge-title">📚 Public Knowledge Base</h2>
+          <p class="home-knowledge-desc">
+            Explore Java, SQL, Insurance, Guidewire concepts, programming fundamentals, and other technical theory — completely free and without signing in.
+          </p>
+        </div>
+        <a href="/knowledge" class="home-knowledge-cta">
+          Explore Knowledge Base &rarr;
+        </a>
+      </div>
+    </section>
+
+    <!-- Featured Learning Guides Segment (AdSense Quality Optimization) -->
+    <section class="featured-guides-section" style="max-width: 800px; margin: 0 auto 36px auto; text-align: left; padding: 0 20px;">
+      <h2 style="font-size: 1.5rem; font-weight: 700; color: #1e293b; margin-bottom: 16px;">Featured Learning Guides</h2>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px;">
+        <a href="/knowledge/guidewire-theory/guidewire-platform-architecture" style="text-decoration: none; display: flex; flex-direction: column; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; transition: transform 0.2s, box-shadow 0.2s; color: inherit;">
+          <span style="font-size: 11px; font-weight: 700; color: #0369a1; background: #e0f2fe; padding: 4px 8px; border-radius: 4px; align-self: flex-start; margin-bottom: 10px;">Guidewire Theory</span>
+          <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0 0 8px 0; color: #0f172a;">InsuranceSuite Architecture</h3>
+          <p style="font-size: 13px; color: #475569; margin: 0; line-height: 1.4;">Deep dive into Guidewire's multi-tier application servers, cluster management, database nodes, and integration frameworks.</p>
+          <span style="margin-top: auto; padding-top: 12px; font-size: 13px; font-weight: 600; color: #2563eb;">Read Guide &rarr;</span>
+        </a>
+        <a href="/knowledge/java/java-oop-principles" style="text-decoration: none; display: flex; flex-direction: column; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; transition: transform 0.2s, box-shadow 0.2s; color: inherit;">
+          <span style="font-size: 11px; font-weight: 700; color: #0369a1; background: #e0f2fe; padding: 4px 8px; border-radius: 4px; align-self: flex-start; margin-bottom: 10px;">Java Concepts</span>
+          <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0 0 8px 0; color: #0f172a;">OOP Principles & Design</h3>
+          <p style="font-size: 13px; color: #475569; margin: 0; line-height: 1.4;">Master encapsulation, abstraction, inheritance, and dynamic polymorphism with practical, real-world enterprise code patterns.</p>
+          <span style="margin-top: auto; padding-top: 12px; font-size: 13px; font-weight: 600; color: #2563eb;">Read Guide &rarr;</span>
+        </a>
+        <a href="/knowledge/sql/sql-joins-deep-dive" style="text-decoration: none; display: flex; flex-direction: column; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; transition: transform 0.2s, box-shadow 0.2s; color: inherit;">
+          <span style="font-size: 11px; font-weight: 700; color: #0369a1; background: #e0f2fe; padding: 4px 8px; border-radius: 4px; align-self: flex-start; margin-bottom: 10px;">SQL & Databases</span>
+          <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0 0 8px 0; color: #0f172a;">SQL Joins Deep Dive</h3>
+          <p style="font-size: 13px; color: #475569; margin: 0; line-height: 1.4;">Understand nested loops, hash joins, and sort-merge execution paths, with visual Venn diagrams and join tables.</p>
+          <span style="margin-top: auto; padding-top: 12px; font-size: 13px; font-weight: 600; color: #2563eb;">Read Guide &rarr;</span>
+        </a>
+      </div>
+    </section>
+  <% } %>
+
+  <section class="home-about-section" aria-label="About this library" style="max-width: 800px; margin: 0 auto 48px auto; padding: 28px 24px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; text-align: left;">
+    <h2 style="font-size: 1.35rem; font-weight: 700; margin: 0 0 12px; color: #1e293b;">A practical Guidewire and Gosu reference, organized for real work</h2>
+    <p style="color: #334155; line-height: 1.7; margin: 0 0 12px;">
+      Learn with me curates practical Guidewire Gosu examples alongside foundational theory so you can move from concept to working code. The library organizes searchable queries by product and use case — PolicyCenter rating and configuration, ClaimCenter exposures and reserves, and BillingCenter workflows — so developers and functional consultants can find a relevant pattern without digging through scattered projects.
+    </p>
+    <p style="color: #334155; line-height: 1.7; margin: 0 0 12px;">
+      It is useful for Gosu developers onboarding to InsuranceSuite, Java engineers transitioning to enterprise insurance technology, and teams supporting live Guidewire implementations that need reliable reference snippets. Each query is presented with context for when to use it, and the public Knowledge Base expands the why behind the code. All examples are curated and reviewed to stay consistent with Guidewire best practices, while the Knowledge Base articles provide deeper explanations for reuse across projects.
+    </p>
+    <p style="color: #334155; line-height: 1.7; margin: 0;">
+      Continue with the architectural overview in <a href="/knowledge/guidewire-theory/guidewire-platform-architecture" style="color: #2563eb; font-weight: 600; text-decoration: underline;">Guidewire InsuranceSuite Architecture</a>, the core principles in <a href="/knowledge/java/java-oop-principles" style="color: #2563eb; font-weight: 600; text-decoration: underline;">Object-Oriented Programming in Java</a>, or the relational techniques in <a href="/knowledge/sql/sql-joins-deep-dive" style="color: #2563eb; font-weight: 600; text-decoration: underline;">SQL Joins Deep Dive</a>.
+    </p>
+  </section>
+
+  <section class="features-section" style="max-width: 900px; margin: 0 auto 60px auto; padding: 0 20px;">
+    <h2 style="text-align: center; font-size: 1.75rem; margin-bottom: 36px; color: #1e293b;">Explore Our Learning Resources</h2>
+    <div class="features-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;">
+      <div class="feature-card" style="background: #f8fafc; padding: 24px; border-radius: 8px; border: 1px solid #e2e8f0;">
+        <h3 style="font-size: 1.25rem; margin-bottom: 12px; color: #1e293b;">Practical Code Snippets</h3>
+        <p style="color: #475569; line-height: 1.5; margin: 0;">Access curated code resources, programming libraries, and code templates modeled from real-world enterprise applications.</p>
+      </div>
+      <div class="feature-card" style="background: #f8fafc; padding: 24px; border-radius: 8px; border: 1px solid #e2e8f0;">
+        <h3 style="font-size: 1.25rem; margin-bottom: 12px; color: #1e293b;">Video Walkthroughs</h3>
+        <p style="color: #475569; line-height: 1.5; margin: 0;">Step-by-step technical videos guide you through technology solutions, demonstrating modern structures, configurations, and integration setup.</p>
+      </div>
+      <div class="feature-card" style="background: #f8fafc; padding: 24px; border-radius: 8px; border: 1px solid #e2e8f0;">
+        <h3 style="font-size: 1.25rem; margin-bottom: 12px; color: #1e293b;">Interactive Discussions</h3>
+        <p style="color: #475569; line-height: 1.5; margin: 0;">Engage with instructors and peers right on the learning resources, asking and answering context-specific engineering questions to reinforce learning.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<%- include('partials/footer') %>
+</body>
+</html>

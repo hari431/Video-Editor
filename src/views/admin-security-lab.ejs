@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Security Lab · Admin · Learn with me</title><link rel="stylesheet" href="/styles.css"><%- include('partials/adsense-verification') %></head>
+<body><header class="topbar"><a class="brand" href="/">Learn with me</a><div class="user"><a href="/account" style="text-decoration: underline; font-weight: bold;"><%= user.name || user.email %></a><% if (typeof user !== 'undefined' && user) { %><span class="user-status-text" style="color: #64748b; font-size: 13px; margin-left: 6px;"><%= (typeof getUserHeaderStatus === 'function') ? getUserHeaderStatus(user) : (user.status ? (user.status.charAt(0).toUpperCase() + user.status.slice(1)) : 'Active') %><% if (user.access_expires_at) { %> <span class="user-access-until">(Access Until: <%= new Date(user.access_expires_at).toLocaleDateString() %>)</span><% } %></span><% } %><form method="post" action="/logout"><button type="submit">Sign out</button></form></div></header>
+<main class="container">
+<h1>Security Lab</h1>
+<p class="muted" style="margin-top:-8px;margin-bottom:16px;">Admin-only catalog of vetted security tools. Runs are explicit, admin-only, and never automatic.</p>
+<%- include('partials/admin-nav') %>
+<section data-testid="security-lab" id="security-lab-card" style="background:#fff;border:1px solid #e1e6ee;border-radius:12px;padding:14px 16px;margin:14px 0 20px;">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;">
+    <h2 style="margin:0;font-size:15px;font-weight:700;color:#172033;">Security Lab</h2>
+    <span id="security-lab-status" class="badge badge-neutral" aria-live="polite">Loading…</span>
+  </div>
+  <p class="muted" style="margin:0 0 8px;">Registered security tools — catalog only; any run is admin-only and never automatic.</p>
+  <form id="security-lab-filters" data-testid="security-lab-filters" style="display:flex;gap:8px;margin:0 0 8px;flex-wrap:wrap;align-items:end;">
+    <div>
+      <label for="security-lab-filter-q" class="muted" style="font-size:12px;font-weight:600;">Search</label><br>
+      <input id="security-lab-filter-q" name="q" type="text" maxlength="120" autocomplete="off" placeholder="e.g. subdomain" style="padding:6px 8px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;">
+    </div>
+    <div>
+      <label for="security-lab-filter-category" class="muted" style="font-size:12px;font-weight:600;">Category</label><br>
+      <select id="security-lab-filter-category" name="category" style="padding:6px 8px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;">
+        <option value="">All categories</option>
+        <option value="dns-recon">dns-recon</option>
+        <option value="http-tls-inspection">http-tls-inspection</option>
+        <option value="security-headers">security-headers</option>
+        <option value="web-discovery">web-discovery</option>
+        <option value="secret-scanning">secret-scanning</option>
+        <option value="security-scanning">security-scanning</option>
+        <option value="forensics-analysis">forensics-analysis</option>
+      </select>
+    </div>
+    <div>
+      <label for="security-lab-filter-risk" class="muted" style="font-size:12px;font-weight:600;">Risk</label><br>
+      <select id="security-lab-filter-risk" name="riskLevel" style="padding:6px 8px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;">
+        <option value="">All levels</option>
+        <option value="low">low</option>
+        <option value="medium">medium</option>
+      </select>
+    </div>
+    <div>
+      <button id="security-lab-filter-apply" type="submit" class="button small secondary">Apply filters</button>
+    </div>
+  </form>
+  <p id="security-lab-summary" class="muted" style="margin:0 0 8px;" aria-live="polite">Loading security tool catalog…</p>
+  <p id="security-lab-enabled-note" class="muted" style="margin:0 0 8px;" aria-live="polite">Checking tool availability…</p>
+  <ul id="security-lab-enabled-list" style="margin:0 0 8px;padding-left:18px;list-style:disc;"></ul>
+  <ul id="security-lab-list" style="margin:0 0 8px;padding-left:18px;list-style:disc;"></ul>
+  <p id="security-lab-error" class="muted" style="display:none;margin:0 0 8px;" role="alert"></p>
+  <button id="security-lab-retry" type="button" class="button small secondary" style="display:none;">Retry</button>
+</section>
+</main>
+<%- include('partials/footer') %>
+<script src="/admin-security-lab.js" defer></script>
+</body></html>

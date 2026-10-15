@@ -1,0 +1,34 @@
+PREMIUM AND DEDUCTIBLE
+======================
+
+Premium is the amount charged for insurance coverage. A deductible is the portion of a covered loss that the insured generally bears before the insurer's payment, subject to policy terms.
+
+PREMIUM DRIVERS
+---------------
+Pricing can consider exposure characteristics, expected losses, expenses, catastrophe risk, reinsurance, taxes/fees, competition and other regulatory or business factors.
+
+DEDUCTIBLE EFFECT
+-----------------
+A higher deductible can reduce the insurer's payment for smaller losses and may affect premium, but the relationship is product- and market-specific.
+
+EXAMPLE
+-------
+If a covered loss is valued at 10,000 and the applicable deductible is 1,000, the policy's covered payment may be 9,000 before considering other limits or conditions.
+
+COMMON MISTAKES
+---------------
+Treating the deductible as an extra premium or assuming the example calculation applies when exclusions, limits or coinsurance change the result.
+
+KEY TAKEAWAYS
+-------------
+Premium prices coverage; deductible allocates part of covered loss to the insured. Both are policy-specific.
+
+ORIGINAL INTERVIEW / CHECKPOINT QUESTIONS
+------------------------------------------
+1. Premium vs deductible?
+2. Why might a higher deductible affect premium?
+3. Why is the simple claim calculation not always sufficient?
+
+EDITORIAL NOTE
+--------------
+This article is original educational content written for the public knowledge library. Reference material may have been used to understand terminology and cross-check concepts; copyrighted or proprietary source text is not reproduced.

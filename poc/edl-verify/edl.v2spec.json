@@ -1,0 +1,60 @@
+{
+  "version": 2,
+  "width": 1280,
+  "height": 720,
+  "files": [
+    {
+      "kind": "video"
+    },
+    {
+      "kind": "video"
+    }
+  ],
+  "videoClips": [
+    {
+      "file": 0,
+      "sourceIn": 2,
+      "sourceOut": 8,
+      "start": 0,
+      "gain": 1,
+      "volumeDb": 0,
+      "fadeIn": 0,
+      "fadeOut": 0
+    }
+  ],
+  "audioClips": [],
+  "blurs": [],
+  "texts": [
+    {
+      "text": "Guidewire EDL",
+      "x": 0.05,
+      "y": 0.05,
+      "size": 0.05,
+      "color": "#FFFFFF",
+      "bg": null,
+      "start": 1,
+      "end": 6
+    }
+  ],
+  "images": [],
+  "videoOverlays": [
+    {
+      "file": 1,
+      "x": 0.68,
+      "y": 0.04,
+      "w": 0.28,
+      "h": null,
+      "start": 1,
+      "end": 5,
+      "sourceIn": 0,
+      "shape": "rect"
+    }
+  ],
+  "zooms": [],
+  "watermark": {
+    "enabled": true,
+    "text": "Learn with me",
+    "position": 1
+  },
+  "resolution": "original"
+}

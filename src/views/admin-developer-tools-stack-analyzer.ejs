@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Gosu / Java Stack Trace Analyzer · Admin · Learn with me</title>
+  <link rel="stylesheet" href="/styles.css">
+  <%- include('partials/adsense-verification') %>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/">Learn with me</a>
+    <div class="user">
+      <a href="/account" style="text-decoration: underline; font-weight: bold;"><%= user.name || user.email %></a>
+      <% if (typeof user !== 'undefined' && user) { %>
+        <span class="user-status-text" style="color: #64748b; font-size: 13px; margin-left: 6px;">
+          <%= (typeof getUserHeaderStatus === 'function') ? getUserHeaderStatus(user) : (user.status ? (user.status.charAt(0).toUpperCase() + user.status.slice(1)) : 'Active') %>
+          <% if (user.access_expires_at) { %>
+            <span class="user-access-until">(Access Until: <%= new Date(user.access_expires_at).toLocaleDateString() %>)</span>
+          <% } %>
+        </span>
+      <% } %>
+      <form method="post" action="/logout">
+        <button type="submit">Sign out</button>
+      </form>
+    </div>
+  </header>
+
+  <main class="container" style="max-width:1100px;">
+    <h1>Gosu / Java Stack Trace Analyzer</h1>
+    <%- include('partials/admin-nav') %>
+
+    <p class="muted">
+      Admin/Owner only. Decodes and analyzes complex multi-nested Gosu or Java exception chains. Group application code and Guidewire framework classes, isolate system framework noise (JDK, Jetty, Hibernate, Jackson), extract detailed class and line number metadata, and isolate database deadlocks or SQLException logs instantly. <strong>Runs completely offline in your browser.</strong>
+    </p>
+
+    <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:20px; margin-top:20px;">
+      <h2 style="font-size:16px; margin-top:0; margin-bottom:12px;">Pasted Exception Stack Trace</h2>
+      <div style="margin-bottom:16px;">
+        <textarea id="rawTraceInput" data-testid="raw-trace-input" placeholder="Paste your Gosu exception or Java stack trace here..." style="width:100%; height:180px; font-family:monospace; font-size:13px; padding:12px; border:1px solid #cbd5e1; border-radius:8px; resize:vertical; background:#f8fafc;"></textarea>
+      </div>
+
+      <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:24px;">
+        <button type="button" class="button small primary" id="analyzeBtn" data-testid="analyze-btn">⚡ Analyze Stack Trace</button>
+        <button type="button" class="button small secondary" id="clearBtn" data-testid="clear-btn">Clear</button>
+        <button type="button" class="button small secondary" id="loadSampleGosuBtn" style="background:#f1f5f9; border:1px solid #cbd5e1; color:#334155;">Load Gosu Rule Trace</button>
+        <button type="button" class="button small secondary" id="loadSampleSqlBtn" style="background:#f1f5f9; border:1px solid #cbd5e1; color:#334155;">Load SQL Database Trace</button>
+      </div>
+
+      <!-- Error banner -->
+      <div id="errorContainer" class="hidden bg-red-50 border border-red-200 text-red-900 rounded-xl p-4 mb-6"></div>
+
+      <!-- Analysis Results -->
+      <div id="resultsPanel" class="hidden space-y-6">
+        <hr style="border:0; border-top:1px solid #e2e8f0; margin:24px 0;">
+
+        <!-- Root Cause Callout -->
+        <div class="bg-red-50/50 border border-red-200 rounded-2xl p-6 shadow-sm">
+          <h3 class="text-sm font-bold text-red-800 uppercase tracking-wider mb-3">Identified Root Cause</h3>
+          <div id="rootCauseBox"></div>
+        </div>
+
+        <!-- DB / SQL Exception Warning -->
+        <div id="dbAlertBox" class="hidden bg-amber-50 border border-amber-200 rounded-xl p-4"></div>
+
+        <!-- Exception Chain timeline -->
+        <div>
+          <h3 class="text-lg font-bold text-slate-900 mb-4">Exception Causes & Stack Frames Chain</h3>
+          <div id="exceptionChainList" class="space-y-6"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <%- include('partials/footer') %>
+  <script type="module" src="/admin-developer-tools-stack-analyzer.js?v=<%= Date.now() %>"></script>
+</body>
+</html>

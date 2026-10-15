@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Edit Product Plan · Learn with me</title>
+  <link rel="stylesheet" href="/styles.css">
+  <%- include('partials/adsense-verification') %>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/">Learn with me</a>
+  <div class="user">
+    <a href="/account" style="text-decoration: underline; font-weight: bold;"><%= user.name || user.email %></a>
+    <% if (typeof user !== 'undefined' && user) { %>
+      <span class="user-status-text" style="color: #64748b; font-size: 13px; margin-left: 6px;"><%= (typeof getUserHeaderStatus === 'function') ? getUserHeaderStatus(user) : (user.status ? (user.status.charAt(0).toUpperCase() + user.status.slice(1)) : 'Active') %><% if (user.access_expires_at) { %> <span class="user-access-until">(Access Until: <%= new Date(user.access_expires_at).toLocaleDateString() %>)</span><% } %></span>
+    <% } %>
+    <form method="post" action="/logout"><button type="submit">Sign out</button></form>
+  </div>
+</header>
+<main class="container" style="max-width:600px;margin-top:24px;margin-bottom:48px;">
+  <%- include('partials/admin-nav') %>
+
+  <a href="/admin/paid-products" class="nav-link" style="display:inline-block;margin-bottom:16px;">&larr; Back to Paid Products</a>
+  
+  <h1>Edit Product Plan</h1>
+  <p class="muted">Editing plan: <strong><%= plan.name %></strong> (<code><%= plan.code %></code>) for product: <strong><%= product.name %></strong></p>
+
+  <% if (error) { %><div class="flash flash-error"><%= error %></div><% } %>
+
+  <div style="background:#fffaf0;border:1px solid #feebc8;color:#c05621;padding:16px;border-radius:12px;margin-top:16px;margin-bottom:16px;display:flex;flex-direction:column;gap:8px;">
+    <h3 style="margin:0;font-size:16px;font-weight:700;">⚠️ Impactful Action Warnings</h3>
+    <ul style="margin:0;padding-left:20px;font-size:14px;line-height:1.4;">
+      <li><strong>Billing Type & Parameters</strong>:
+        <ul style="margin:4px 0 0;padding-left:16px;">
+          <li>If configuring as a <strong>Recurring Subscription</strong>, a valid <strong>Razorpay Plan ID</strong> is strictly required.</li>
+          <li>If configuring as a <strong>One-Time Payment</strong>, a positive integer for <strong>Duration (Days)</strong> is strictly required.</li>
+        </ul>
+      </li>
+      <li><strong>Disabling the Plan</strong>: Disabling a plan (setting it to inactive) will prevent new checkouts using this plan code. Disabling is <strong>strictly blocked</strong> if there are existing active user entitlements currently depending on this plan.</li>
+    </ul>
+  </div>
+
+  <form method="post" action="/admin/paid-products/plan/<%= plan.id %>/edit" style="background:#fff;border:1px solid #e1e6ee;border-radius:12px;padding:24px;margin-top:16px;">
+    <% if (csrfToken) { %>
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <% } %>
+
+    <div style="margin-bottom:18px;">
+      <label style="display:block;font-weight:600;margin-bottom:6px;color:#2d3748;">Plan Code (Immutable)</label>
+      <input type="text" value="<%= plan.code %>" disabled style="width:100%;padding:10px;border:1px solid #cbd5e0;border-radius:6px;background:#edf2f7;color:#4a5568;font-family:monospace;">
+    </div>
+
+    <div style="margin-bottom:18px;">
+      <label for="name" style="display:block;font-weight:600;margin-bottom:6px;color:#2d3748;">Plan Name</label>
+      <input type="text" id="name" name="name" value="<%= (form && form.name) !== undefined ? form.name : plan.name %>" required placeholder="e.g. Pro Monthly Subscription" style="width:100%;padding:10px;border:1px solid #cbd5e0;border-radius:6px;">
+    </div>
+
+    <div style="margin-bottom:18px;display:flex;gap:16px;">
+      <div style="flex:1;">
+        <label for="billing_type" style="display:block;font-weight:600;margin-bottom:6px;color:#2d3748;">Billing Type</label>
+        <% const currentBillingType = (form && form.billing_type) !== undefined ? form.billing_type : plan.billing_type; %>
+        <select id="billing_type" name="billing_type" required style="width:100%;padding:10px;border:1px solid #cbd5e0;border-radius:6px;background:#fff;">
+          <option value="one_time" <%= currentBillingType === 'one_time' ? 'selected' : '' %>>One-Time Payment</option>
+          <option value="recurring" <%= currentBillingType === 'recurring' ? 'selected' : '' %>>Recurring Subscription</option>
+        </select>
+      </div>
+      
+      <div style="flex:1;">
+        <label for="currency" style="display:block;font-weight:600;margin-bottom:6px;color:#2d3748;">Currency</label>
+        <input type="text" id="currency" name="currency" value="<%= (form && form.currency) !== undefined ? form.currency : plan.currency %>" required style="width:100%;padding:10px;border:1px solid #cbd5e0;border-radius:6px;text-transform:uppercase;">
+      </div>
+    </div>
+
+    <div style="margin-bottom:18px;display:flex;gap:16px;">
+      <div style="flex:1;">
+        <label for="price" style="display:block;font-weight:600;margin-bottom:6px;color:#2d3748;">Price</label>
+        <% const defaultPrice = (plan.price_amount_paise / 100).toFixed(2); %>
+        <input type="number" id="price" name="price" step="0.01" min="0" value="<%= (form && form.price) !== undefined ? form.price : defaultPrice %>" required placeholder="e.g. 299.00" style="width:100%;padding:10px;border:1px solid #cbd5e0;border-radius:6px;">
+        <p class="muted" style="margin-top:4px;font-size:12px;">Standard price amount (gets converted to paise on save).</p>
+      </div>
+
+      <div style="flex:1;">
+        <label for="duration_days" style="display:block;font-weight:600;margin-bottom:6px;color:#2d3748;">Duration (Days)</label>
+        <input type="number" id="duration_days" name="duration_days" min="1" value="<%= (form && form.duration_days) !== undefined ? form.duration_days : (plan.duration_days || '') %>" placeholder="Lifetime / Unlimited" style="width:100%;padding:10px;border:1px solid #cbd5e0;border-radius:6px;">
+        <p class="muted" style="margin-top:4px;font-size:12px;">Leave blank for lifetime/continuous plans.</p>
+      </div>
+    </div>
+
+    <div style="margin-bottom:18px;">
+      <label for="razorpay_plan_id" style="display:block;font-weight:600;margin-bottom:6px;color:#2d3748;">Razorpay Plan ID (Optional)</label>
+      <input type="text" id="razorpay_plan_id" name="razorpay_plan_id" value="<%= (form && form.razorpay_plan_id) !== undefined ? form.razorpay_plan_id : (plan.razorpay_plan_id || '') %>" placeholder="e.g. plan_N1v9xYabc123" style="width:100%;padding:10px;border:1px solid #cbd5e0;border-radius:6px;">
+      <p class="muted" style="margin-top:4px;font-size:12px;">Mandatory for recurring subscriptions if connecting live checkout.</p>
+    </div>
+
+    <div style="margin-bottom:24px;display:flex;align-items:center;gap:8px;">
+      <% const isChecked = (form && form.is_active) !== undefined ? (form.is_active === 'true' || form.is_active === true) : plan.is_active; %>
+      <input type="checkbox" id="is_active" name="is_active" value="true" <%= isChecked ? 'checked' : '' %>>
+      <label for="is_active" style="font-weight:600;color:#2d3748;margin:0;">Plan is active</label>
+    </div>
+
+    <div style="display:flex;gap:12px;justify-content:flex-end;">
+      <a href="/admin/paid-products" class="button secondary" style="padding:10px 20px;text-decoration:none;">Cancel</a>
+      <button type="submit" class="button success" style="padding:10px 20px;">Save Changes</button>
+    </div>
+  </form>
+</main>
+</body>
+</html>

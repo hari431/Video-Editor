@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Create Promotion · Learn with me</title>
+  <link rel="stylesheet" href="/styles.css">
+  <%- include('partials/adsense-verification') %>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/">Learn with me</a>
+  <div class="user">
+    <a href="/account" style="text-decoration: underline; font-weight: bold;"><%= user.name || user.email %></a>
+    <% if (typeof user !== 'undefined' && user) { %>
+      <span class="user-status-text" style="color: #64748b; font-size: 13px; margin-left: 6px;"><%= (typeof getUserHeaderStatus === 'function') ? getUserHeaderStatus(user) : (user.status ? (user.status.charAt(0).toUpperCase() + user.status.slice(1)) : 'Active') %><% if (user.access_expires_at) { %> <span class="user-access-until">(Access Until: <%= new Date(user.access_expires_at).toLocaleDateString() %>)</span><% } %></span>
+    <% } %>
+    <form method="post" action="/logout"><button type="submit">Sign out</button></form>
+  </div>
+</header>
+<main class="container" style="max-width:600px;margin-top:24px;margin-bottom:48px;">
+  <%- include('partials/admin-nav') %>
+
+  <a href="/admin/promotions" class="nav-link" style="display:inline-block;margin-bottom:16px;">&larr; Back to Promotions</a>
+  
+  <h1>Create Promotion</h1>
+  <p class="muted">Set up a new discount campaign, apply validation rules, eligibility requirements, and duration controls.</p>
+
+  <% if (error) { %><div class="flash flash-error"><%= error %></div><% } %>
+
+  <form method="post" action="/admin/promotions/create" style="background:#fff;border:1px solid #e1e6ee;border-radius:12px;padding:24px;margin-top:16px;">
+    <% if (csrfToken) { %>
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <% } %>
+
+    <div style="margin-bottom:18px;">
+      <label for="code" style="display:block;font-weight:600;margin-bottom:6px;color:#2d3748;">Promotion Code</label>
+      <input type="text" id="code" name="code" value="<%= (form && form.code) || '' %>" required placeholder="e.g. SAVE50" style="width:100%;padding:10px;border:1px solid #cbd5e0;border-radius:6px;text-transform:uppercase;">
+      <p class="muted" style="margin-top:4px;font-size:12px;">Unique within the applicable product scope. Alphanumeric characters only.</p>
+    </div>
+
+    <div style="margin-bottom:18px;">
+      <label for="product_id" style="display:block;font-weight:600;margin-bottom:6px;color:#2d3748;">Applicable Product</label>
+      <select id="product_id" name="product_id" required style="width:100%;padding:10px;border:1px solid #cbd5e0;border-radius:6px;background:#fff;">
+        <option value="">-- Select Product Scope --</option>
+        <% products.forEach(prod => { %>
+          <option value="<%= prod.id %>" <%= (form && Number(form.product_id) === Number(prod.id)) ? 'selected' : '' %>><%= prod.name %> (<%= prod.code %>)</option>
+        <% }) %>
+      </select>
+    </div>
+
+    <div style="margin-bottom:18px;display:flex;gap:16px;">
+      <div style="flex:1;">
+        <label for="discount_type" style="display:block;font-weight:600;margin-bottom:6px;color:#2d3748;">Discount Type</label>
+        <select id="discount_type" name="discount_type" required onchange="updateDiscountHelp()" style="width:100%;padding:10px;border:1px solid #cbd5e0;border-radius:6px;background:#fff;">
+          <option value="percentage" <%= (form && form.discount_type === 'percentage') ? 'selected' : '' %>>Percentage (%)</option>
+          <option value="flat" <%= (form && form.discount_type === 'flat') ? 'selected' : '' %>>Flat Amount (INR)</option>
+        </select>
+      </div>
+      <div style="flex:1;">
+        <label for="discount_value" style="display:block;font-weight:600;margin-bottom:6px;color:#2d3748;">Discount Value</label>
+        <input type="number" id="discount_value" name="discount_value" value="<%= (form && form.discount_value) || '' %>" required min="0" placeholder="e.g. 50" style="width:100%;padding:10px;border:1px solid #cbd5e0;border-radius:6px;">
+      </div>
+    </div>
+    <p id="discountHelp" class="muted" style="margin-top:-10px;margin-bottom:18px;font-size:12px;"></p>
+
+    <div style="margin-bottom:18px;">
+      <label for="eligibility_days" style="display:block;font-weight:600;margin-bottom:6px;color:#2d3748;">User Age Limit (Eligibility Days)</label>
+      <input type="number" id="eligibility_days" name="eligibility_days" value="<%= (form && form.eligibility_days) || '' %>" min="1" placeholder="e.g. 7" style="width:100%;padding:10px;border:1px solid #cbd5e0;border-radius:6px;">
+      <p class="muted" style="margin-top:4px;font-size:12px;">Only users registered within this many days can redeem. Leave blank for all users.</p>
+    </div>
+
+    <div style="margin-bottom:18px;">
+      <label for="max_redemptions" style="display:block;font-weight:600;margin-bottom:6px;color:#2d3748;">Max Redemptions Capacity</label>
+      <input type="number" id="max_redemptions" name="max_redemptions" value="<%= (form && form.max_redemptions) || '' %>" min="1" placeholder="e.g. 100" style="width:100%;padding:10px;border:1px solid #cbd5e0;border-radius:6px;">
+      <p class="muted" style="margin-top:4px;font-size:12px;">Maximum times this coupon can be redeemed across the entire site. Leave blank for unlimited.</p>
+    </div>
+
+    <div style="margin-bottom:18px;display:flex;gap:16px;">
+      <div style="flex:1;">
+        <label for="valid_from" style="display:block;font-weight:600;margin-bottom:6px;color:#2d3748;">Active From</label>
+        <input type="datetime-local" id="valid_from" name="valid_from" value="<%= (form && form.valid_from) || '' %>" style="width:100%;padding:10px;border:1px solid #cbd5e0;border-radius:6px;background:#fff;">
+      </div>
+      <div style="flex:1;">
+        <label for="valid_until" style="display:block;font-weight:600;margin-bottom:6px;color:#2d3748;">Active Until (Expiry)</label>
+        <input type="datetime-local" id="valid_until" name="valid_until" value="<%= (form && form.valid_until) || '' %>" style="width:100%;padding:10px;border:1px solid #cbd5e0;border-radius:6px;background:#fff;">
+      </div>
+    </div>
+    <p class="muted" style="margin-top:-10px;margin-bottom:18px;font-size:12px;">Start and end dates of the campaign. Leave blank for infinite validity.</p>
+
+    <div style="margin-bottom:18px;">
+      <label for="recurring_offer_id" style="display:block;font-weight:600;margin-bottom:6px;color:#2d3748;">Razorpay Offer ID (For Recurring)</label>
+      <input type="text" id="recurring_offer_id" name="recurring_offer_id" value="<%= (form && form.recurring_offer_id) || '' %>" placeholder="e.g. offer_PLmK7s91m" style="width:100%;padding:10px;border:1px solid #cbd5e0;border-radius:6px;">
+      <p class="muted" style="margin-top:4px;font-size:12px;">Required if this promotion is to be used for recurring monthly subscription plans.</p>
+    </div>
+
+    <div style="margin-bottom:18px;display:flex;align-items:flex-start;gap:8px;">
+      <input type="checkbox" id="show_on_payment_screen" name="show_on_payment_screen" value="true" <%= (form && (form.show_on_payment_screen === 'true' || form.show_on_payment_screen === true || form.show_on_payment_screen === 'on')) ? 'checked' : '' %>>
+      <div>
+        <label for="show_on_payment_screen" style="font-weight:600;color:#2d3748;margin:0;display:block;">Display promotion on one-time payment screen</label>
+        <p class="muted" style="margin-top:2px;font-size:12px;margin-bottom:0;">Only selected promotions will be displayed to users during eligible one-time purchases.</p>
+      </div>
+    </div>
+
+    <div style="margin-bottom:24px;display:flex;align-items:center;gap:8px;">
+      <input type="checkbox" id="is_enabled" name="is_enabled" value="true" <%= (!form || form.is_enabled === 'true' || form.is_enabled === true) ? 'checked' : '' %>>
+      <label for="is_enabled" style="font-weight:600;color:#2d3748;margin:0;">Enable promotion immediately</label>
+    </div>
+
+    <div style="display:flex;gap:12px;justify-content:flex-end;">
+      <a href="/admin/promotions" class="button secondary" style="padding:10px 20px;text-decoration:none;">Cancel</a>
+      <button type="submit" class="button success" style="padding:10px 20px;" data-testid="submit-promo-btn">Create Promotion</button>
+    </div>
+  </form>
+</main>
+
+<script>
+function updateDiscountHelp() {
+  const type = document.getElementById('discount_type').value;
+  const helpEl = document.getElementById('discountHelp');
+  if (type === 'percentage') {
+    helpEl.innerText = "Value in percentage (0 to 100). e.g., 50 for a 50% discount.";
+  } else {
+    helpEl.innerText = "Value in standard rupees (INR). e.g., 150 for a ₹150.00 flat discount.";
+  }
+}
+updateDiscountHelp();
+</script>
+</body>
+</html>

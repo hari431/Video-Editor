@@ -1,0 +1,41 @@
+CONTROL FLOW
+============
+
+Control flow determines which statements execute and how often. Java provides conditionals, loops, switch expressions/statements, break, continue, and return.
+
+CONDITIONALS
+------------
+if/else is appropriate for general boolean decisions. switch is useful when one value is being matched against several cases.
+
+LOOPS
+-----
+for is useful when iteration structure is known; while is useful when repetition depends on a condition; enhanced for is convenient for arrays and collections.
+
+EXAMPLE
+-------
+for (String item : items) {
+    if (item == null) continue;
+    process(item);
+}
+
+DESIGN GUIDANCE
+---------------
+Keep branches small. If a method contains many nested conditions, consider extracting methods or using a clearer domain abstraction.
+
+COMMON MISTAKES
+---------------
+Off-by-one errors, accidental infinite loops, missing break/return logic, and deeply nested conditions make control flow harder to verify.
+
+KEY TAKEAWAYS
+-------------
+Readable control flow is usually more valuable than clever control flow. Small methods and clear conditions reduce defects.
+
+ORIGINAL INTERVIEW / CHECKPOINT QUESTIONS
+------------------------------------------
+1. When would you use while instead of for?
+2. What is an off-by-one error?
+3. When can a switch improve readability?
+
+EDITORIAL NOTE
+--------------
+This article is original educational content written for the public knowledge library. Reference material may have been used to understand terminology and cross-check concepts; copyrighted or proprietary source text is not reproduced.

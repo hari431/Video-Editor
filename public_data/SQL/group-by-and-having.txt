@@ -1,0 +1,85 @@
+SQL AGGREGATION, GROUP BY, AND HAVING
+=======================================
+
+Data aggregation is a fundamental relational database operation that collapses multiple records into summarized, meaningful metrics. Understanding the logical query processing pipeline and the relationship between aggregations, group construction, and post-aggregation filtering is essential for writing performant queries.
+
+AGGREGATION FUNCTIONS IN SQL
+----------------------------
+Standard SQL provides several built-in mathematical functions to perform operations across a set of input rows:
+- COUNT(): Tally of items. `COUNT(*)` counts all rows including NULLs, while `COUNT(column)` only counts non-NULL values in that specific column.
+- SUM(): Calculates the mathematical total of a numeric column. Ignores NULLs.
+- AVG(): Calculates the arithmetic mean. Ignores NULLs. Note: `AVG(col)` is equivalent to `SUM(col) / COUNT(col)`, which differs from `SUM(col) / COUNT(*)` if NULL values are present.
+- MIN() & MAX(): Finds the minimum and maximum values. These can operate on numbers, dates, or strings (lexicographical sorting).
+
+EXECUTION ORDER & LOGICAL QUERY PIPELINE
+----------------------------------------
+To write correct complex aggregate reports, you must understand the strict order of execution. SQL is a declarative language, and the database engine processes clauses in a logical order that differs completely from their written order:
+
+```
+   1. FROM & JOIN     (Load and combine source tables)
+   2. WHERE           (Filter raw rows BEFORE grouping - utilizes indexes)
+   3. GROUP BY        (Segment records into distinct buckets)
+   4. HAVING          (Filter groups AFTER aggregation)
+   5. SELECT          (Project columns, compute aggregate expressions)
+   6. DISTINCT        (De-duplicate output rows)
+   7. ORDER BY        (Sort final results)
+   8. LIMIT / OFFSET  (Restrict output set size)
+```
+
+Because WHERE is executed in step 2 (before GROUP BY in step 3), it cannot reference aggregate values. Conversely, because HAVING is executed in step 4 (after grouping), it can only filter based on aggregate calculations or columns present in the GROUP BY clause.
+
+SQL COMPLEX CONTEXT EXAMPLE
+---------------------------
+Below is a real-world enterprise example calculating financial summaries for customers, grouping transaction ledgers, and retaining only those with high activity:
+
+SELECT 
+    customer_id,
+    COUNT(id) AS transaction_count,
+    SUM(amount) AS total_spent,
+    AVG(amount) AS average_spent,
+    MAX(amount) AS largest_transaction
+FROM transactions
+WHERE transaction_date >= '2026-01-01'
+  AND status = 'CLEARED'
+GROUP BY customer_id
+HAVING COUNT(id) >= 5
+   AND SUM(amount) > 10000.00
+ORDER BY total_spent DESC;
+
+*Rules of Grouping:* Any non-aggregated column appearing in your SELECT clause MUST be included in your GROUP BY clause. Failing to do so violates the relational model (as the database would have to guess which raw row value to display for that grouped bucket) and will cause compilation errors in databases like PostgreSQL, SQL Server, and Oracle.
+
+WHERE VS HAVING: THE PERFORMANCE DIFFERENTIAL
+---------------------------------------------
+A common performance anti-pattern is using HAVING to perform filtering that could have been handled by WHERE.
+- WHERE filtering is highly efficient: it discards unwanted rows immediately, preventing the database from loading them into memory or consuming sorting and CPU resources during the grouping phase. WHERE filters can directly utilize indexes.
+- HAVING filtering is expensive: it forces the database to scan, load, sort, and aggregate all raw rows into groups, only to discard entire grouped sets at the end. This often triggers temporary disk-spilling and memory sorting.
+
+-- ❌ INEFFECIENT (HAVING filters non-aggregated column)
+SELECT department_id, AVG(salary)
+FROM employees
+GROUP BY department_id
+HAVING department_id IN (10, 20, 30);
+
+-- ✅ OPTIMIZED (WHERE filters rows early using index on department_id)
+SELECT department_id, AVG(salary)
+FROM employees
+WHERE department_id IN (10, 20, 30)
+GROUP BY department_id;
+
+COMMON MISTAKES
+---------------
+1. Misunderstanding NULL Ignorance: Expecting `AVG(rating)` to include NULL values. If a table has 3 rows with ratings [10, 5, NULL], `AVG(rating)` evaluates to 7.5 (15 / 2), not 5.0 (15 / 3).
+2. Referencing Aliases in HAVING: Trying to reference SELECT aliases inside HAVING (e.g., `HAVING total_spent > 1000`). Because HAVING is evaluated before SELECT, the alias does not exist yet. Use the full aggregate expression `HAVING SUM(amount) > 1000`.
+3. Over-grouping: Including unnecessary columns in the GROUP BY clause "just to get the query to compile". This splits your groups into tiny sub-groups, destroying the intended aggregate summarization.
+
+KEY TAKEAWAYS
+-------------
+- WHERE filters rows early before grouping; HAVING filters the aggregated groups later.
+- Aggregate functions (SUM, AVG, MIN, MAX) ignore NULL values, which affects statistical calculations.
+- Always filter as much data as possible using the WHERE clause to minimize grouping memory overhead.
+
+ORIGINAL INTERVIEW / CHECKPOINT QUESTIONS
+------------------------------------------
+1. Why does a SELECT statement with a GROUP BY clause restrict which columns you can return without an aggregate function?
+2. Explain how NULL values affect the output of `COUNT(*)`, `COUNT(column_name)`, and `AVG(column_name)`.
+3. Why is it a performance anti-pattern to filter on non-aggregated columns using HAVING instead of WHERE?

@@ -1,0 +1,37 @@
+SELECT AND FILTERING
+====================
+
+SELECT retrieves data, while WHERE limits rows according to predicates.
+
+PREDICATE DESIGN
+----------------
+Combine conditions with AND/OR and use parentheses when logic could be ambiguous. Equality, ranges, membership and pattern matching each have different behavior.
+
+EXAMPLE
+-------
+SELECT id, premium
+FROM policies
+WHERE status = 'ACTIVE'
+  AND premium >= 1000;
+
+NULL
+----
+NULL represents an unknown or absent value and is not compared with = in the usual way. Use IS NULL or IS NOT NULL.
+
+PERFORMANCE
+-----------
+Filtering on indexed columns can be efficient, but indexes are not magic. The optimizer considers selectivity, statistics, table size and other factors.
+
+KEY TAKEAWAYS
+-------------
+Write precise predicates and understand NULL semantics before reasoning about query results.
+
+ORIGINAL INTERVIEW / CHECKPOINT QUESTIONS
+------------------------------------------
+1. Why is column = NULL incorrect?
+2. When should parentheses be used with AND/OR?
+3. Does an index always make a query faster?
+
+EDITORIAL NOTE
+--------------
+This article is original educational content written for the public knowledge library. Reference material may have been used to understand terminology and cross-check concepts; copyrighted or proprietary source text is not reproduced.

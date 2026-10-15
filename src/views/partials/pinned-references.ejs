@@ -1,0 +1,13 @@
+<% if (typeof pinnedRefs !== 'undefined' && pinnedRefs && pinnedRefs.length) { %>
+<section class="pinned-references" data-testid="pinned-references" style="margin:18px 0;padding:16px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;">
+  <h3 style="margin:0 0 12px;font-size:15px;font-weight:700;color:#172033;">📌 References</h3>
+  <div style="display:flex;flex-wrap:wrap;gap:8px;">
+    <% for (const ref of pinnedRefs) { %>
+      <% const isPremium = ref.access === 'premium'; const isExternalPath = ref.url.startsWith('/external/'); %>
+      <a href="<%= ref.url %>" target="<%= true ? '_blank' : ref.url.startsWith('/') ? '_self' : '_blank' %>" rel="noopener noreferrer" class="button small" data-testid="pinned-ref" data-access="<%= ref.access || 'normal' %>" title="<%= isPremium ? 'Premium content — Premium membership is required to access this video.' : '' %>" style="display:inline-flex;align-items:center;gap:6px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:7px 12px;font-size:13px;font-weight:600;color:#1e40af;text-decoration:none;">
+        <% if (isPremium) { %>🔒 <% } %><%= ref.title %><% if (isPremium) { %> <span style="margin-left:6px;background:#fef3c7;border:1px solid #fde68a;color:#92400e;border-radius:999px;padding:1px 7px;font-size:11px;font-weight:700;">Premium</span><% } %>
+      </a>
+    <% } %>
+  </div>
+</section>
+<% } %>

@@ -1,0 +1,34 @@
+CLAIMCENTER EXPOSURES AND COVERAGES
+===================================
+
+An exposure represents a specific aspect of a claim for which the insurer may have an obligation under a coverage.
+
+RELATIONSHIP
+------------
+A single claim can have multiple exposures. Each exposure can be associated with coverage and financial handling.
+
+REFERENCE GROUNDING
+-------------------
+The supplied ClaimCenter material describes reserve lines as combining exposure/coverage with cost type and category.
+
+EXAMPLE
+-------
+An auto accident claim might have separate exposures for vehicle damage and bodily injury depending on the policy and facts.
+
+COMMON MISTAKES
+---------------
+Treating the whole claim as one financial exposure or assuming every incident automatically creates an exposure.
+
+KEY TAKEAWAYS
+-------------
+Exposures provide a more granular way to manage coverage and financial responsibility within a claim.
+
+ORIGINAL INTERVIEW / CHECKPOINT QUESTIONS
+------------------------------------------
+1. Claim vs exposure?
+2. Why can one claim have multiple exposures?
+3. How can coverage affect an exposure?
+
+EDITORIAL NOTE
+--------------
+This article is original educational content written for the public knowledge library. Reference material may have been used to understand terminology and cross-check concepts; copyrighted or proprietary source text is not reproduced.

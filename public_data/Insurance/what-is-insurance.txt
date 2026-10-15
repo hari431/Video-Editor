@@ -1,0 +1,47 @@
+WHAT IS INSURANCE
+=================
+
+Insurance is a risk-management arrangement in which an insurer accepts specified risks in exchange for consideration, usually premium, subject to the terms of a contract.
+
+CORE IDEA
+---------
+The insured transfers specified financial risk to the insurer within defined policy terms. The insurer pools risks across many policyholders and uses underwriting, pricing and claims processes to manage the portfolio.
+
+POLICY AS A CONTRACT
+--------------------
+A policy defines who is insured, what is covered, limits, deductibles, exclusions, conditions, dates and other obligations. Coverage is not simply a promise to pay every loss.
+
+POOLING NUMERIC EXAMPLE
+-----------------------
+100 homeowners each pay $1,000 premium → $100,000 pool. In a year, 4 homes suffer $20,000 fire losses = $80,000. The pool funds those 4, with $20,000 remaining for expenses, reinsurance, and surplus. No single homeowner could absorb a $20,000 loss alone, but the pooled structure makes it bearable. Underwriting aims to price the $1,000 so the pool remains solvent across years.
+
+EXAMPLE WITH COVERAGE LOGIC
+---------------------------
+A homeowner may purchase property and liability coverage. A covered loss is evaluated against the policy's definitions, exclusions, limits and deductible. Example claim $50,000 dwelling fire:
+
+Limit $200,000 → loss within limit
+Deductible $1,000 → insurer pays $49,000
+Exclusion “earth movement” not triggered → covered
+If loss were flood and policy excludes flood, payout $0 despite limit.
+
+REFERENCE GROUNDING
+-------------------
+The supplied NAIC consumer guide describes common home-insurance coverages such as dwelling, other structures, personal property, loss of use, personal liability and medical payments. This article uses those concepts without reproducing the guide's wording.
+
+COMMON MISTAKES
+---------------
+Treating insurance as a savings account, assuming every loss is covered, and ignoring exclusions and conditions. Also comparing premium alone without comparing limits and deductibles across quotes.
+
+KEY TAKEAWAYS
+-------------
+Insurance is structured risk transfer through a contract. Coverage depends on the policy terms, not simply on the fact that a loss occurred.
+
+ORIGINAL INTERVIEW / CHECKPOINT QUESTIONS
+------------------------------------------
+1. What does insurance transfer?
+2. Why is a policy more than a promise to pay?
+3. Why do exclusions matter?
+
+EDITORIAL NOTE
+--------------
+This article is original educational content written for the public knowledge library. Reference material may have been used to understand terminology and cross-check concepts; copyrighted or proprietary source text is not reproduced.

@@ -1,0 +1,34 @@
+POLICYCENTER FORMS
+==================
+
+Forms are policy documents or form records associated with coverage, product, jurisdiction or transaction rules. They can communicate contractual terms and endorsements.
+
+TRANSACTION RELATIONSHIP
+------------------------
+Forms can be inferred or selected based on policy characteristics and transaction context. They are part of the policy's contractual/document package.
+
+REFERENCE GROUNDING
+-------------------
+The supplied PolicyCenter material notes that forms are inferred when a transaction is bound and that forms are not simply arbitrary content added outside the transaction.
+
+CLOUD PERSPECTIVE
+-----------------
+Current PolicyCenter API references expose policy forms as a resource area.
+
+COMMON MISTAKES
+---------------
+Treating forms as ordinary UI text or assuming a form can be attached without considering transaction rules.
+
+KEY TAKEAWAYS
+-------------
+Forms are part of the insurance contract/document process and are closely tied to product and transaction context.
+
+ORIGINAL INTERVIEW / CHECKPOINT QUESTIONS
+------------------------------------------
+1. Why do forms matter?
+2. When can forms be determined?
+3. Why should forms not be treated as arbitrary attachments?
+
+EDITORIAL NOTE
+--------------
+This article is original educational content written for the public knowledge library. Reference material may have been used to understand terminology and cross-check concepts; copyrighted or proprietary source text is not reproduced.
