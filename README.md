@@ -1,4 +1,4 @@
-# BrowserVideoStudio
+# Video Editor Studio
 
 A standalone, local-first web app for **video editing** (primary) and **screen
 recording** (secondary). It is a focused extraction of a much larger project:
